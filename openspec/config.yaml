@@ -1,0 +1,45 @@
+schema: spec-driven
+project: chronos
+strict_tdd: false
+
+context: |
+  Project: chronos
+  Stack: docs-only initial setup; no application runtime detected.
+  Architecture: not yet established.
+  Testing: no test runner, coverage tool, linter, type checker, or formatter detected.
+  Style: repository contains README and SDD registry only.
+
+testing:
+  detected: 2026-06-27
+  test_runner:
+    command: ""
+    framework: none
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage:
+    available: false
+    command: ""
+  quality_tools:
+    linter: false
+    type_checker: false
+    formatter: false
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes.
+  specs:
+    - Use Given/When/Then for scenarios.
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+  design:
+    - Document architecture decisions with rationale.
+  tasks:
+    - Group work by phase and keep tasks completable in one session.
+  apply:
+    - Follow existing code patterns.
+    - Use strict TDD when enabled.
+  verify:
+    - Record the commands run and observed results.
+  archive:
+    - Preserve the audit trail in the archive.

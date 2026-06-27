@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Chronos MVP Foundation">
+  <main class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">Chronos MVP</p>
+      <h1 id="page-title">Plan the day in visible blocks.</h1>
+      <p class="summary">
+        Chronos will help turn responsibilities into planned blocks, support focused execution, and
+        make review easier by comparing planned and actual time.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background:
+      radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 28rem),
+      linear-gradient(135deg, #020617 0%, #111827 48%, #172554 100%);
+  }
+
+  .hero {
+    width: min(100%, 48rem);
+    padding: clamp(2rem, 5vw, 4rem);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 2rem;
+    background: rgba(15, 23, 42, 0.78);
+    box-shadow: 0 24px 80px rgba(2, 6, 23, 0.36);
+  }
+
+  .eyebrow {
+    margin: 0 0 1rem;
+    color: #67e8f9;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    max-width: 12ch;
+    margin: 0;
+    font-size: clamp(3rem, 9vw, 6.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+  }
+
+  .summary {
+    max-width: 38rem;
+    margin: 1.5rem 0 0;
+    color: #cbd5e1;
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    line-height: 1.7;
+  }
+</style>
