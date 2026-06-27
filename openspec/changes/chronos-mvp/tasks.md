@@ -32,10 +32,10 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Backend-First Domain and Persistence
 
-- [ ] 2.1 Define block/task/event/pause/review types plus repository/service interfaces in `src/domain/*` and `src/server/*`.
-- [ ] 2.2 Create the initial Drizzle schema and migration in `src/db/schema.ts` and `supabase/migrations/0001_initial.sql`.
-- [ ] 2.3 Add Supabase Auth/RLS policies in `supabase/migrations/0002_rls.sql` and document required security assumptions inline.
-- [ ] 2.4 Implement repository adapters and pure services in `src/server/repositories/*.ts` and `src/domain/services/*.ts` for lifecycle, pause, and planned-vs-actual rules.
+- [x] 2.1 Define block/task/event/pause/review types plus repository/service interfaces in `src/domain/*` and `src/server/*`.
+- [x] 2.2 Create the initial Drizzle schema and migration in `src/db/schema.ts` and `supabase/migrations/0001_initial.sql`.
+- [x] 2.3 Add Supabase Auth/RLS policies in `supabase/migrations/0002_rls.sql` and document required security assumptions inline.
+- [x] 2.4 Implement repository adapters and pure services in `src/server/repositories/*.ts` and `src/domain/services/*.ts` for lifecycle, pause, and planned-vs-actual rules.
 
 ## Phase 3: App Wiring and Interactive Surfaces
 

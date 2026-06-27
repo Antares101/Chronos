@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
+    "db:check": "drizzle-kit check --config drizzle.config.ts",
     "typecheck": "astro check",
     "lint": "eslint . --ext .js,.ts,.astro",
     "format": "prettier --write --ignore-unknown \"*.{js,ts,cjs,json}\" \"src/**/*.{astro,ts,tsx}\" \".env.example\"",
