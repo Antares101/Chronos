@@ -13,6 +13,7 @@ describe('env validation', () => {
   it('returns configured foundation environment values', async () => {
     vi.stubEnv('PUBLIC_SUPABASE_URL', 'http://localhost:54321');
     vi.stubEnv('PUBLIC_SUPABASE_ANON_KEY', 'local-anon-key');
+    vi.stubEnv('PUBLIC_AUTH_REDIRECT_ORIGIN', 'http://localhost:4321');
     vi.stubEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:54322/postgres');
 
     const { env } = await import('./env');
@@ -20,6 +21,7 @@ describe('env validation', () => {
     expect(env).toEqual({
       PUBLIC_SUPABASE_URL: 'http://localhost:54321',
       PUBLIC_SUPABASE_ANON_KEY: 'local-anon-key',
+      PUBLIC_AUTH_REDIRECT_ORIGIN: 'http://localhost:4321',
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:54322/postgres',
     });
   });

@@ -40,6 +40,7 @@ Chain strategy: stacked-to-main
 ## Phase 3: App Wiring and Interactive Surfaces
 
 - [ ] 3.1 Implement the auth/session boundary in `src/middleware.ts`, `src/server/auth.ts`, and protected routes under `src/pages/(app)/*`.
+  - Partial Slice 3A progress: Supabase SSR session middleware, Node SSR adapter setup, magic-link sign-in/callback/sign-out routes, protected `/app` shell, auth env contract, and focused auth helper tests are implemented under Astro-supported paths. Full 3.1 remains unchecked because the original task names `src/pages/(app)/*` and broader Phase 3 app wiring still need final confirmation/reconciliation.
 - [ ] 3.2 Build the daily timeline and weekly calendar islands in `src/components/timeline/DailyTimeline.tsx` and `src/components/calendar/WeeklyCalendar.tsx`.
 - [ ] 3.3 Add the general task list, block detail, and pause controls in `src/components/tasks/TaskList.tsx`, `src/components/block/BlockDetail.tsx`, and `src/components/block/PauseControls.tsx`.
 - [ ] 3.4 Wire conclusion/review plus metrics/weekly insight in `src/components/review/ConclusionPanel.tsx` and `src/components/metrics/WeeklyInsight.tsx`.
