@@ -39,14 +39,15 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: App Wiring and Interactive Surfaces
 
-- [ ] 3.1 Implement the auth/session boundary in `src/middleware.ts`, `src/server/auth.ts`, and protected routes under `src/pages/(app)/*`.
+- [x] 3.1 Implement the auth/session boundary in `src/middleware.ts`, `src/server/auth.ts`, and protected routes under `src/pages/(app)/*`.
   - Partial Slice 3A progress: Supabase SSR session middleware, Node SSR adapter setup, magic-link sign-in/callback/sign-out routes, protected `/app` shell, auth env contract, and focused auth helper tests are implemented under Astro-supported paths. Full 3.1 remains unchecked because the original task names `src/pages/(app)/*` and broader Phase 3 app wiring still need final confirmation/reconciliation.
+  - Reconciliation: confirmed complete via Astro-supported protected route path `src/pages/app/index.astro`, `src/middleware.ts`, `src/server/auth.ts`, `src/pages/sign-in.astro`, `src/pages/auth/callback.ts`, `src/pages/sign-out.ts`, and `src/server/auth.test.ts`. The original `(app)` task label is treated as a route-group intent, not an Astro filesystem requirement.
 - [x] 3.2 Build the daily timeline and weekly calendar islands in `src/components/timeline/DailyTimeline.tsx` and `src/components/calendar/WeeklyCalendar.tsx`.
-- [ ] 3.3 Add the general task list, block detail, and pause controls in `src/components/tasks/TaskList.tsx`, `src/components/block/BlockDetail.tsx`, and `src/components/block/PauseControls.tsx`.
-- [ ] 3.4 Wire conclusion/review plus metrics/weekly insight in `src/components/review/ConclusionPanel.tsx` and `src/components/metrics/WeeklyInsight.tsx`.
+- [x] 3.3 Add the general task list, block detail, and pause controls in `src/components/tasks/TaskList.tsx`, `src/components/block/BlockDetail.tsx`, and `src/components/block/PauseControls.tsx`.
+- [x] 3.4 Wire conclusion/review plus metrics/weekly insight in `src/components/review/ConclusionPanel.tsx` and `src/components/metrics/WeeklyInsight.tsx`.
 
 ## Phase 4: Verification and Human Guide
 
-- [ ] 4.1 Add unit tests in `src/domain/services/*.test.ts` for the `Daily chronogram`, `Block model`, and `Pause logging` scenarios from `chronos-mvp-core/spec.md`.
-- [ ] 4.2 Add integration tests in `tests/integration/*.test.ts` for user scoping, schema shape, and planned-vs-actual persistence assumptions.
-- [ ] 4.3 Update `openspec/changes/chronos-mvp/summary.md` and cross-check every spec requirement against a task before implementation starts.
+- [x] 4.1 Add unit tests in `src/domain/services/*.test.ts` for the `Daily chronogram`, `Block model`, and `Pause logging` scenarios from `chronos-mvp-core/spec.md`.
+- [x] 4.2 Add integration tests in `tests/integration/*.test.ts` for user scoping, schema shape, and planned-vs-actual persistence assumptions.
+- [x] 4.3 Update `openspec/changes/chronos-mvp/summary.md` and cross-check every spec requirement against a task before implementation starts.

@@ -31,6 +31,7 @@ import type {
   NewEvent,
   NewPause,
   NewTask,
+  PlannedScheduleUpdate,
 } from '../../domain/models';
 import type { ChronosDatabase } from '../db';
 
@@ -60,6 +61,26 @@ export class DrizzleBlockRepository implements BlockRepository {
         .update(blocks)
         .set({ phase, updatedAt: new Date().toISOString() })
         .where(and(eq(blocks.userId, query.userId), eq(blocks.id, query.blockId)))
+        .returning(),
+      'block',
+    );
+  }
+
+  async updatePlannedSchedule(
+    query: BlockQuery,
+    schedule: PlannedScheduleUpdate,
+  ): Promise<BlockRow> {
+    return expectOne(
+      await this.db
+        .update(blocks)
+        .set({ ...schedule, updatedAt: new Date().toISOString() })
+        .where(
+          and(
+            eq(blocks.userId, query.userId),
+            eq(blocks.id, query.blockId),
+            eq(blocks.phase, 'planning'),
+          ),
+        )
         .returning(),
       'block',
     );
@@ -160,6 +181,25 @@ export class DrizzleActualTimeEntryRepository implements ActualTimeEntryReposito
   async create(input: NewActualTimeEntry): Promise<ActualTimeEntryRow> {
     return expectOne(
       await this.db.insert(actualTimeEntries).values(input).returning(),
+      'actual time entry',
+    );
+  }
+
+  async end(
+    query: BlockQuery & { actualEntryId: string; endedAt: string },
+  ): Promise<ActualTimeEntryRow> {
+    return expectOne(
+      await this.db
+        .update(actualTimeEntries)
+        .set({ endedAt: query.endedAt, updatedAt: new Date().toISOString() })
+        .where(
+          and(
+            eq(actualTimeEntries.userId, query.userId),
+            eq(actualTimeEntries.blockId, query.blockId),
+            eq(actualTimeEntries.id, query.actualEntryId),
+          ),
+        )
+        .returning(),
       'actual time entry',
     );
   }

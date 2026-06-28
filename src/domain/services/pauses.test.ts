@@ -46,6 +46,37 @@ describe('pause service', () => {
     expect(result.pause.endedAt).toBeNull();
   });
 
+  it('logs 10-minute pauses without mutating planned block times', () => {
+    const result = logPause({
+      block: executionBlock,
+      kind: '10m',
+      now: () => '2026-06-27T12:30:00.000Z',
+    });
+
+    expect(result.pause).toMatchObject({
+      kind: '10m',
+      startedAt: '2026-06-27T12:30:00.000Z',
+      endedAt: '2026-06-27T12:40:00.000Z',
+    });
+    expect(executionBlock.plannedStart).toBe('2026-06-27T12:00:00.000Z');
+    expect(executionBlock.plannedEnd).toBe('2026-06-27T13:00:00.000Z');
+  });
+
+  it('rejects pause logging outside the active execution block', () => {
+    expect(() => logPause({ block: { ...executionBlock, phase: 'planning' }, kind: '5m' })).toThrow(
+      'Pauses can only be logged inside an execution block.',
+    );
+  });
+
+  it('detects accidental planned schedule shifts after pause logging', () => {
+    expect(() =>
+      assertPauseDoesNotShiftPlannedSchedule(executionBlock, {
+        ...executionBlock,
+        plannedEnd: '2026-06-27T13:10:00.000Z',
+      }),
+    ).toThrow('Pauses must not shift the planned block schedule.');
+  });
+
   it('builds pause actual entries after a pause has ended', () => {
     const pause: Pause = {
       id: 'pause-1',
@@ -66,5 +97,21 @@ describe('pause service', () => {
       activity: 'pause',
       pauseId: 'pause-1',
     });
+  });
+
+  it('requires an ended pause before recording pause actual time', () => {
+    expect(() =>
+      buildPauseActualEntry({
+        id: 'pause-1',
+        userId: 'user-1',
+        blockId: 'block-1',
+        kind: 'untimed',
+        startedAt: '2026-06-27T12:20:00.000Z',
+        endedAt: null,
+        note: null,
+        createdAt: '2026-06-27T12:20:00.000Z',
+        updatedAt: '2026-06-27T12:20:00.000Z',
+      }),
+    ).toThrow('Pause actual entry requires an end time.');
   });
 });

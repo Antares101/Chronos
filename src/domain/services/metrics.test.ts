@@ -86,4 +86,56 @@ describe('planned vs actual metrics service', () => {
     });
     expect(summary.byPhase.execution.actualMinutes).toBe(90);
   });
+
+  it('deduplicates overlapping focus and pause intervals in actual metrics', () => {
+    const blocks: Block[] = [
+      {
+        id: 'work-block',
+        userId: 'user-1',
+        category: 'work',
+        title: 'Work block',
+        plannedStart: '2026-06-27T09:00:00.000Z',
+        plannedEnd: '2026-06-27T10:00:00.000Z',
+        phase: 'execution',
+        createdAt: '2026-06-27T08:00:00.000Z',
+        updatedAt: '2026-06-27T10:00:00.000Z',
+      },
+    ];
+    const actualEntries: ActualTimeEntry[] = [
+      {
+        id: 'focus-1',
+        userId: 'user-1',
+        blockId: 'work-block',
+        phase: 'execution',
+        startedAt: '2026-06-27T09:00:00.000Z',
+        endedAt: '2026-06-27T10:00:00.000Z',
+        activity: 'focus',
+        pauseId: null,
+        createdAt: '2026-06-27T09:00:00.000Z',
+        updatedAt: '2026-06-27T10:00:00.000Z',
+      },
+      {
+        id: 'pause-1',
+        userId: 'user-1',
+        blockId: 'work-block',
+        phase: 'execution',
+        startedAt: '2026-06-27T09:15:00.000Z',
+        endedAt: '2026-06-27T09:25:00.000Z',
+        activity: 'pause',
+        pauseId: 'pause-1',
+        createdAt: '2026-06-27T09:15:00.000Z',
+        updatedAt: '2026-06-27T09:25:00.000Z',
+      },
+    ];
+
+    const summary = calculatePlannedVsActual(blocks, actualEntries);
+
+    expect(summary.byBlock['work-block']).toMatchObject({
+      plannedMinutes: 60,
+      actualMinutes: 60,
+      deltaMinutes: 0,
+    });
+    expect(summary.byCategory.work.actualMinutes).toBe(60);
+    expect(summary.byPhase.execution.actualMinutes).toBe(60);
+  });
 });

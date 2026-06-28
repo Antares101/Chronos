@@ -12,6 +12,7 @@ import type {
   NewPause,
   NewTask,
   Pause,
+  PlannedScheduleUpdate,
 } from './models';
 
 export type UserScopedQuery = {
@@ -27,6 +28,7 @@ export interface BlockRepository {
   listForUser(userId: string): Promise<Block[]>;
   findById(query: BlockQuery): Promise<Block | null>;
   updatePhase(query: BlockQuery, phase: BlockPhase): Promise<Block>;
+  updatePlannedSchedule(query: BlockQuery, schedule: PlannedScheduleUpdate): Promise<Block>;
 }
 
 export interface TaskRepository {
@@ -49,6 +51,7 @@ export interface PauseRepository {
 
 export interface ActualTimeEntryRepository {
   create(input: NewActualTimeEntry): Promise<ActualTimeEntry>;
+  end(query: BlockQuery & { actualEntryId: string; endedAt: string }): Promise<ActualTimeEntry>;
   listForUser(userId: string): Promise<ActualTimeEntry[]>;
   listForBlock(query: BlockQuery): Promise<ActualTimeEntry[]>;
 }

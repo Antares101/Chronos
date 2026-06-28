@@ -35,7 +35,7 @@ export type DailyTimelineProps = {
   description: string;
   visibleStart: string;
   visibleEnd: string;
-  currentTime: string;
+  currentTime: string | null;
   blocks: readonly DailyTimelineBlock[];
   pauses?: readonly DailyTimelinePause[];
 };
@@ -60,7 +60,16 @@ export default function DailyTimeline({
     (first, second) => Date.parse(first.plannedStart) - Date.parse(second.plannedStart),
   );
   const ticks = getTimelineTicks(visibleStart, visibleEnd, 120);
-  const currentPercent = timeToTimelinePercent(currentTime, visibleStart, visibleEnd);
+  const currentPercent = currentTime
+    ? timeToTimelinePercent(currentTime, visibleStart, visibleEnd)
+    : null;
+  const trackLabel = currentTime
+    ? `Daily timeline from ${formatTimeLabel(visibleStart)} to ${formatTimeLabel(
+        visibleEnd,
+      )}. Current time is ${formatTimeLabel(currentTime)}.`
+    : `Daily timeline from ${formatTimeLabel(visibleStart)} to ${formatTimeLabel(
+        visibleEnd,
+      )}. No current time indicator for this date.`;
 
   return (
     <section className="daily-timeline" aria-labelledby="daily-timeline-title">
@@ -70,7 +79,7 @@ export default function DailyTimeline({
           <h2 id="daily-timeline-title">{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="daily-timeline__status">Sample data</span>
+        <span className="daily-timeline__status">Stored data</span>
       </header>
 
       <div className="daily-timeline__axis" aria-hidden="true">
@@ -81,20 +90,17 @@ export default function DailyTimeline({
         ))}
       </div>
 
-      <div
-        className="daily-timeline__track"
-        aria-label={`Daily timeline from ${formatTimeLabel(visibleStart)} to ${formatTimeLabel(
-          visibleEnd,
-        )}. Current time is ${formatTimeLabel(currentTime)}.`}
-      >
-        <div
-          className="daily-timeline__current"
-          role="img"
-          aria-label={`Current time indicator at ${formatTimeLabel(currentTime)}.`}
-          style={{ left: `${currentPercent}%` }}
-        >
-          <span>Now</span>
-        </div>
+      <div className="daily-timeline__track" aria-label={trackLabel}>
+        {currentTime && currentPercent !== null ? (
+          <div
+            className="daily-timeline__current"
+            role="img"
+            aria-label={`Current time indicator at ${formatTimeLabel(currentTime)}.`}
+            style={{ left: `${currentPercent}%` }}
+          >
+            <span>Now</span>
+          </div>
+        ) : null}
 
         {sortedBlocks.length === 0 ? (
           <p className="daily-timeline__empty">
@@ -126,7 +132,7 @@ export default function DailyTimeline({
 
 type TimelineBlockProps = {
   block: DailyTimelineBlock;
-  currentTime: string;
+  currentTime: string | null;
   pauses: readonly DailyTimelinePause[];
   visibleStart: string;
   visibleEnd: string;
@@ -189,12 +195,17 @@ function TimelineBlock({
 
 type PauseSegmentProps = {
   block: DailyTimelineBlock;
-  currentTime: string;
+  currentTime: string | null;
   pause: DailyTimelinePause;
 };
 
 function PauseSegment({ block, currentTime, pause }: PauseSegmentProps) {
   const pauseEnd = pause.endedAt ?? currentTime;
+
+  if (!pauseEnd) {
+    return null;
+  }
+
   const span = intervalToTimelineSpan(
     pause.startedAt,
     pauseEnd,

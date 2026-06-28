@@ -1,5 +1,5 @@
 import type { ActualTimeEntry, Block, BlockCategory, BlockPhase } from '../models';
-import { minutesBetween } from './lifecycle';
+import { calculateNonOverlappingActualMinutes, minutesBetween } from './lifecycle';
 
 export type PlannedVsActualMetric = {
   key: string;
@@ -43,6 +43,11 @@ export function calculatePlannedVsActual(
     byPhase[block.phase].plannedMinutes += plannedMinutes;
   }
 
+  const actualEntriesByBlockId = new Map<string, ActualTimeEntry[]>();
+  const actualEntriesByPhase = new Map<BlockPhase, Map<string, ActualTimeEntry[]>>(
+    phases.map((phase) => [phase, new Map<string, ActualTimeEntry[]>()]),
+  );
+
   for (const entry of actualEntries) {
     const block = blockById.get(entry.blockId);
 
@@ -50,10 +55,30 @@ export function calculatePlannedVsActual(
       continue;
     }
 
-    const actualMinutes = minutesBetween(entry.startedAt, entry.endedAt);
-    byBlock[entry.blockId].actualMinutes += actualMinutes;
+    appendActualEntry(actualEntriesByBlockId, entry.blockId, entry);
+    const entriesByBlockForPhase = actualEntriesByPhase.get(entry.phase);
+
+    if (entriesByBlockForPhase) {
+      appendActualEntry(entriesByBlockForPhase, entry.blockId, entry);
+    }
+  }
+
+  for (const [blockId, entries] of actualEntriesByBlockId) {
+    const block = blockById.get(blockId);
+
+    if (!block) {
+      continue;
+    }
+
+    const actualMinutes = calculateNonOverlappingActualMinutes(entries);
+    byBlock[blockId].actualMinutes += actualMinutes;
     byCategory[block.category].actualMinutes += actualMinutes;
-    byPhase[entry.phase].actualMinutes += actualMinutes;
+  }
+
+  for (const [phase, entriesByBlockId] of actualEntriesByPhase) {
+    for (const entries of entriesByBlockId.values()) {
+      byPhase[phase].actualMinutes += calculateNonOverlappingActualMinutes(entries);
+    }
   }
 
   recalculateDeltas(Object.values(byCategory));
@@ -61,6 +86,14 @@ export function calculatePlannedVsActual(
   recalculateDeltas(Object.values(byPhase));
 
   return { byCategory, byBlock, byPhase };
+}
+
+function appendActualEntry(
+  entriesByBlockId: Map<string, ActualTimeEntry[]>,
+  blockId: string,
+  entry: ActualTimeEntry,
+): void {
+  entriesByBlockId.set(blockId, [...(entriesByBlockId.get(blockId) ?? []), entry]);
 }
 
 function emptyMetric(key: string): PlannedVsActualMetric {

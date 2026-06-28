@@ -56,7 +56,7 @@ export default function WeeklyCalendar({
           <h2 id="weekly-calendar-title">{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="weekly-calendar__status">Planning sample</span>
+        <span className="weekly-calendar__status">Stored plan</span>
       </header>
 
       <div className="weekly-calendar__content">

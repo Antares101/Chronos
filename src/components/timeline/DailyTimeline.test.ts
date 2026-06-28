@@ -66,6 +66,14 @@ describe('DailyTimeline', () => {
     expect(html).toContain('Now');
   });
 
+  it('omits the current-time indicator when the viewed day is not current', () => {
+    const html = renderDailyTimeline({ currentTime: null });
+
+    expect(html).toContain('No current time indicator for this date.');
+    expect(html).not.toContain('Current time indicator at');
+    expect(html).not.toContain('Now');
+  });
+
   it('renders pause segments inside the relevant active block semantics', () => {
     const html = renderDailyTimeline();
 

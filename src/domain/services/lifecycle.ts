@@ -57,10 +57,7 @@ export function concludeBlock(input: ConcludeBlockInput): ConcludeBlockResult {
   }
 
   const plannedMinutes = minutesBetween(input.block.plannedStart, input.block.plannedEnd);
-  const actualMinutes = input.actualEntries.reduce(
-    (total, entry) => total + minutesBetween(entry.startedAt, entry.endedAt),
-    0,
-  );
+  const actualMinutes = calculateNonOverlappingActualMinutes(input.actualEntries);
 
   return {
     phase: 'conclusion',
@@ -89,6 +86,56 @@ export function minutesBetween(start: string, end: string): number {
   }
 
   return Math.round((endMs - startMs) / 60_000);
+}
+
+export function calculateNonOverlappingActualMinutes(
+  actualEntries: Pick<ActualTimeEntry, 'startedAt' | 'endedAt'>[],
+): number {
+  const intervals = actualEntries
+    .map((entry) => toTimeInterval(entry.startedAt, entry.endedAt))
+    .sort((first, second) => first.startMs - second.startMs);
+
+  let totalMs = 0;
+  let currentStartMs: number | null = null;
+  let currentEndMs: number | null = null;
+
+  for (const interval of intervals) {
+    if (currentStartMs === null || currentEndMs === null) {
+      currentStartMs = interval.startMs;
+      currentEndMs = interval.endMs;
+      continue;
+    }
+
+    if (interval.startMs <= currentEndMs) {
+      currentEndMs = Math.max(currentEndMs, interval.endMs);
+      continue;
+    }
+
+    totalMs += currentEndMs - currentStartMs;
+    currentStartMs = interval.startMs;
+    currentEndMs = interval.endMs;
+  }
+
+  if (currentStartMs !== null && currentEndMs !== null) {
+    totalMs += currentEndMs - currentStartMs;
+  }
+
+  return Math.round(totalMs / 60_000);
+}
+
+function toTimeInterval(start: string, end: string): { startMs: number; endMs: number } {
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+    throw new Error('Time values must be valid ISO date strings.');
+  }
+
+  if (endMs < startMs) {
+    throw new Error('End time must be after start time.');
+  }
+
+  return { startMs, endMs };
 }
 
 export function assertReviewMatchesBlock(review: ConclusionReview, block: Block): void {

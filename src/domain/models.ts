@@ -89,6 +89,7 @@ export type ConclusionReview = {
 };
 
 export type NewBlock = Omit<Block, 'id' | 'createdAt' | 'updatedAt'>;
+export type PlannedScheduleUpdate = Pick<Block, 'plannedStart' | 'plannedEnd'>;
 export type NewTask = Omit<ChronosTask, 'id' | 'createdAt' | 'updatedAt'>;
 export type NewEvent = Omit<ChronosEvent, 'id' | 'createdAt' | 'updatedAt'>;
 export type NewPause = Omit<Pause, 'id' | 'createdAt' | 'updatedAt'>;
