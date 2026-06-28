@@ -1,25 +1,215 @@
 ---
+import WeeklyCalendar, { type WeeklyCalendarProps } from '../../components/calendar/WeeklyCalendar';
+import DailyTimeline, { type DailyTimelineProps } from '../../components/timeline/DailyTimeline';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import type { ChronosAuthLocals } from '../../server/auth';
 
 const locals = Astro.locals as ChronosAuthLocals;
 const email = locals.user?.email ?? 'Signed-in user';
+
+// Safe local sample data only for Slice 3B. No persistence calls are made here.
+const dailyTimelineSample = {
+  eyebrow: 'Today · Monday',
+  title: 'Your day is mapped',
+  description: 'A bounded daily chronogram keeps planned work, home, and training blocks visible.',
+  visibleStart: '2026-06-29T08:00:00.000Z',
+  visibleEnd: '2026-06-29T18:00:00.000Z',
+  currentTime: '2026-06-29T12:18:00.000Z',
+  blocks: [
+    {
+      id: 'planning-review',
+      title: 'Plan review',
+      category: 'work',
+      phase: 'planning',
+      plannedStart: '2026-06-29T08:15:00.000Z',
+      plannedEnd: '2026-06-29T09:20:00.000Z',
+      note: 'Review commitments',
+    },
+    {
+      id: 'deep-work',
+      title: 'Deep work',
+      category: 'work',
+      phase: 'execution',
+      plannedStart: '2026-06-29T09:30:00.000Z',
+      plannedEnd: '2026-06-29T12:50:00.000Z',
+      note: 'Execution block',
+    },
+    {
+      id: 'home-errands',
+      title: 'Home errands',
+      category: 'home',
+      phase: 'planning',
+      plannedStart: '2026-06-29T13:30:00.000Z',
+      plannedEnd: '2026-06-29T15:45:00.000Z',
+      note: 'Groceries after work',
+    },
+    {
+      id: 'strength-training',
+      title: 'Strength training',
+      category: 'training',
+      phase: 'planning',
+      plannedStart: '2026-06-29T15:50:00.000Z',
+      plannedEnd: '2026-06-29T17:35:00.000Z',
+      note: 'Lower pressure finish',
+    },
+  ],
+  pauses: [
+    {
+      id: 'deep-work-reset',
+      blockId: 'deep-work',
+      kind: '10m',
+      startedAt: '2026-06-29T10:35:00.000Z',
+      endedAt: '2026-06-29T10:45:00.000Z',
+      note: 'Short reset recorded without moving the block.',
+    },
+  ],
+} satisfies DailyTimelineProps;
+
+const weeklyCalendarSample = {
+  eyebrow: 'Weekly planning',
+  title: 'Make responsibilities visible',
+  description: 'A week-level block map shows category color, planned time ranges, and key events.',
+  visibleStart: '2026-06-29T08:00:00.000Z',
+  visibleEnd: '2026-06-29T18:00:00.000Z',
+  days: [
+    {
+      date: '2026-06-29',
+      label: 'Mon',
+      blocks: [
+        {
+          id: 'mon-focus',
+          title: 'Work focus',
+          category: 'work',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+          plannedEnd: '2026-06-29T11:00:00.000Z',
+        },
+        {
+          id: 'mon-training',
+          title: 'Training',
+          category: 'training',
+          plannedStart: '2026-06-29T14:00:00.000Z',
+          plannedEnd: '2026-06-29T15:00:00.000Z',
+        },
+      ],
+    },
+    {
+      date: '2026-06-30',
+      label: 'Tue',
+      blocks: [
+        {
+          id: 'tue-client',
+          title: 'Client work',
+          category: 'work',
+          plannedStart: '2026-06-30T09:00:00.000Z',
+          plannedEnd: '2026-06-30T12:00:00.000Z',
+        },
+        {
+          id: 'tue-home',
+          title: 'Home admin',
+          category: 'home',
+          plannedStart: '2026-06-30T14:30:00.000Z',
+          plannedEnd: '2026-06-30T16:00:00.000Z',
+        },
+      ],
+    },
+    {
+      date: '2026-07-01',
+      label: 'Wed',
+      blocks: [
+        {
+          id: 'wed-build',
+          title: 'Build slice',
+          category: 'work',
+          plannedStart: '2026-07-01T10:30:00.000Z',
+          plannedEnd: '2026-07-01T13:00:00.000Z',
+        },
+      ],
+    },
+    {
+      date: '2026-07-02',
+      label: 'Thu',
+      blocks: [
+        {
+          id: 'thu-deep-work',
+          title: 'Deep work',
+          category: 'work',
+          plannedStart: '2026-07-02T09:30:00.000Z',
+          plannedEnd: '2026-07-02T12:30:00.000Z',
+        },
+      ],
+    },
+    {
+      date: '2026-07-03',
+      label: 'Fri',
+      blocks: [
+        {
+          id: 'fri-review',
+          title: 'Review',
+          category: 'work',
+          plannedStart: '2026-07-03T08:30:00.000Z',
+          plannedEnd: '2026-07-03T10:30:00.000Z',
+          highlightedEvents: [{ id: 'release-note', title: 'Release note' }],
+        },
+        {
+          id: 'fri-training',
+          title: 'Training',
+          category: 'training',
+          plannedStart: '2026-07-03T13:30:00.000Z',
+          plannedEnd: '2026-07-03T15:00:00.000Z',
+        },
+      ],
+    },
+    {
+      date: '2026-07-04',
+      label: 'Sat',
+      blocks: [
+        {
+          id: 'sat-errands',
+          title: 'Errands',
+          category: 'home',
+          plannedStart: '2026-07-04T10:00:00.000Z',
+          plannedEnd: '2026-07-04T12:00:00.000Z',
+          highlightedEvents: [{ id: 'pharmacy', title: 'Pharmacy pickup' }],
+        },
+      ],
+    },
+    {
+      date: '2026-07-05',
+      label: 'Sun',
+      blocks: [
+        {
+          id: 'sun-review',
+          title: 'Weekly review',
+          category: 'work',
+          plannedStart: '2026-07-05T09:00:00.000Z',
+          plannedEnd: '2026-07-05T11:00:00.000Z',
+        },
+      ],
+    },
+  ],
+} satisfies WeeklyCalendarProps;
 ---
 
 <BaseLayout title="Chronos App Shell">
   <main class="shell">
-    <section class="panel" aria-labelledby="app-title">
-      <p class="eyebrow">Protected app shell</p>
-      <h1 id="app-title">Chronos is ready for your planning surfaces.</h1>
-      <p class="summary">
-        You are signed in as <strong>{email}</strong>. This protected shell establishes the session
-        boundary for the timeline, calendar, task, review, and metrics surfaces that will be added
-        in later slices.
-      </p>
+    <section class="hero" aria-labelledby="app-title">
+      <div>
+        <p class="eyebrow">Protected app shell</p>
+        <h1 id="app-title">Chronos planning surfaces</h1>
+        <p class="summary">
+          You are signed in as <strong>{email}</strong>. These Slice 3B islands use local sample
+          data only while the protected session boundary remains in place.
+        </p>
+      </div>
 
       <form method="post" action="/sign-out">
         <button type="submit">Sign out</button>
       </form>
+    </section>
+
+    <section class="islands" aria-label="Chronos daily and weekly planning surfaces">
+      <DailyTimeline {...dailyTimelineSample} client:load />
+      <WeeklyCalendar {...weeklyCalendarSample} client:load />
     </section>
   </main>
 </BaseLayout>
@@ -27,15 +217,20 @@ const email = locals.user?.email ?? 'Signed-in user';
 <style>
   .shell {
     min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 52%, #0f766e 100%);
+    padding: clamp(1rem, 2vw, 2rem);
+    background:
+      radial-gradient(circle at top left, rgba(94, 234, 212, 0.22), transparent 30rem),
+      linear-gradient(135deg, #0f172a 0%, #1e293b 52%, #0f766e 100%);
   }
 
-  .panel {
-    width: min(100%, 44rem);
-    padding: clamp(2rem, 5vw, 3.5rem);
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    width: min(100%, 86rem);
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2rem);
     border: 1px solid rgba(204, 251, 241, 0.28);
     border-radius: 1.5rem;
     background: rgba(15, 23, 42, 0.82);
@@ -53,13 +248,14 @@ const email = locals.user?.email ?? 'Signed-in user';
 
   h1 {
     margin: 0;
-    font-size: clamp(2.5rem, 7vw, 5rem);
-    line-height: 0.95;
+    font-size: clamp(2.1rem, 5vw, 4rem);
+    line-height: 1;
     letter-spacing: -0.06em;
   }
 
   .summary {
-    margin: 1.5rem 0 2rem;
+    max-width: 58rem;
+    margin: 1rem 0 0;
     color: #cbd5e1;
     font-size: 1.05rem;
     line-height: 1.7;
@@ -73,5 +269,20 @@ const email = locals.user?.email ?? 'Signed-in user';
     color: #134e4a;
     cursor: pointer;
     font-weight: 700;
+  }
+
+  .islands {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    width: min(100%, 86rem);
+    margin: 1rem auto 0;
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>
