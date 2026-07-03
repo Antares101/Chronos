@@ -6,6 +6,11 @@ const AUTH_CALLBACK_PATH = '/auth/callback';
 const DEFAULT_APP_PATH = '/app';
 const SIGN_IN_PATH = '/sign-in';
 const REDIRECT_TO_PARAM = 'redirectTo';
+const MOCK_LOCAL_USER_ID = '00000000-0000-4000-8000-000000000001';
+const MOCK_LOCAL_USER_EMAIL = 'local-dev@chronos.test';
+const MOCK_LOCAL_AUTH_TIMESTAMP = '2026-01-01T00:00:00.000Z';
+const MOCK_LOCAL_SESSION_EXPIRES_AT = 4_102_444_800;
+const LOCALHOST_NAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
 type RequestCookie = {
   name: string;
@@ -17,6 +22,37 @@ export type ChronosAuthLocals = {
   session: Session | null;
   user: User | null;
 };
+
+export const mockLocalUser = {
+  id: MOCK_LOCAL_USER_ID,
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: MOCK_LOCAL_USER_EMAIL,
+  email_confirmed_at: MOCK_LOCAL_AUTH_TIMESTAMP,
+  confirmed_at: MOCK_LOCAL_AUTH_TIMESTAMP,
+  last_sign_in_at: MOCK_LOCAL_AUTH_TIMESTAMP,
+  created_at: MOCK_LOCAL_AUTH_TIMESTAMP,
+  updated_at: MOCK_LOCAL_AUTH_TIMESTAMP,
+  app_metadata: {
+    chronosLocalDevAuth: true,
+    provider: 'email',
+    providers: ['email'],
+  },
+  user_metadata: {
+    name: 'Chronos Local Dev User',
+  },
+  identities: [],
+  is_anonymous: false,
+} satisfies User;
+
+export const mockLocalSession = {
+  access_token: 'chronos-local-dev-access-token',
+  refresh_token: 'chronos-local-dev-refresh-token',
+  expires_in: 3_600,
+  expires_at: MOCK_LOCAL_SESSION_EXPIRES_AT,
+  token_type: 'bearer',
+  user: mockLocalUser,
+} satisfies Session;
 
 export type AuthMiddlewareDecision =
   { kind: 'continue' } | { kind: 'redirect'; location: string; status: 303 };
@@ -109,6 +145,71 @@ export function createChronosServerClient(request: Request, cookies: AstroCookie
       },
     },
   );
+}
+
+export function createMockLocalAuthLocals(
+  url: URL,
+  isDev = import.meta.env.DEV,
+  clientAddress?: string | null,
+): ChronosAuthLocals | null {
+  if (!isProtectedAppPath(url.pathname) || !isLocalhostDevRequest(url, isDev, clientAddress)) {
+    return null;
+  }
+
+  return {
+    supabase: createMockLocalSupabaseClient(),
+    session: mockLocalSession,
+    user: mockLocalUser,
+  };
+}
+
+export function isLocalhostDevRequest(
+  url: URL,
+  isDev = import.meta.env.DEV,
+  clientAddress?: string | null,
+): boolean {
+  return Boolean(
+    isDev && LOCALHOST_NAMES.has(url.hostname) && isLoopbackClientAddress(clientAddress),
+  );
+}
+
+export function isLoopbackClientAddress(clientAddress: string | null | undefined): boolean {
+  const address = clientAddress?.trim();
+
+  if (!address) {
+    return false;
+  }
+
+  const normalizedAddress =
+    address.startsWith('[') && address.endsWith(']') ? address.slice(1, -1) : address;
+  const ipv4Address = normalizedAddress.toLowerCase().startsWith('::ffff:')
+    ? normalizedAddress.slice(7)
+    : normalizedAddress;
+
+  return (
+    normalizedAddress === '::1' ||
+    normalizedAddress === '0:0:0:0:0:0:0:1' ||
+    /^127(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(ipv4Address)
+  );
+}
+
+export function isMockLocalUser(
+  user: Pick<User, 'id' | 'email'> & { app_metadata?: User['app_metadata'] },
+): boolean {
+  return Boolean(
+    user.id === MOCK_LOCAL_USER_ID &&
+    user.email === MOCK_LOCAL_USER_EMAIL &&
+    user.app_metadata?.chronosLocalDevAuth,
+  );
+}
+
+function createMockLocalSupabaseClient(): SupabaseClient {
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: mockLocalSession }, error: null }),
+      getUser: async () => ({ data: { user: mockLocalUser }, error: null }),
+    },
+  } as unknown as SupabaseClient;
 }
 
 export function isProtectedAppPath(pathname: string): boolean {

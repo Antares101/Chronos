@@ -5,13 +5,18 @@ import { GET as authCallbackGet } from '../pages/auth/callback';
 import { POST as signOutPost } from '../pages/sign-out';
 
 import {
+  createMockLocalAuthLocals,
   createSignInUrl,
   getAuthCallbackUrl,
   getAuthEmailRedirectUrl,
   getAuthErrorMessage,
   getRedirectTarget,
   getSafeReturnPath,
+  isLocalhostDevRequest,
+  isLoopbackClientAddress,
   isProtectedAppPath,
+  mockLocalSession,
+  mockLocalUser,
   parseCookieHeader,
   resolveAuthCallbackDecision,
   resolveAuthMiddlewareDecision,
@@ -56,6 +61,76 @@ describe('auth route helpers', () => {
     expect(resolveAuthMiddlewareDecision(new URL('https://chronos.test/app'), user)).toEqual({
       kind: 'continue',
     });
+  });
+
+  it('classifies loopback client addresses only for trusted local clients', () => {
+    expect(isLoopbackClientAddress('127.0.0.1')).toBe(true);
+    expect(isLoopbackClientAddress('127.10.20.30')).toBe(true);
+    expect(isLoopbackClientAddress('::1')).toBe(true);
+    expect(isLoopbackClientAddress('::ffff:127.0.0.1')).toBe(true);
+    expect(isLoopbackClientAddress('192.168.1.10')).toBe(false);
+    expect(isLoopbackClientAddress('localhost')).toBe(false);
+    expect(isLoopbackClientAddress('')).toBe(false);
+    expect(isLoopbackClientAddress(undefined)).toBe(false);
+  });
+
+  it('classifies localhost development requests only with dev, local hostname, and loopback client address', () => {
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true, '127.0.0.1')).toBe(
+      true,
+    );
+    expect(isLocalhostDevRequest(new URL('http://127.0.0.1:4321/app'), true, '127.0.0.1')).toBe(
+      true,
+    );
+    expect(isLocalhostDevRequest(new URL('http://[::1]:4321/app'), true, '::1')).toBe(true);
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true, '192.168.1.10')).toBe(
+      false,
+    );
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true)).toBe(false);
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), false, '127.0.0.1')).toBe(
+      false,
+    );
+    expect(isLocalhostDevRequest(new URL('http://192.168.1.10:4321/app'), true, '127.0.0.1')).toBe(
+      false,
+    );
+    expect(isLocalhostDevRequest(new URL('https://chronos.test/app'), true, '127.0.0.1')).toBe(
+      false,
+    );
+  });
+
+  it('creates deterministic mock auth locals only for protected localhost dev app routes', async () => {
+    const locals = createMockLocalAuthLocals(
+      new URL('http://localhost:4321/app/today'),
+      true,
+      '127.0.0.1',
+    );
+
+    expect(locals?.user).toBe(mockLocalUser);
+    expect(mockLocalUser.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(locals?.session).toBe(mockLocalSession);
+    await expect(locals?.supabase.auth.getSession()).resolves.toEqual({
+      data: { session: mockLocalSession },
+      error: null,
+    });
+    await expect(locals?.supabase.auth.getUser()).resolves.toEqual({
+      data: { user: mockLocalUser },
+      error: null,
+    });
+
+    expect(
+      createMockLocalAuthLocals(new URL('http://localhost:4321/sign-in'), true, '127.0.0.1'),
+    ).toBeNull();
+    expect(
+      createMockLocalAuthLocals(new URL('http://localhost:4321/app'), true, '192.168.1.10'),
+    ).toBeNull();
+    expect(createMockLocalAuthLocals(new URL('http://localhost:4321/app'), true)).toBeNull();
+    expect(
+      createMockLocalAuthLocals(new URL('http://localhost:4321/app'), false, '127.0.0.1'),
+    ).toBeNull();
+    expect(
+      createMockLocalAuthLocals(new URL('http://chronos.test/app'), true, '127.0.0.1'),
+    ).toBeNull();
   });
 
   it('allows only same-origin return paths', () => {

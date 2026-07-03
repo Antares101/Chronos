@@ -2,13 +2,28 @@ import { defineMiddleware } from 'astro:middleware';
 
 import {
   createChronosServerClient,
+  createMockLocalAuthLocals,
   resolveAuthMiddlewareDecision,
   type ChronosAuthLocals,
 } from './server/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const supabase = createChronosServerClient(context.request, context.cookies);
   const locals = context.locals as typeof context.locals & ChronosAuthLocals;
+  const mockLocalAuthLocals = createMockLocalAuthLocals(
+    context.url,
+    import.meta.env.DEV,
+    getSafeClientAddress(context),
+  );
+
+  if (mockLocalAuthLocals) {
+    locals.supabase = mockLocalAuthLocals.supabase;
+    locals.session = mockLocalAuthLocals.session;
+    locals.user = mockLocalAuthLocals.user;
+
+    return next();
+  }
+
+  const supabase = createChronosServerClient(context.request, context.cookies);
 
   locals.supabase = supabase;
 
@@ -31,3 +46,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   return next();
 });
+
+function getSafeClientAddress(context: { clientAddress?: string }): string | undefined {
+  try {
+    return context.clientAddress;
+  } catch {
+    return undefined;
+  }
+}
