@@ -1,0 +1,36 @@
+---
+import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
+import WeeklyInsight from '../../components/metrics/WeeklyInsight';
+import type { ChronosAuthLocals } from '../../server/auth';
+import { loadChronosInsightsState } from '../../server/app/chronos-app';
+import { chronosAppRoutes, resolveChronosReadRouteContext } from '../../server/app/route-contract';
+
+const routePath = chronosAppRoutes.insights;
+
+const locals = Astro.locals as ChronosAuthLocals;
+const routeContext = resolveChronosReadRouteContext({
+  user: locals.user,
+  currentUrl: Astro.url,
+  routePath,
+});
+
+if (routeContext.kind === 'redirect') {
+  return Astro.redirect(routeContext.location, routeContext.status);
+}
+
+const { email, repositories, userId } = routeContext;
+const appState = await loadChronosInsightsState(repositories, userId);
+---
+
+<ChronosAppShell
+  title="Chronos Insights"
+  eyebrow="Insights"
+  heading="Measure the week"
+  summary="Compare planned blocks with actual time without loading action forms or other route panels."
+  email={email}
+  currentPath={routePath}
+>
+  <section class="islands" aria-label="Chronos insight surfaces">
+    <WeeklyInsight {...appState.weeklyInsight} client:load />
+  </section>
+</ChronosAppShell>

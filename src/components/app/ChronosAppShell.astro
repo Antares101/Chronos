@@ -1,0 +1,846 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { chronosAppRoutes, type ChronosAppSectionPath } from '../../server/app/route-contract';
+
+type AppRoute = {
+  href: ChronosAppSectionPath;
+  label: string;
+  description: string;
+};
+
+interface Props {
+  title: string;
+  eyebrow: string;
+  heading: string;
+  summary: string;
+  email: string;
+  currentPath: string;
+  actionError?: string | null;
+  statusMessage?: string | null;
+}
+
+const {
+  title,
+  eyebrow,
+  heading,
+  summary,
+  email,
+  currentPath,
+  actionError = null,
+  statusMessage = null,
+} = Astro.props;
+
+const routes: AppRoute[] = [
+  {
+    href: chronosAppRoutes.today,
+    label: 'Today',
+    description: 'Timeline and active block controls',
+  },
+  {
+    href: chronosAppRoutes.planning,
+    label: 'Planning',
+    description: 'Weekly plan and task assignment',
+  },
+  {
+    href: chronosAppRoutes.review,
+    label: 'Review',
+    description: 'Conclusions and review details',
+  },
+  {
+    href: chronosAppRoutes.insights,
+    label: 'Insights',
+    description: 'Planned vs actual metrics',
+  },
+];
+---
+
+<BaseLayout title={title}>
+  <main class="shell">
+    <section class="hero ui-card" aria-labelledby="app-title">
+      <div>
+        <p class="eyebrow">{eyebrow}</p>
+        <h1 id="app-title">{heading}</h1>
+        <p class="summary">
+          {summary} You are signed in as <strong>{email}</strong>.
+        </p>
+      </div>
+
+      <div class="hero__actions" aria-label="Account and appearance actions">
+        <button
+          type="button"
+          class="theme-toggle ui-button ui-button--secondary"
+          data-theme-toggle
+          aria-label="Switch to dark theme"
+          aria-pressed="false"
+          aria-disabled="true"
+          disabled
+        >
+          <span class="theme-toggle__icon" aria-hidden="true">◐</span>
+          <span data-theme-toggle-label>Dark mode</span>
+        </button>
+
+        <button
+          type="button"
+          class="sound-toggle ui-button ui-button--secondary"
+          data-sound-toggle
+          aria-label="Enable interaction sounds"
+          aria-pressed="false"
+          aria-disabled="true"
+          disabled
+        >
+          <span class="sound-toggle__icon" aria-hidden="true">♪</span>
+          <span data-sound-toggle-label>Sound off</span>
+        </button>
+
+        <form method="post" action="/sign-out">
+          <button type="submit" class="ui-button">Sign out</button>
+        </form>
+      </div>
+    </section>
+
+    <nav class="section-nav" aria-label="Chronos app sections">
+      {
+        routes.map((route) => (
+          <a
+            href={route.href}
+            class:list={[
+              { 'section-nav__link--active': currentPath === route.href },
+              'section-nav__link',
+              'ui-nav-link',
+            ]}
+            aria-current={currentPath === route.href ? 'page' : undefined}
+          >
+            <span>{route.label}</span>
+            <small>{route.description}</small>
+          </a>
+        ))
+      }
+    </nav>
+
+    {
+      actionError && (
+        <p class="alert ui-alert ui-alert--destructive" role="alert">
+          {actionError}
+        </p>
+      )
+    }
+    {statusMessage && <p class="notice ui-alert ui-alert--success">{statusMessage}</p>}
+
+    <slot />
+  </main>
+
+  <script>
+    import { initSoundToggle, initThemeToggle } from './app-shell-client';
+
+    type WebAudioWindow = Window & {
+      webkitAudioContext?: typeof AudioContext;
+    };
+
+    const matchMedia =
+      typeof window.matchMedia === 'function' ? window.matchMedia.bind(window) : undefined;
+    const getLocalStorage = () => {
+      try {
+        return window.localStorage;
+      } catch {
+        return undefined;
+      }
+    };
+    const storage = getLocalStorage();
+
+    const themeButton = document.querySelector('[data-theme-toggle]');
+    const themeLabel = document.querySelector('[data-theme-toggle-label]');
+
+    if (themeButton instanceof HTMLButtonElement && themeLabel instanceof HTMLElement) {
+      initThemeToggle({
+        root: document.documentElement,
+        button: themeButton,
+        label: themeLabel,
+        storage,
+        matchMedia,
+      });
+    }
+
+    const soundButton = document.querySelector('[data-sound-toggle]');
+    const soundLabel = document.querySelector('[data-sound-toggle-label]');
+
+    if (soundButton instanceof HTMLButtonElement && soundLabel instanceof HTMLElement) {
+      const soundController = initSoundToggle({
+        button: soundButton,
+        label: soundLabel,
+        storage,
+        matchMedia,
+        getAudioContextConstructor: () => {
+          const audioWindow = window as WebAudioWindow;
+
+          return window.AudioContext ?? audioWindow.webkitAudioContext;
+        },
+      });
+
+      document.addEventListener('click', (event) => {
+        if (
+          event.target instanceof Element &&
+          !event.target.closest('[data-sound-toggle]') &&
+          event.target.closest('button:not(:disabled), .section-nav__link')
+        ) {
+          soundController.playChime();
+        }
+      });
+    }
+  </script>
+</BaseLayout>
+
+<style is:global>
+  .shell {
+    --app-bg: var(--chronos-bg, #f8fafc);
+    --app-bg-soft: var(--chronos-bg-soft, #eef2f7);
+    --app-surface: var(--chronos-surface, #ffffff);
+    --app-surface-muted: var(--chronos-surface-muted, #f1f5f9);
+    --app-surface-tinted: var(--chronos-surface-tinted, #eef2ff);
+    --app-border: var(--chronos-border, rgba(148, 163, 184, 0.22));
+    --app-border-strong: var(--chronos-border-strong, rgba(99, 102, 241, 0.22));
+    --app-text: var(--chronos-text, #0f172a);
+    --app-text-muted: var(--chronos-text-muted, #475569);
+    --app-text-soft: var(--chronos-text-soft, #64748b);
+    --app-primary: var(--chronos-primary, #4f46e5);
+    --app-primary-strong: var(--chronos-primary-strong, #4338ca);
+    --app-primary-soft: var(--chronos-primary-soft, #e0e7ff);
+    --app-sky: var(--chronos-sky, #0ea5e9);
+    --app-success-soft: var(--chronos-success-soft, #d1fae5);
+    --app-danger-soft: var(--chronos-danger-soft, #fee2e2);
+    --app-success-text: var(--chronos-success-text, #065f46);
+    --app-danger-text: var(--chronos-danger-text, #991b1b);
+    --app-ring: var(--chronos-ring, rgba(99, 102, 241, 0.28));
+    --app-input: var(--chronos-input, rgba(99, 102, 241, 0.24));
+    --app-button-text: var(--chronos-button-text, #ffffff);
+    --app-disabled: var(--chronos-disabled, #cbd5e1);
+    --app-disabled-text: var(--chronos-disabled-text, #475569);
+    --app-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
+    --app-shadow-soft: var(--chronos-shadow-soft, 0 14px 36px rgba(15, 23, 42, 0.08));
+    --app-glow: var(--chronos-glow, 0 0 34px rgba(79, 70, 229, 0.2));
+    --app-ornament: var(--chronos-ornament, rgba(79, 70, 229, 0.36));
+    --app-radius: var(--radius, 1rem);
+    position: relative;
+    isolation: isolate;
+    min-height: 100vh;
+    padding: clamp(1rem, 2vw, 2rem);
+    color: var(--app-text);
+    font-family:
+      'Plus Jakarta Sans',
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(79, 70, 229, 0.14), transparent 28rem),
+      radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26rem),
+      linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg-soft) 100%);
+  }
+
+  .shell::before {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: '';
+    background:
+      linear-gradient(
+        120deg,
+        transparent 0 42%,
+        rgba(79, 70, 229, 0.08) 42.15% 42.35%,
+        transparent 42.5%
+      ),
+      radial-gradient(circle at 18% 16%, var(--app-ornament) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 82% 20%, var(--app-ornament) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 68% 72%, rgba(14, 165, 233, 0.32) 0 1px, transparent 1.5px);
+    opacity: 0.55;
+  }
+
+  :root[data-theme='dark'] .shell {
+    --app-button-text: var(--chronos-button-text, #0b1120);
+    background:
+      radial-gradient(circle at top left, rgba(129, 140, 248, 0.18), transparent 30rem),
+      radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 28rem),
+      linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg-soft) 100%);
+  }
+
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    box-sizing: border-box;
+  }
+
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    width: min(100%, 86rem);
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--app-border);
+    border-radius: 1.5rem;
+    background: var(--app-surface);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow);
+    animation: chronos-rise 420ms ease-out both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before,
+  .actions::before,
+  .action-card::before,
+  .empty-panel::before {
+    position: absolute;
+    inset: 0.55rem;
+    pointer-events: none;
+    content: '';
+    border: 1px solid color-mix(in srgb, var(--app-ornament) 46%, transparent);
+    border-radius: inherit;
+    opacity: 0.48;
+  }
+
+  .hero::after,
+  .action-card::after,
+  .empty-panel::after {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.9rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    content: '';
+    border-radius: 999px;
+    background: var(--app-sky);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--app-sky) 54%, transparent);
+    opacity: 0.62;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
+  .hero > *,
+  .section-nav > *,
+  .actions > *,
+  .actions__grid > *,
+  .islands > * {
+    min-width: 0;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.75rem;
+    color: var(--app-primary-strong);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow::before {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.5rem;
+    border: 1px solid currentColor;
+    content: '';
+    transform: rotate(45deg);
+    box-shadow: var(--app-glow);
+  }
+
+  h1 {
+    margin: 0;
+    color: var(--app-text);
+    font-size: clamp(2.1rem, 5vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+
+  .summary {
+    max-width: 58rem;
+    margin: 1rem 0 0;
+    color: var(--app-text-muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .section-nav,
+  .notice,
+  .alert,
+  .actions,
+  .empty-panel {
+    width: min(100%, 86rem);
+    margin: 1rem auto 0;
+  }
+
+  .section-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .ui-card,
+  .ui-panel {
+    border: 1px solid var(--app-border);
+    border-radius: calc(var(--app-radius) + 0.5rem);
+    background: var(--app-surface);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow);
+  }
+
+  .ui-nav-link,
+  .ui-button,
+  .ui-alert,
+  input,
+  select,
+  textarea {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      color 160ms ease;
+  }
+
+  .section-nav__link {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 2.75rem;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    padding: 0.85rem 1rem;
+    background: var(--chronos-surface-elevated, rgba(255, 255, 255, 0.76));
+    color: var(--app-text-muted);
+    text-decoration: none;
+    box-shadow: var(--app-shadow-soft);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-nav__link::before {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%);
+    opacity: 0.72;
+  }
+
+  .section-nav__link:hover {
+    border-color: var(--app-border-strong);
+    color: var(--app-text);
+    transform: translateY(-2px);
+    box-shadow: var(--app-glow), var(--app-shadow-soft);
+  }
+
+  .section-nav__link:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--app-ring);
+  }
+
+  .section-nav__link span {
+    color: var(--app-text);
+    font-weight: 900;
+  }
+
+  .section-nav__link small {
+    color: var(--app-text-soft);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .section-nav__link--active {
+    border-color: var(--app-border-strong);
+    background: linear-gradient(135deg, var(--app-surface) 0%, var(--app-surface-tinted) 100%);
+    box-shadow: 0 16px 40px rgba(79, 70, 229, 0.14);
+  }
+
+  .section-nav__link--active span {
+    color: var(--app-primary-strong);
+  }
+
+  .notice,
+  .alert {
+    border-radius: 1rem;
+    padding: 0.85rem 1rem;
+    font-weight: 700;
+  }
+
+  .notice {
+    border: 1px solid rgba(5, 150, 105, 0.22);
+    background: var(--app-success-soft);
+    color: var(--app-success-text);
+  }
+
+  .alert {
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    background: var(--app-danger-soft);
+    color: var(--app-danger-text);
+  }
+
+  button,
+  .ui-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.8rem 1.2rem;
+    min-height: 2.75rem;
+    background: var(--app-primary);
+    color: var(--app-button-text);
+    cursor: pointer;
+    font-weight: 700;
+    max-width: 100%;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.18);
+  }
+
+  button:active:not(:disabled),
+  .ui-button:active:not(:disabled),
+  .section-nav__link:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  .ui-button--secondary {
+    border: 1px solid var(--app-border);
+    background: var(--app-surface-muted);
+    color: var(--app-text);
+    box-shadow: var(--app-shadow-soft);
+  }
+
+  .theme-toggle,
+  .sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+
+  .theme-toggle__icon,
+  .sound-toggle__icon {
+    color: var(--app-primary-strong);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  button:hover:not(:disabled),
+  .ui-button:hover:not(:disabled) {
+    background: var(--app-primary-strong);
+  }
+
+  .ui-button--secondary:hover:not(:disabled) {
+    background: var(--app-surface-tinted);
+  }
+
+  button:disabled {
+    background: var(--app-disabled);
+    color: var(--app-disabled-text);
+    cursor: not-allowed;
+    opacity: 0.76;
+    box-shadow: none;
+  }
+
+  .actions {
+    border: 1px solid var(--app-border);
+    border-radius: 1.5rem;
+    background: var(--app-surface);
+    color: var(--app-text);
+    padding: clamp(1rem, 2.4vw, 1.75rem);
+    box-shadow: var(--app-shadow);
+    overflow: hidden;
+    position: relative;
+    animation: chronos-rise 520ms ease-out both;
+  }
+
+  .actions__header {
+    display: grid;
+    gap: 0.45rem;
+    max-width: 62rem;
+  }
+
+  .actions__header h2 {
+    font-size: clamp(1.35rem, 3vw, 2.25rem);
+    color: var(--app-text);
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
+
+  .actions__header .eyebrow {
+    margin-bottom: 0;
+  }
+
+  .actions__header h2,
+  .action-card h3,
+  .empty-panel h2 {
+    margin: 0;
+  }
+
+  .actions__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: clamp(0.85rem, 1.8vw, 1.15rem);
+    margin-top: 1.25rem;
+    min-width: 0;
+  }
+
+  .action-card,
+  .empty-panel {
+    border: 1px solid var(--app-border);
+    border-radius: 1.2rem;
+    background: var(--app-surface);
+    color: var(--app-text);
+    padding: clamp(0.95rem, 1.8vw, 1.15rem);
+    min-width: 0;
+    overflow: hidden;
+    box-shadow: var(--app-shadow-soft);
+    position: relative;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  .action-card:hover,
+  .empty-panel:hover {
+    border-color: var(--app-border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--app-glow), var(--app-shadow-soft);
+  }
+
+  .action-card h3 {
+    color: var(--app-text);
+    font-size: 1.02rem;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  .action-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .action-card form,
+  .action-card label {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .action-card form {
+    margin-top: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border: 1px solid var(--app-input);
+    border-radius: 0.75rem;
+    padding: 0.7rem 0.8rem;
+    background: var(--app-surface);
+    color: var(--app-text);
+    font: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--app-text-soft);
+    opacity: 1;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--app-primary);
+    box-shadow: 0 0 0 3px var(--app-ring);
+    outline: none;
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    background: var(--app-surface-muted);
+    border-color: var(--app-border);
+    color: var(--app-text-muted);
+    cursor: not-allowed;
+    opacity: 1;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  fieldset {
+    display: grid;
+    gap: 0.45rem;
+    border: 1px solid var(--app-border);
+    border-radius: 0.9rem;
+    padding: 0.75rem;
+    min-width: 0;
+  }
+
+  legend,
+  .form-heading,
+  .action-card label {
+    color: var(--app-text);
+    font-weight: 800;
+  }
+
+  .action-card .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.35rem 0.2rem;
+  }
+
+  .action-card .checkbox-label input {
+    accent-color: var(--app-primary);
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+  }
+
+  .conclusion-form {
+    min-width: 0;
+  }
+
+  .conclusion-form + .conclusion-form {
+    border-top: 1px solid var(--app-border);
+    padding-top: 0.85rem;
+  }
+
+  .empty-copy,
+  .empty-panel p {
+    color: var(--app-text-muted);
+    font-weight: 700;
+  }
+
+  .islands {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    width: min(100%, 86rem);
+    margin: 1rem auto 0;
+    animation: chronos-rise 600ms ease-out both;
+  }
+
+  @keyframes chronos-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .hero__actions {
+      justify-content: flex-start;
+      width: 100%;
+    }
+
+    .form-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .shell {
+      padding: 0.75rem;
+    }
+
+    .hero,
+    .actions,
+    .action-card,
+    .empty-panel {
+      border-radius: 1rem;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    .hero__actions,
+    .hero__actions form {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero,
+    .actions,
+    .islands {
+      animation: none;
+    }
+
+    .section-nav__link,
+    .action-card,
+    .empty-panel,
+    button,
+    .ui-button {
+      transition: none;
+    }
+
+    .section-nav__link:hover,
+    .action-card:hover,
+    .empty-panel:hover,
+    button:active:not(:disabled),
+    .ui-button:active:not(:disabled),
+    .section-nav__link:active {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce), (prefers-reduced-data: reduce) {
+    .shell,
+    :root[data-theme='dark'] .shell {
+      background: var(--app-bg);
+    }
+
+    .shell::before,
+    .section-nav__link::before,
+    .hero::after,
+    .action-card::after,
+    .empty-panel::after {
+      display: none;
+    }
+
+    .hero,
+    .actions,
+    .action-card,
+    .empty-panel,
+    .section-nav__link {
+      box-shadow: none;
+    }
+  }
+</style>

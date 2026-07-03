@@ -1,0 +1,129 @@
+---
+import BlockDetail from '../../components/block/BlockDetail';
+import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
+import DailyTimeline from '../../components/timeline/DailyTimeline';
+import type { ChronosAuthLocals } from '../../server/auth';
+import { loadChronosTodayState } from '../../server/app/chronos-app';
+import {
+  chronosAppRoutes,
+  resolveChronosActionRouteContext,
+} from '../../server/app/route-contract';
+
+const routePath = chronosAppRoutes.today;
+
+const routeContext = await resolveChronosActionRouteContext({
+  user: (Astro.locals as ChronosAuthLocals).user,
+  request: Astro.request,
+  currentUrl: Astro.url,
+  routePath,
+});
+
+if (routeContext.kind === 'redirect') {
+  return Astro.redirect(routeContext.location, routeContext.status);
+}
+
+const { actionError, email, repositories, statusMessage, userId } = routeContext;
+const appState = await loadChronosTodayState(repositories, userId);
+---
+
+<ChronosAppShell
+  title="Chronos Today"
+  eyebrow="Today"
+  heading="Run the day"
+  summary="Timeline, active block context, pause controls, and quick block additions stay focused on today."
+  email={email}
+  currentPath={routePath}
+  actionError={actionError}
+  statusMessage={statusMessage}
+>
+  <section class="actions" aria-labelledby="today-actions-title">
+    <div class="actions__header">
+      <p class="eyebrow">Today actions</p>
+      <h2 id="today-actions-title">Start blocks and record active context</h2>
+    </div>
+
+    <div class="actions__grid">
+      <article class="action-card">
+        <h3>Start planned block</h3>
+        <form method="post">
+          <input type="hidden" name="action" value="start-block" />
+          <label>
+            Planning block
+            <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
+              {
+                appState.planningBlocks.map((block) => (
+                  <option value={block.id}>{block.title}</option>
+                ))
+              }
+            </select>
+          </label>
+          <button type="submit" disabled={appState.planningBlocks.length === 0}>Start block</button>
+        </form>
+      </article>
+
+      <article class="action-card">
+        <h3>Create task inside block</h3>
+        <form method="post">
+          <input type="hidden" name="action" value="create-task" />
+          <label>
+            Target block
+            <select name="blockId" required disabled={appState.blocks.length === 0}>
+              {
+                appState.blocks.map((block) => (
+                  <option value={block.id}>
+                    {block.title} · {block.phase}
+                  </option>
+                ))
+              }
+            </select>
+          </label>
+          <label>
+            Task title
+            <input name="title" required maxlength="120" placeholder="Prepare notes" />
+          </label>
+          <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
+        </form>
+      </article>
+
+      <article class="action-card">
+        <h3>Add highlighted event</h3>
+        <form method="post">
+          <input type="hidden" name="action" value="create-highlighted-event" />
+          <label>
+            Target block
+            <select name="blockId" required disabled={appState.blocks.length === 0}>
+              {
+                appState.blocks.map((block) => (
+                  <option value={block.id}>
+                    {block.title} · {block.phase}
+                  </option>
+                ))
+              }
+            </select>
+          </label>
+          <label>
+            Event title
+            <input name="title" required maxlength="120" placeholder="Important handoff" />
+          </label>
+          <button type="submit" disabled={appState.blocks.length === 0}
+            >Add highlighted event</button
+          >
+        </form>
+      </article>
+    </div>
+  </section>
+
+  <section class="islands" aria-label="Chronos today surfaces">
+    <DailyTimeline {...appState.dailyTimeline} client:load />
+    {
+      appState.blockDetail ? (
+        <BlockDetail {...appState.blockDetail} pauseActionPath={routePath} client:load />
+      ) : (
+        <section class="empty-panel">
+          <h2>No block selected yet</h2>
+          <p>Create a planned block to populate the block context and pause controls.</p>
+        </section>
+      )
+    }
+  </section>
+</ChronosAppShell>

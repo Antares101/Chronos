@@ -17,7 +17,14 @@ import type {
 } from '../../domain/models';
 import type { BlockQuery } from '../../domain/repositories';
 import type { ChronosAppRepositories } from './chronos-app';
-import { handleChronosAppAction, loadChronosAppState } from './chronos-app';
+import {
+  handleChronosAppAction,
+  loadChronosAppState,
+  loadChronosInsightsState,
+  loadChronosPlanningState,
+  loadChronosReviewState,
+  loadChronosTodayState,
+} from './chronos-app';
 
 const persistedAt = '2026-06-28T08:00:00.000Z';
 
@@ -553,7 +560,7 @@ describe('Chronos app backend actions', () => {
       () => '2026-06-29T09:30:00.000Z',
     );
 
-    expect(historicalState.defaultPlanningDate).toBe('2026-06-29');
+    expect(historicalState.todayDate).toBe('2026-06-29');
     expect(historicalState.dailyTimeline.visibleStart).toBe('2026-06-29T00:00:00.000Z');
     expect(historicalState.dailyTimeline.currentTime).toBe('2026-06-29T09:30:00.000Z');
     expect(historicalState.dailyTimeline.blocks).toEqual([]);
@@ -567,9 +574,114 @@ describe('Chronos app backend actions', () => {
       () => '2026-06-29T09:30:00.000Z',
     );
 
-    expect(emptyState.defaultPlanningDate).toBe('2026-06-29');
+    expect(emptyState.todayDate).toBe('2026-06-29');
     expect(emptyState.dailyTimeline.visibleStart).toBe('2026-06-29T00:00:00.000Z');
     expect(emptyState.weeklyCalendar.visibleStart).toBe('2026-06-29T00:00:00.000Z');
+  });
+
+  it('loads today state without metrics or conclusion review dependencies', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'today-block', phase: 'execution' })],
+      tasks: [taskFixture({ id: 'task-1', blockId: 'today-block' })],
+      pauses: [pauseFixture({ id: 'pause-1', blockId: 'today-block', endedAt: persistedAt })],
+      events: [eventFixture({ id: 'event-1', blockId: 'today-block' })],
+    });
+    repositories.actualTimeEntries.listForUser = async () => {
+      throw new Error('Today state must not load actual entries.');
+    };
+    repositories.conclusionReviews.findForBlock = async () => {
+      throw new Error('Today state must not load conclusion reviews.');
+    };
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.dailyTimeline.blocks).toHaveLength(1);
+    expect(state.blockDetail?.tasks).toMatchObject([{ title: 'Task' }]);
+    expect(state.blockDetail?.highlightedEvents).toMatchObject([{ title: 'Event' }]);
+  });
+
+  it('loads planning state without pause, metrics, or review dependencies', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'planning-block' })],
+      tasks: [taskFixture({ id: 'task-1', blockId: null })],
+      events: [eventFixture({ id: 'event-1', blockId: 'planning-block' })],
+    });
+    repositories.pauses.listForBlock = async () => {
+      throw new Error('Planning state must not load pauses.');
+    };
+    repositories.actualTimeEntries.listForUser = async () => {
+      throw new Error('Planning state must not load actual entries.');
+    };
+    repositories.conclusionReviews.findForBlock = async () => {
+      throw new Error('Planning state must not load conclusion reviews.');
+    };
+
+    const state = await loadChronosPlanningState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.weeklyCalendar.days.flatMap((day) => day.blocks)).toHaveLength(1);
+    expect(state.taskList.tasks).toEqual([{ id: 'task-1', title: 'Task', status: 'todo' }]);
+  });
+
+  it('loads review state without daily, weekly, or metrics child dependencies', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'execution-block', phase: 'execution' })],
+      tasks: [taskFixture({ id: 'task-1', blockId: 'execution-block' })],
+    });
+    repositories.events.listForBlock = async () => {
+      throw new Error('Review state must not load events.');
+    };
+    repositories.pauses.listForBlock = async () => {
+      throw new Error('Review state must not load pauses.');
+    };
+    repositories.actualTimeEntries.listForUser = async () => {
+      throw new Error('Review state must not load actual entries.');
+    };
+
+    const state = await loadChronosReviewState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.executionBlocks).toHaveLength(1);
+    expect(state.tasksByBlockId['execution-block']).toMatchObject([{ title: 'Task' }]);
+  });
+
+  it('loads insights state without task, event, pause, or review dependencies', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'block-1' })],
+      actualEntries: [
+        actualEntryFixture({
+          id: 'actual-1',
+          blockId: 'block-1',
+          endedAt: '2026-06-29T09:30:00.000Z',
+        }),
+      ],
+    });
+    repositories.tasks.listForUser = async () => {
+      throw new Error('Insights state must not load tasks.');
+    };
+    repositories.events.listForBlock = async () => {
+      throw new Error('Insights state must not load events.');
+    };
+    repositories.pauses.listForBlock = async () => {
+      throw new Error('Insights state must not load pauses.');
+    };
+    repositories.conclusionReviews.findForBlock = async () => {
+      throw new Error('Insights state must not load conclusion reviews.');
+    };
+
+    const state = await loadChronosInsightsState(repositories, 'user-1');
+
+    expect(Object.keys(state.weeklyInsight.summary.byBlock)).toHaveLength(1);
   });
 });
 
@@ -637,8 +749,38 @@ function pauseFixture(overrides: Partial<Pause> = {}): Pause {
     blockId: 'block-1',
     kind: 'untimed',
     startedAt: '2026-06-29T09:10:00.000Z',
-    endedAt: null,
+    endedAt: '2026-06-29T10:00:00.000Z',
     note: null,
+    createdAt: persistedAt,
+    updatedAt: persistedAt,
+    ...overrides,
+  };
+}
+
+function eventFixture(overrides: Partial<ChronosEvent> = {}): ChronosEvent {
+  return {
+    id: 'event-1',
+    userId: 'user-1',
+    blockId: 'block-1',
+    title: 'Event',
+    highlighted: true,
+    occurredAt: '2026-06-29T09:20:00.000Z',
+    createdAt: persistedAt,
+    updatedAt: persistedAt,
+    ...overrides,
+  };
+}
+
+function actualEntryFixture(overrides: Partial<ActualTimeEntry> = {}): ActualTimeEntry {
+  return {
+    id: 'actual-1',
+    userId: 'user-1',
+    blockId: 'block-1',
+    pauseId: null,
+    phase: 'execution',
+    activity: 'focus',
+    startedAt: '2026-06-29T09:00:00.000Z',
+    endedAt: '2026-06-29T10:00:00.000Z',
     createdAt: persistedAt,
     updatedAt: persistedAt,
     ...overrides,

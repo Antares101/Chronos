@@ -51,13 +51,50 @@ export type ChronosAppState = {
   executionBlocks: Block[];
   assignableTasks: ChronosTask[];
   tasksByBlockId: Record<string, ChronosTask[]>;
-  defaultPlanningDate: string;
+  todayDate: string;
   dailyTimeline: DailyTimelineProps;
   weeklyCalendar: WeeklyCalendarProps;
   taskList: TaskListProps;
   blockDetail: BlockDetailProps | null;
   conclusionPanel: ConclusionPanelProps | null;
   weeklyInsight: WeeklyInsightProps;
+};
+
+export type ChronosTodayState = Pick<
+  ChronosAppState,
+  | 'blocks'
+  | 'planningBlocks'
+  | 'executionBlocks'
+  | 'assignableTasks'
+  | 'tasksByBlockId'
+  | 'todayDate'
+  | 'dailyTimeline'
+  | 'blockDetail'
+>;
+
+export type ChronosPlanningState = Pick<
+  ChronosAppState,
+  'blocks' | 'planningBlocks' | 'assignableTasks' | 'todayDate' | 'weeklyCalendar' | 'taskList'
+>;
+
+export type ChronosReviewState = Pick<
+  ChronosAppState,
+  'executionBlocks' | 'tasksByBlockId' | 'conclusionPanel'
+>;
+
+export type ChronosInsightsState = Pick<ChronosAppState, 'weeklyInsight'>;
+
+type ChronosBaseState = Pick<
+  ChronosAppState,
+  | 'blocks'
+  | 'planningBlocks'
+  | 'executionBlocks'
+  | 'assignableTasks'
+  | 'tasksByBlockId'
+  | 'todayDate'
+> & {
+  tasks: ChronosTask[];
+  nowIso: string;
 };
 
 export type ChronosAppActionStatus =
@@ -100,34 +137,26 @@ export async function loadChronosAppState(
   userId: string,
   now: Clock = () => new Date().toISOString(),
 ): Promise<ChronosAppState> {
-  const nowIso = now();
-  const [allBlocks, allTasks, allActualEntries] = await Promise.all([
-    repositories.blocks.listForUser(userId),
-    repositories.tasks.listForUser(userId),
-    repositories.actualTimeEntries.listForUser(userId),
-  ]);
-
-  const blocks = orderBlocksForChronogram(allBlocks.filter((block) => block.userId === userId));
-  const tasks = allTasks.filter((task) => task.userId === userId);
-  const actualEntries = allActualEntries.filter((entry) => entry.userId === userId);
+  const baseState = await loadChronosBaseState(repositories, userId, now);
+  const { blocks, tasks, tasksByBlockId, todayDate, nowIso } = baseState;
+  const actualEntries = (await repositories.actualTimeEntries.listForUser(userId)).filter(
+    (entry) => entry.userId === userId,
+  );
   const [eventsByBlockId, pausesByBlockId] = await loadBlockChildren(repositories, userId, blocks);
   const selectedBlock = selectPrimaryBlock(blocks);
   const selectedReview = selectedBlock
     ? await repositories.conclusionReviews.findForBlock({ userId, blockId: selectedBlock.id })
     : null;
-  const dailyDate = selectDailyDate(nowIso);
-  const defaultPlanningDate = dailyDate;
-  const tasksByBlockId = groupTasksByBlockId(tasks);
 
   return {
     blocks,
-    planningBlocks: blocks.filter((block) => block.phase === 'planning'),
-    executionBlocks: blocks.filter((block) => block.phase === 'execution'),
-    assignableTasks: tasks.filter((task) => task.blockId === null),
+    planningBlocks: baseState.planningBlocks,
+    executionBlocks: baseState.executionBlocks,
+    assignableTasks: baseState.assignableTasks,
     tasksByBlockId,
-    defaultPlanningDate,
-    dailyTimeline: buildDailyTimelineProps(blocks, pausesByBlockId, dailyDate, nowIso),
-    weeklyCalendar: buildWeeklyCalendarProps(blocks, eventsByBlockId, defaultPlanningDate),
+    todayDate,
+    dailyTimeline: buildDailyTimelineProps(blocks, pausesByBlockId, todayDate, nowIso),
+    weeklyCalendar: buildWeeklyCalendarProps(blocks, eventsByBlockId, todayDate),
     taskList: buildTaskListProps(tasks),
     blockDetail: selectedBlock
       ? buildBlockDetailProps(
@@ -145,13 +174,140 @@ export async function loadChronosAppState(
             tasksByBlockId[selectedBlock.id] ?? [],
           )
         : null,
-    weeklyInsight: {
-      eyebrow: 'Weekly summary',
-      title: 'Planned vs actual',
-      description: 'Stored block and actual-time data summarized by category, block, and phase.',
-      summary: calculatePlannedVsActual(blocks, actualEntries),
-    },
+    weeklyInsight: buildWeeklyInsightProps(blocks, actualEntries),
   };
+}
+
+export async function loadChronosTodayState(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  now: Clock = () => new Date().toISOString(),
+): Promise<ChronosTodayState> {
+  const baseState = await loadChronosBaseState(repositories, userId, now);
+  const { blocks, tasksByBlockId, todayDate, nowIso } = baseState;
+  const selectedBlock = selectPrimaryBlock(blocks);
+  const dailyBlocks = blocks.filter((block) => getDateKey(block.plannedStart) === todayDate);
+  const childBlocks = uniqueBlocks([...dailyBlocks, ...(selectedBlock ? [selectedBlock] : [])]);
+  const [eventsByBlockId, pausesByBlockId] = await loadBlockChildren(
+    repositories,
+    userId,
+    childBlocks,
+  );
+
+  return {
+    blocks,
+    planningBlocks: baseState.planningBlocks,
+    executionBlocks: baseState.executionBlocks,
+    assignableTasks: baseState.assignableTasks,
+    tasksByBlockId,
+    todayDate,
+    dailyTimeline: buildDailyTimelineProps(blocks, pausesByBlockId, todayDate, nowIso),
+    blockDetail: selectedBlock
+      ? buildBlockDetailProps(
+          selectedBlock,
+          tasksByBlockId[selectedBlock.id] ?? [],
+          eventsByBlockId.get(selectedBlock.id) ?? [],
+          pausesByBlockId.get(selectedBlock.id) ?? [],
+        )
+      : null,
+  };
+}
+
+export async function loadChronosPlanningState(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  now: Clock = () => new Date().toISOString(),
+): Promise<ChronosPlanningState> {
+  const baseState = await loadChronosBaseState(repositories, userId, now);
+  const eventsByBlockId = await loadBlockEvents(repositories, userId, baseState.blocks);
+
+  return {
+    blocks: baseState.blocks,
+    planningBlocks: baseState.planningBlocks,
+    assignableTasks: baseState.assignableTasks,
+    todayDate: baseState.todayDate,
+    weeklyCalendar: buildWeeklyCalendarProps(
+      baseState.blocks,
+      eventsByBlockId,
+      baseState.todayDate,
+    ),
+    taskList: buildTaskListProps(baseState.tasks),
+  };
+}
+
+export async function loadChronosReviewState(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  now: Clock = () => new Date().toISOString(),
+): Promise<ChronosReviewState> {
+  const baseState = await loadChronosBaseState(repositories, userId, now);
+  const reviewedBlock = await selectReviewedBlock(repositories, userId, baseState.blocks);
+  const review = reviewedBlock
+    ? await repositories.conclusionReviews.findForBlock({ userId, blockId: reviewedBlock.id })
+    : null;
+
+  return {
+    executionBlocks: baseState.executionBlocks,
+    tasksByBlockId: baseState.tasksByBlockId,
+    conclusionPanel:
+      reviewedBlock && review
+        ? buildConclusionPanelProps(
+            reviewedBlock,
+            review,
+            baseState.tasksByBlockId[reviewedBlock.id] ?? [],
+          )
+        : null,
+  };
+}
+
+export async function loadChronosInsightsState(
+  repositories: ChronosAppRepositories,
+  userId: string,
+): Promise<ChronosInsightsState> {
+  const blocks = await loadUserBlocks(repositories, userId);
+  const actualEntries = (await repositories.actualTimeEntries.listForUser(userId)).filter(
+    (entry) => entry.userId === userId,
+  );
+
+  return {
+    weeklyInsight: buildWeeklyInsightProps(blocks, actualEntries),
+  };
+}
+
+async function loadChronosBaseState(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  now: Clock,
+): Promise<ChronosBaseState> {
+  const nowIso = now();
+  const [blocks, allTasks] = await Promise.all([
+    loadUserBlocks(repositories, userId),
+    repositories.tasks.listForUser(userId),
+  ]);
+
+  const tasks = allTasks.filter((task) => task.userId === userId);
+  const todayDate = selectTodayDate(nowIso);
+  const tasksByBlockId = groupTasksByBlockId(tasks);
+
+  return {
+    blocks,
+    planningBlocks: blocks.filter((block) => block.phase === 'planning'),
+    executionBlocks: blocks.filter((block) => block.phase === 'execution'),
+    assignableTasks: tasks.filter((task) => task.blockId === null),
+    tasksByBlockId,
+    todayDate,
+    tasks,
+    nowIso,
+  };
+}
+
+async function loadUserBlocks(
+  repositories: ChronosAppRepositories,
+  userId: string,
+): Promise<Block[]> {
+  const allBlocks = await repositories.blocks.listForUser(userId);
+
+  return orderBlocksForChronogram(allBlocks.filter((block) => block.userId === userId));
 }
 
 export async function handleChronosAppAction(
@@ -352,7 +508,7 @@ function buildDailyTimelineProps(
   return {
     eyebrow: `Today · ${date}`,
     title: 'Your persisted day',
-    description: 'Stored blocks and pauses are loaded from the authenticated backend session.',
+    description: 'Stored blocks and pauses are loaded for your signed-in day.',
     visibleStart: `${date}T00:00:00.000Z`,
     visibleEnd: `${date}T23:59:59.999Z`,
     currentTime,
@@ -488,6 +644,18 @@ function buildConclusionPanelProps(
   };
 }
 
+function buildWeeklyInsightProps(
+  blocks: Block[],
+  actualEntries: ActualTimeEntry[],
+): WeeklyInsightProps {
+  return {
+    eyebrow: 'Weekly summary',
+    title: 'Planned vs actual',
+    description: 'Stored block and actual-time data summarized by category, block, and phase.',
+    summary: calculatePlannedVsActual(blocks, actualEntries),
+  };
+}
+
 async function loadBlockChildren(
   repositories: ChronosAppRepositories,
   userId: string,
@@ -511,6 +679,43 @@ async function loadBlockChildren(
   ];
 }
 
+async function loadBlockEvents(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  blocks: Block[],
+): Promise<Map<string, ChronosEvent[]>> {
+  const entries = await Promise.all(
+    blocks.map(
+      async (block) =>
+        [block.id, await repositories.events.listForBlock({ userId, blockId: block.id })] as const,
+    ),
+  );
+
+  return new Map(entries);
+}
+
+async function selectReviewedBlock(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  blocks: Block[],
+): Promise<Block | null> {
+  const concludedBlocks = blocks.filter((block) => block.phase === 'conclusion');
+
+  for (const block of concludedBlocks) {
+    const review = await repositories.conclusionReviews.findForBlock({ userId, blockId: block.id });
+
+    if (review) {
+      return block;
+    }
+  }
+
+  return null;
+}
+
+function uniqueBlocks(blocks: Block[]): Block[] {
+  return Array.from(new Map(blocks.map((block) => [block.id, block])).values());
+}
+
 function selectPrimaryBlock(blocks: Block[]): Block | null {
   return (
     blocks.find((block) => block.phase === 'execution') ??
@@ -520,7 +725,7 @@ function selectPrimaryBlock(blocks: Block[]): Block | null {
   );
 }
 
-function selectDailyDate(nowIso: string): string {
+function selectTodayDate(nowIso: string): string {
   return getDateKey(nowIso);
 }
 
