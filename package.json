@@ -12,8 +12,9 @@
     "db:check": "drizzle-kit check --config drizzle.config.ts",
     "typecheck": "astro check",
     "lint": "eslint . --ext .js,.ts,.tsx,.astro",
-    "format": "prettier --write --ignore-unknown \"*.{js,ts,cjs,json}\" \"src/**/*.{astro,ts,tsx}\" \".env.example\"",
-    "format:check": "prettier --check --ignore-unknown \"*.{js,ts,cjs,json}\" \"src/**/*.{astro,ts,tsx}\" \".env.example\"",
+    "format": "prettier --write --ignore-unknown \"*.{js,ts,cjs,json}\" \"scripts/**/*.{js,mjs,cjs,ts}\" \"src/**/*.{astro,ts,tsx}\" \".env.example\"",
+    "format:check": "prettier --check --ignore-unknown \"*.{js,ts,cjs,json}\" \"scripts/**/*.{js,mjs,cjs,ts}\" \"src/**/*.{astro,ts,tsx}\" \".env.example\"",
+    "smoke:browser": "node scripts/browser-smoke.mjs",
     "test": "vitest run"
   },
   "dependencies": {
