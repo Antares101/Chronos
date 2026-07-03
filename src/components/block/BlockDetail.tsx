@@ -143,11 +143,11 @@ export default function BlockDetail({
 
 const blockDetailStyles = `
   .block-detail {
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
-    background: rgba(248, 250, 252, 0.96);
-    color: #0f172a;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
     padding: clamp(1rem, 2vw, 1.5rem);
     overflow: hidden;
     display: grid;
@@ -159,15 +159,18 @@ const blockDetailStyles = `
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 18px;
     padding: 1rem;
-    background: #ffffff;
+    background: var(
+      --chronos-header-surface,
+      linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
+    );
   }
 
   .block-detail__eyebrow {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: var(--chronos-primary, #4f46e5);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -182,15 +185,15 @@ const blockDetailStyles = `
 
   .block-detail__header p {
     margin: 0.35rem 0 0;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     line-height: 1.5;
   }
 
   .block-detail__context {
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 16px;
     padding: 0.8rem;
-    background: #f8fafc;
+    background: var(--chronos-surface-muted, #f1f5f9);
   }
 
   .block-detail__context h3 {
@@ -199,16 +202,16 @@ const blockDetailStyles = `
 
   .block-detail__context p {
     margin: 0.35rem 0 0;
-    color: #334155;
+    color: var(--chronos-text-muted, #475569);
     font-weight: 700;
     font-size: 0.87rem;
   }
 
   .block-detail__group {
-    border: 1px solid rgba(148, 163, 184, 0.24);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 16px;
     padding: 0.85rem;
-    background: #ffffff;
+    background: var(--chronos-surface, #ffffff);
   }
 
   .block-detail__group h3 {
@@ -218,7 +221,7 @@ const blockDetailStyles = `
 
   .block-detail__empty {
     margin: 0.35rem 0;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.86rem;
     font-weight: 700;
   }
@@ -237,11 +240,11 @@ const blockDetailStyles = `
     display: flex;
     justify-content: space-between;
     gap: 0.7rem;
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 12px;
     padding: 0.65rem 0.75rem;
-    background: #f1f5f9;
-    color: #334155;
+    background: var(--chronos-surface-muted, #f1f5f9);
+    color: var(--chronos-text-muted, #475569);
   }
 
   .block-detail__task--done {
@@ -253,13 +256,13 @@ const blockDetailStyles = `
   .block-detail__event span {
     font-size: 0.82rem;
     font-weight: 800;
-    color: #166534;
+    color: var(--chronos-success-text, #065f46);
     white-space: nowrap;
   }
 
   .block-detail__event small {
     margin-top: 0.15rem;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     font-size: 0.74rem;
     font-weight: 500;
     text-align: right;
@@ -270,7 +273,7 @@ const blockDetailStyles = `
   }
 
   .block-detail__event span:first-child {
-    color: #92400e;
+    color: var(--chronos-warning, #d97706);
   }
 
   .block-detail__event[aria-label] {

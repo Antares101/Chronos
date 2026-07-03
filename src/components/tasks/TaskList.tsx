@@ -70,11 +70,11 @@ export default function TaskList({ eyebrow, title, description, tasks }: TaskLis
 
 const taskListStyles = `
   .task-list {
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
-    background: rgba(248, 250, 252, 0.96);
-    color: #0f172a;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
     padding: clamp(1rem, 2vw, 1.5rem);
     overflow: hidden;
   }
@@ -84,15 +84,18 @@ const taskListStyles = `
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 18px;
     padding: 1rem;
-    background: #ffffff;
+    background: var(
+      --chronos-header-surface,
+      linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
+    );
   }
 
   .task-list__eyebrow {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: var(--chronos-primary, #4f46e5);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -107,15 +110,15 @@ const taskListStyles = `
 
   .task-list__header p {
     margin: 0.35rem 0 0;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     line-height: 1.5;
   }
 
   .task-list__status {
     flex: 0 0 auto;
     border-radius: 999px;
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--chronos-sky-soft, #e0f2fe);
+    color: var(--chronos-sky-text, #075985);
     font-size: 0.76rem;
     font-weight: 800;
     padding: 0.45rem 0.75rem;
@@ -127,7 +130,7 @@ const taskListStyles = `
 
   .task-list__empty {
     margin: 1.5rem 0;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.9rem;
     font-weight: 700;
     text-align: center;
@@ -145,10 +148,10 @@ const taskListStyles = `
     display: flex;
     justify-content: space-between;
     gap: 0.8rem;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 14px;
     padding: 0.75rem 0.9rem;
-    background: #f8fafc;
+    background: var(--chronos-surface-muted, #f1f5f9);
   }
 
   .task-list__item--done {
@@ -166,13 +169,13 @@ const taskListStyles = `
     padding: 0.25rem 0.55rem;
     font-size: 0.7rem;
     font-weight: 800;
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--chronos-primary-soft, #e0e7ff);
+    color: var(--chronos-primary-strong, #312e81);
   }
 
   .task-list__item--done .task-list__item-status {
-    background: #bbf7d0;
-    color: #14532d;
+    background: var(--chronos-success-soft, #d1fae5);
+    color: var(--chronos-success-text, #065f46);
   }
 
   @media (max-width: 720px) {

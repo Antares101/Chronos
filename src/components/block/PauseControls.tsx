@@ -157,11 +157,11 @@ function formatPauseDuration(startedAt: string, endedAt: string): string {
 
 const pauseControlsStyles = `
   .pause-controls {
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
-    background: rgba(248, 250, 252, 0.96);
-    color: #0f172a;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
     padding: clamp(1rem, 2vw, 1.5rem);
     overflow: hidden;
   }
@@ -171,15 +171,18 @@ const pauseControlsStyles = `
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 18px;
     padding: 1rem;
-    background: #ffffff;
+    background: var(
+      --chronos-header-surface,
+      linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
+    );
   }
 
   .pause-controls__eyebrow {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: var(--chronos-primary, #4f46e5);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -194,7 +197,7 @@ const pauseControlsStyles = `
 
   .pause-controls__header p {
     margin: 0.35rem 0 0;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     line-height: 1.5;
   }
 
@@ -207,18 +210,18 @@ const pauseControlsStyles = `
   }
 
   .pause-controls__state--enabled {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--chronos-success-soft, #d1fae5);
+    color: var(--chronos-success-text, #065f46);
   }
 
   .pause-controls__state--disabled {
-    background: #fecaca;
-    color: #991b1b;
+    background: var(--chronos-danger-soft, #fee2e2);
+    color: var(--chronos-danger-text, #991b1b);
   }
 
   .pause-controls__phase {
     margin: 0.85rem 0 0;
-    color: #334155;
+    color: var(--chronos-text-muted, #475569);
     font-weight: 700;
     font-size: 0.87rem;
   }
@@ -236,11 +239,12 @@ const pauseControlsStyles = `
 
   .pause-controls button {
     appearance: none;
-    border: 1px solid rgba(15, 118, 110, 0.32);
+    border: 1px solid var(--chronos-border-strong, rgba(99, 102, 241, 0.22));
     border-radius: 14px;
-    background: #ecfeff;
-    color: #115e59;
+    background: var(--chronos-primary-soft, #e0e7ff);
+    color: var(--chronos-primary-strong, #312e81);
     padding: 0.65rem;
+    min-height: 2.75rem;
     font-weight: 700;
     cursor: pointer;
     width: 100%;
@@ -248,8 +252,8 @@ const pauseControlsStyles = `
 
   .pause-controls button:disabled {
     border-color: rgba(148, 163, 184, 0.4);
-    background: #e2e8f0;
-    color: #94a3b8;
+    background: var(--chronos-surface-muted, #f1f5f9);
+    color: var(--chronos-text-soft, #64748b);
     cursor: not-allowed;
   }
 
@@ -259,7 +263,7 @@ const pauseControlsStyles = `
 
   .pause-controls__empty {
     margin: 0.45rem 0 0;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.85rem;
     font-weight: 700;
   }
@@ -273,20 +277,20 @@ const pauseControlsStyles = `
   }
 
   .pause-controls__history-item {
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 12px;
     padding: 0.55rem 0.7rem;
     display: flex;
     justify-content: space-between;
-    background: #f1f5f9;
+    background: var(--chronos-surface-muted, #f1f5f9);
     font-size: 0.83rem;
     gap: 0.75rem;
-    color: #334155;
+    color: var(--chronos-text-muted, #475569);
   }
 
   .pause-controls__history-item span:nth-of-type(2) {
     font-weight: 800;
-    color: #0f766e;
+    color: var(--chronos-primary, #4f46e5);
   }
 
   .pause-controls__end-form {

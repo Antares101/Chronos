@@ -190,11 +190,11 @@ function CalendarBlock({ block, visibleStart, visibleEnd }: CalendarBlockProps) 
 
 const weeklyCalendarStyles = `
   .weekly-calendar {
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
-    background: rgba(248, 250, 252, 0.96);
-    color: #0f172a;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
     padding: clamp(1rem, 2vw, 1.5rem);
     overflow: hidden;
   }
@@ -204,15 +204,18 @@ const weeklyCalendarStyles = `
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 18px;
     padding: 1rem;
-    background: #ffffff;
+    background: var(
+      --chronos-header-surface,
+      linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
+    );
   }
 
   .weekly-calendar__eyebrow {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: var(--chronos-primary, #4f46e5);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -231,15 +234,15 @@ const weeklyCalendarStyles = `
 
   .weekly-calendar__header p {
     margin: 0.35rem 0 0;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     line-height: 1.6;
   }
 
   .weekly-calendar__status {
     flex: 0 0 auto;
     border-radius: 999px;
-    background: #dbeafe;
-    color: #1e3a8a;
+    background: var(--chronos-primary-soft, #e0e7ff);
+    color: var(--chronos-primary-strong, #312e81);
     font-size: 0.76rem;
     font-weight: 800;
     padding: 0.45rem 0.75rem;
@@ -254,8 +257,9 @@ const weeklyCalendarStyles = `
 
   .weekly-calendar__legend {
     border-radius: 18px;
-    background: #0f172a;
-    color: #e2e8f0;
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
+    background: var(--chronos-surface-muted, #f1f5f9);
+    color: var(--chronos-text, #0f172a);
     padding: 1rem;
   }
 
@@ -295,7 +299,7 @@ const weeklyCalendarStyles = `
   .weekly-calendar__time-axis {
     position: relative;
     min-height: 27rem;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.72rem;
     font-weight: 700;
   }
@@ -340,24 +344,24 @@ const weeklyCalendarStyles = `
   }
 
   .weekly-calendar__day time {
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.72rem;
   }
 
   .weekly-calendar__lane {
     position: relative;
     min-height: 24.25rem;
-    border: 1px solid rgba(148, 163, 184, 0.24);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 16px;
     background:
       linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px) 0 0 / 100% 20%,
-      #ffffff;
+      var(--chronos-surface, #ffffff);
     overflow: hidden;
   }
 
   .weekly-calendar__lane > p {
     margin: 1rem 0.5rem;
-    color: #94a3b8;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.75rem;
     font-weight: 700;
     text-align: center;
@@ -396,7 +400,7 @@ const weeklyCalendarStyles = `
   }
 
   .weekly-calendar__event {
-    color: #92400e;
+    color: var(--chronos-warning, #d97706);
   }
 
   @media (max-width: 980px) {

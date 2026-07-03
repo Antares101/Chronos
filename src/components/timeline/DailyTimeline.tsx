@@ -239,11 +239,11 @@ function PauseSegment({ block, currentTime, pause }: PauseSegmentProps) {
 
 const dailyTimelineStyles = `
   .daily-timeline {
-    border: 1px solid rgba(148, 163, 184, 0.3);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
-    background: rgba(248, 250, 252, 0.96);
-    color: #0f172a;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
     padding: clamp(1rem, 2vw, 1.5rem);
     overflow: hidden;
   }
@@ -253,15 +253,18 @@ const dailyTimelineStyles = `
     justify-content: space-between;
     gap: 1rem;
     align-items: flex-start;
-    border: 1px solid rgba(148, 163, 184, 0.26);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 18px;
     padding: 1rem;
-    background: #ffffff;
+    background: var(
+      --chronos-header-surface,
+      linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
+    );
   }
 
   .daily-timeline__eyebrow {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: var(--chronos-primary, #4f46e5);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -276,15 +279,15 @@ const dailyTimelineStyles = `
 
   .daily-timeline__header p:last-child {
     margin: 0.35rem 0 0;
-    color: #475569;
+    color: var(--chronos-text-muted, #475569);
     line-height: 1.6;
   }
 
   .daily-timeline__status {
     flex: 0 0 auto;
     border-radius: 999px;
-    background: #dcfce7;
-    color: #166534;
+    background: var(--chronos-success-soft, #d1fae5);
+    color: var(--chronos-success-text, #065f46);
     font-size: 0.76rem;
     font-weight: 800;
     padding: 0.45rem 0.75rem;
@@ -294,7 +297,7 @@ const dailyTimelineStyles = `
     position: relative;
     height: 2.5rem;
     margin: 1rem 0 0;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-size: 0.78rem;
     font-weight: 700;
   }
@@ -317,11 +320,11 @@ const dailyTimelineStyles = `
   .daily-timeline__track {
     position: relative;
     min-height: 12rem;
-    border: 1px solid rgba(148, 163, 184, 0.28);
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 20px;
     background:
       linear-gradient(90deg, rgba(148, 163, 184, 0.16) 1px, transparent 1px) 0 0 / 20% 100%,
-      linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      linear-gradient(135deg, var(--chronos-bg, #f8fafc) 0%, var(--chronos-surface-tinted, #eef2ff) 100%);
     overflow: hidden;
   }
 
@@ -330,7 +333,7 @@ const dailyTimelineStyles = `
     inset-block: 0;
     z-index: 4;
     width: 2px;
-    background: #0f172a;
+    background: var(--chronos-primary, #4f46e5);
     transform: translateX(-1px);
   }
 
@@ -340,8 +343,8 @@ const dailyTimelineStyles = `
     left: 50%;
     transform: translateX(-50%);
     border-radius: 999px;
-    background: #0f172a;
-    color: #ffffff;
+    background: var(--chronos-primary, #4f46e5);
+    color: var(--chronos-button-text, #ffffff);
     font-size: 0.68rem;
     font-weight: 800;
     padding: 0.25rem 0.45rem;
@@ -359,7 +362,7 @@ const dailyTimelineStyles = `
   }
 
   .daily-timeline__block--execution {
-    box-shadow: inset 0 -4px 0 rgba(15, 118, 110, 0.16);
+    box-shadow: inset 0 -4px 0 rgba(79, 70, 229, 0.18);
   }
 
   .daily-timeline__block-title,
@@ -393,8 +396,8 @@ const dailyTimelineStyles = `
     inset-block: 0;
     min-width: 1rem;
     border-radius: 999px;
-    background: #fde68a;
-    color: #92400e;
+    background: var(--chronos-warning-soft, #fef3c7);
+    color: var(--chronos-warning-text, #92400e);
     font-size: 0.62rem;
     font-weight: 800;
     line-height: 1.35rem;
@@ -406,7 +409,7 @@ const dailyTimelineStyles = `
 
   .daily-timeline__empty {
     margin: 5rem 1rem 0;
-    color: #64748b;
+    color: var(--chronos-text-soft, #64748b);
     font-weight: 700;
     text-align: center;
   }
@@ -421,8 +424,8 @@ const dailyTimelineStyles = `
   .daily-timeline__notes p {
     margin: 0;
     border-radius: 14px;
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--chronos-surface-muted, #f1f5f9);
+    color: var(--chronos-text-muted, #475569);
     font-size: 0.82rem;
     line-height: 1.5;
     padding: 0.85rem;
@@ -440,6 +443,34 @@ const dailyTimelineStyles = `
 
     .daily-timeline__axis {
       font-size: 0.7rem;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .daily-timeline__axis span:nth-child(even) {
+      display: none;
+    }
+
+    .daily-timeline__axis span:first-child,
+    .daily-timeline__axis span:last-child {
+      display: block;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .daily-timeline__axis {
+      height: 2.25rem;
+      font-size: 0.68rem;
+    }
+
+    .daily-timeline__axis span {
+      display: none;
+    }
+
+    .daily-timeline__axis span:nth-child(3n + 1),
+    .daily-timeline__axis span:first-child,
+    .daily-timeline__axis span:last-child {
+      display: block;
     }
   }
 `;

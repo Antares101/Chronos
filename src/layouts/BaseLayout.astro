@@ -16,6 +16,43 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <script is:inline>
+      (() => {
+        const storageKey = 'chronos-theme';
+        const root = document.documentElement;
+
+        const getPreferredTheme = () => {
+          try {
+            return typeof window.matchMedia === 'function' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          } catch {
+            return 'light';
+          }
+        };
+
+        const storedTheme = (() => {
+          try {
+            return localStorage.getItem(storageKey);
+          } catch {
+            return null;
+          }
+        })();
+
+        const theme =
+          storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : getPreferredTheme();
+
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <title>{title}</title>
   </head>
   <body>
@@ -24,9 +61,85 @@ const {
 </html>
 
 <style is:global>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 65%;
+    --input: 243 75% 59%;
+    --ring: 243 75% 59%;
+    --radius: 1rem;
+    --chronos-bg: #f8fafc;
+    --chronos-bg-soft: #eef2f7;
+    --chronos-surface: #ffffff;
+    --chronos-surface-muted: #f1f5f9;
+    --chronos-surface-tinted: #eef2ff;
+    --chronos-surface-elevated: rgba(255, 255, 255, 0.86);
+    --chronos-header-surface: linear-gradient(
+      135deg,
+      var(--chronos-surface) 0%,
+      var(--chronos-surface-tinted) 100%
+    );
+    --chronos-inverse-surface: #020617;
+    --chronos-inverse-surface-muted: #111827;
+    --chronos-inverse-surface-accent: #312e81;
+    --chronos-inverse-surface-elevated: rgba(15, 23, 42, 0.84);
+    --chronos-inverse-text: #f8fafc;
+    --chronos-inverse-text-muted: #cbd5e1;
+    --chronos-inverse-primary-text: #a5b4fc;
+    --chronos-inverse-success-text: #bbf7d0;
+    --chronos-inverse-danger-text: #fecaca;
+    --chronos-border: rgba(148, 163, 184, 0.22);
+    --chronos-border-strong: rgba(99, 102, 241, 0.22);
+    --chronos-text: #0f172a;
+    --chronos-text-muted: #475569;
+    --chronos-text-soft: #64748b;
+    --chronos-primary: #4f46e5;
+    --chronos-primary-strong: #4338ca;
+    --chronos-primary-soft: #e0e7ff;
+    --chronos-sky: #0ea5e9;
+    --chronos-sky-soft: #e0f2fe;
+    --chronos-sky-text: #075985;
+    --chronos-success: #059669;
+    --chronos-success-soft: #d1fae5;
+    --chronos-warning: #d97706;
+    --chronos-warning-soft: #fef3c7;
+    --chronos-warning-text: #92400e;
+    --chronos-danger: #dc2626;
+    --chronos-danger-soft: #fee2e2;
+    --chronos-ring: rgba(99, 102, 241, 0.28);
+    --chronos-input: rgba(99, 102, 241, 0.24);
+    --chronos-button-text: #ffffff;
+    --chronos-disabled: #cbd5e1;
+    --chronos-disabled-text: #475569;
+    --chronos-success-text: #065f46;
+    --chronos-danger-text: #991b1b;
+    --chronos-shadow: 0 24px 70px rgba(15, 23, 42, 0.1);
+    --chronos-shadow-soft: 0 14px 36px rgba(15, 23, 42, 0.08);
+    --chronos-glow: 0 0 34px rgba(79, 70, 229, 0.2);
+    --chronos-ornament: rgba(79, 70, 229, 0.36);
     font-family:
+      'Plus Jakarta Sans',
       Inter,
       ui-sans-serif,
       system-ui,
@@ -34,13 +147,72 @@ const {
       BlinkMacSystemFont,
       'Segoe UI',
       sans-serif;
-    background: #0f172a;
-    color: #f8fafc;
+    background: var(--chronos-bg);
+    color: var(--chronos-text);
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --background: 222 47% 7%;
+    --foreground: 213 31% 91%;
+    --card: 222 40% 10%;
+    --card-foreground: 213 31% 91%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 222 47% 7%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 199 89% 58%;
+    --accent-foreground: 222 47% 7%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 28%;
+    --input: 239 84% 67%;
+    --ring: 239 84% 67%;
+    --chronos-bg: #0b1120;
+    --chronos-bg-soft: #111827;
+    --chronos-surface: #111827;
+    --chronos-surface-muted: #1e293b;
+    --chronos-surface-tinted: #1e1b4b;
+    --chronos-surface-elevated: rgba(15, 23, 42, 0.84);
+    --chronos-border: rgba(148, 163, 184, 0.18);
+    --chronos-border-strong: rgba(129, 140, 248, 0.36);
+    --chronos-text: #e5e7eb;
+    --chronos-text-muted: #cbd5e1;
+    --chronos-text-soft: #94a3b8;
+    --chronos-primary: #818cf8;
+    --chronos-primary-strong: #a5b4fc;
+    --chronos-primary-soft: rgba(129, 140, 248, 0.18);
+    --chronos-sky: #38bdf8;
+    --chronos-sky-soft: rgba(56, 189, 248, 0.16);
+    --chronos-sky-text: #bae6fd;
+    --chronos-success: #34d399;
+    --chronos-success-soft: rgba(16, 185, 129, 0.16);
+    --chronos-warning: #fbbf24;
+    --chronos-warning-soft: rgba(251, 191, 36, 0.16);
+    --chronos-warning-text: #fde68a;
+    --chronos-danger: #f87171;
+    --chronos-danger-soft: rgba(248, 113, 113, 0.16);
+    --chronos-ring: rgba(129, 140, 248, 0.34);
+    --chronos-input: rgba(129, 140, 248, 0.38);
+    --chronos-button-text: #0b1120;
+    --chronos-disabled: #334155;
+    --chronos-disabled-text: #94a3b8;
+    --chronos-success-text: #bbf7d0;
+    --chronos-danger-text: #fecaca;
+    --chronos-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+    --chronos-shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.24);
+    --chronos-glow: 0 0 42px rgba(129, 140, 248, 0.28);
+    --chronos-ornament: rgba(165, 180, 252, 0.44);
   }
 
   body {
     margin: 0;
     min-width: 320px;
+    background: var(--chronos-bg);
   }
 
   a {

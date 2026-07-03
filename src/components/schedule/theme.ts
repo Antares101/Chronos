@@ -13,24 +13,24 @@ export const orderedBlockCategories: BlockCategory[] = ['work', 'home', 'trainin
 const categoryThemes: Record<BlockCategory, CategoryTheme> = {
   work: {
     label: 'Work',
-    background: '#ccfbf1',
-    border: '#5eead4',
-    text: '#134e4a',
-    marker: '#0f766e',
+    background: 'var(--chronos-primary-soft, #e0e7ff)',
+    border: 'var(--chronos-border-strong, #a5b4fc)',
+    text: 'var(--chronos-primary-strong, #312e81)',
+    marker: 'var(--chronos-primary, #4f46e5)',
   },
   home: {
     label: 'Home',
-    background: '#fce7f3',
-    border: '#f9a8d4',
-    text: '#9d174d',
-    marker: '#be185d',
+    background: 'var(--chronos-sky-soft, #e0f2fe)',
+    border: 'var(--chronos-sky, #7dd3fc)',
+    text: 'var(--chronos-sky-text, #075985)',
+    marker: 'var(--chronos-sky, #0ea5e9)',
   },
   training: {
     label: 'Training',
-    background: '#ede9fe',
-    border: '#c4b5fd',
-    text: '#5b21b6',
-    marker: '#6d28d9',
+    background: 'var(--chronos-success-soft, #d1fae5)',
+    border: 'var(--chronos-success, #6ee7b7)',
+    text: 'var(--chronos-success-text, #065f46)',
+    marker: 'var(--chronos-success, #059669)',
   },
 };
 

@@ -94,8 +94,17 @@ describe('timeline helpers', () => {
 
 describe('category themes', () => {
   it('returns the calm Chronos color contract for block categories', () => {
-    expect(getCategoryTheme('work')).toMatchObject({ label: 'Work', marker: '#0f766e' });
-    expect(getCategoryTheme('home')).toMatchObject({ label: 'Home', marker: '#be185d' });
-    expect(getCategoryTheme('training')).toMatchObject({ label: 'Training', marker: '#6d28d9' });
+    expect(getCategoryTheme('work')).toMatchObject({
+      label: 'Work',
+      marker: 'var(--chronos-primary, #4f46e5)',
+    });
+    expect(getCategoryTheme('home')).toMatchObject({
+      label: 'Home',
+      marker: 'var(--chronos-sky, #0ea5e9)',
+    });
+    expect(getCategoryTheme('training')).toMatchObject({
+      label: 'Training',
+      marker: 'var(--chronos-success, #059669)',
+    });
   });
 });

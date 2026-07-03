@@ -55,7 +55,7 @@ describe('WeeklyCalendar', () => {
     expect(html).toContain('09:00 to 11:00');
     expect(html).toContain('aria-label="Highlighted event: Release note"');
     expect(html).toContain('★ Release note');
-    expect(html).toContain('background-color:#ccfbf1');
+    expect(html).toContain('background-color:var(--chronos-primary-soft, #e0e7ff)');
   });
 
   it('renders empty day lanes safely', () => {

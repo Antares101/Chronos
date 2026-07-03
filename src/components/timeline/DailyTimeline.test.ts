@@ -54,9 +54,9 @@ describe('DailyTimeline', () => {
     expect(html).toContain('Training block');
     expect(html).toContain('Work · 1h 30m');
     expect(html).toContain('Training · 1h');
-    expect(html).toContain('background-color:#ccfbf1');
-    expect(html).toContain('border-color:#5eead4');
-    expect(html).toContain('background-color:#ede9fe');
+    expect(html).toContain('background-color:var(--chronos-primary-soft, #e0e7ff)');
+    expect(html).toContain('border-color:var(--chronos-border-strong, #a5b4fc)');
+    expect(html).toContain('background-color:var(--chronos-success-soft, #d1fae5)');
   });
 
   it('renders the current-time indicator when current time is in the visible range', () => {

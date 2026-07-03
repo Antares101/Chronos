@@ -57,11 +57,22 @@ if (Astro.request.method === 'POST') {
 
 <style>
   .shell {
+    --sign-in-bg: var(--chronos-inverse-surface, #020617);
+    --sign-in-bg-soft: var(--chronos-inverse-surface-muted, #111827);
+    --sign-in-bg-accent: var(--chronos-inverse-surface-accent, #312e81);
+    --sign-in-panel: var(--chronos-inverse-surface-elevated, rgba(15, 23, 42, 0.84));
+    --sign-in-text: var(--chronos-inverse-text, #f8fafc);
+    --sign-in-text-muted: var(--chronos-inverse-text-muted, #cbd5e1);
     min-height: 100vh;
     display: grid;
     place-items: center;
     padding: 2rem;
-    background: linear-gradient(135deg, #020617 0%, #111827 54%, #312e81 100%);
+    background: linear-gradient(
+      135deg,
+      var(--sign-in-bg) 0%,
+      var(--sign-in-bg-soft) 54%,
+      var(--sign-in-bg-accent) 100%
+    );
   }
 
   .panel {
@@ -69,12 +80,13 @@ if (Astro.request.method === 'POST') {
     padding: clamp(2rem, 5vw, 3rem);
     border: 1px solid rgba(165, 180, 252, 0.32);
     border-radius: 1.5rem;
-    background: rgba(15, 23, 42, 0.84);
+    background: var(--sign-in-panel);
+    color: var(--sign-in-text);
   }
 
   .eyebrow {
     margin: 0 0 0.75rem;
-    color: #a5b4fc;
+    color: var(--chronos-inverse-primary-text, #a5b4fc);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -95,15 +107,15 @@ if (Astro.request.method === 'POST') {
   }
 
   .summary {
-    color: #cbd5e1;
+    color: var(--sign-in-text-muted);
   }
 
   .notice {
-    color: #bbf7d0;
+    color: var(--chronos-inverse-success-text, #bbf7d0);
   }
 
   .alert {
-    color: #fecaca;
+    color: var(--chronos-inverse-danger-text, #fecaca);
   }
 
   form,
@@ -117,20 +129,40 @@ if (Astro.request.method === 'POST') {
   }
 
   input {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
     border: 1px solid rgba(148, 163, 184, 0.42);
     border-radius: 0.75rem;
     padding: 0.8rem 0.9rem;
-    background: #020617;
-    color: #f8fafc;
+    background: var(--sign-in-bg);
+    color: var(--sign-in-text);
+  }
+
+  input:focus-visible {
+    border-color: var(--chronos-inverse-primary-text, #a5b4fc);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.34);
   }
 
   button {
-    border: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--chronos-border-strong, rgba(99, 102, 241, 0.22));
     border-radius: 999px;
     padding: 0.8rem 1.2rem;
-    background: #c7d2fe;
-    color: #312e81;
+    background: var(--chronos-primary-soft, #c7d2fe);
+    color: var(--chronos-primary-strong, #312e81);
     cursor: pointer;
     font-weight: 700;
+  }
+
+  button:focus-visible {
+    border-color: var(--chronos-inverse-primary-text, #a5b4fc);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.34);
   }
 </style>
