@@ -5,3 +5,9 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Local agent/runtime artifacts
+.codegraph/
+.dev-server.*
+.pi/tmp/
+artifacts/
