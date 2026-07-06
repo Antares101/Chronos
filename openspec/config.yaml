@@ -1,45 +1,57 @@
 schema: spec-driven
 project: chronos
-strict_tdd: false
+strict_tdd: true
 
 context: |
   Project: chronos
-  Stack: docs-only initial setup; no application runtime detected.
-  Architecture: not yet established.
-  Testing: no test runner, coverage tool, linter, type checker, or formatter detected.
-  Style: repository contains README and SDD registry only.
+  Stack: Astro 7 server-rendered app with React 19 islands, @astrojs/node adapter, Supabase auth/SSR, Drizzle/Postgres data layer, and Vitest component/server tests.
+  Architecture: Astro routes coordinate page-level server behavior; shared server modules under src/server/app provide route contracts, repositories, fixtures, and app orchestration; React islands under src/components provide interactive timeline, calendar, task, block, review, and insight surfaces.
+  Testing: Vitest is available via npm test. Quality gates include npm run format:check, npm run check, npm run build, and optional npm run lint / npm run smoke:browser.
+  Style: User-facing Chronos copy should be personal, practical, and operational rather than marketing-oriented. UI/docs/skill artifacts default to English.
 
 testing:
-  detected: 2026-06-27
+  detected: 2026-07-05
   test_runner:
-    command: ""
-    framework: none
+    command: 'npm test'
+    framework: vitest
   layers:
-    unit: false
-    integration: false
+    unit: true
+    integration: true
     e2e: false
   coverage:
     available: false
-    command: ""
+    command: ''
   quality_tools:
-    linter: false
-    type_checker: false
-    formatter: false
+    linter: true
+    linter_command: 'npm run lint'
+    type_checker: true
+    type_checker_command: 'npm run check'
+    formatter: true
+    formatter_check_command: 'npm run format:check'
+    build: true
+    build_command: 'npm run build'
 
 rules:
   proposal:
     - Include rollback plan for risky changes.
+    - Keep Chronos framed as a personal time-management tool, not a marketed product.
   specs:
     - Use Given/When/Then for scenarios.
     - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+    - Specify practical daily-use behavior before visual polish.
   design:
     - Document architecture decisions with rationale.
+    - Preserve auth, route, form field, and data semantics unless explicitly changed.
+    - Protect the Chronos visual direction from Design.md and the Chronos UI skill.
   tasks:
-    - Group work by phase and keep tasks completable in one session.
+    - Group work by reviewable slices and keep tasks completable in one session.
+    - Forecast changed-line budget and prefer chained slices when the work exceeds 400 changed lines.
   apply:
     - Follow existing code patterns.
     - Use strict TDD when enabled.
+    - Record RED/GREEN/REFACTOR evidence for behavior changes.
   verify:
     - Record the commands run and observed results.
+    - Include visual QA evidence for UI changes when browser tooling is available.
   archive:
     - Preserve the audit trail in the archive.

@@ -10,14 +10,20 @@ Chronos should feel calm, bounded, and readable before it feels dense. The `/app
 
 ## Visual direction
 
-| Area        | Direction                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------------ |
-| Mood        | Calm, structured, low-stress planning. Avoid noisy dashboards.                             |
-| Composition | Light mode uses a near-white Slate/Zinc app canvas with white cards. Dark mode uses premium dark Slate/Zinc neutrals, not pure black. Both modes use soft indigo/sky accents and clear section grouping. |
-| Hierarchy   | Section eyebrow, direct heading, then compact cards. Use spacing instead of heavy borders. |
-| Density     | Prefer readable cards that wrap over compressed two-column forms.                          |
-| Controls    | Inputs, selects, textareas, and buttons must never exceed their parent card. Use shadcn/ui-style local primitives and CSS variables, not Tailwind or shadcn CLI churn. |
+| Area        | Direction                                                                                                                                                                                                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mood        | Calm, structured, low-stress planning. Avoid noisy dashboards.                                                                                                                                                                                                               |
+| Composition | Light mode uses a near-white Slate/Zinc app canvas with white cards. Dark mode uses premium dark Slate/Zinc neutrals, not pure black. Both modes use soft indigo/sky accents and clear section grouping.                                                                     |
+| Hierarchy   | Section eyebrow, direct heading, then compact cards. Use spacing instead of heavy borders.                                                                                                                                                                                   |
+| Density     | Prefer readable cards that wrap over compressed two-column forms.                                                                                                                                                                                                            |
+| Controls    | Inputs, selects, textareas, and buttons must never exceed their parent card. Use shadcn/ui-style local primitives and CSS variables, not Tailwind or shadcn CLI churn.                                                                                                       |
 | Motif       | The authenticated app shell may use tasteful Japanese RPG-inspired menu panels: inset bevel lines, restrained glow, small constellation/quest ornaments, route identity cards, and tactile hover/focus/pressed states. Keep the mood calm and readable, not game-like noise. |
+
+## Product and copy context
+
+Chronos is personal-use software, not a product being sold. User-facing copy should sound like a practical operating surface for the owner: direct, concise, and useful in the moment. The root `/` is a lightweight redirect to `/app/today`; do not reintroduce a public marketing or launchpad home.
+
+Avoid marketing, persuasion, onboarding explanations, and backend terms in UI copy. Do not use phrases such as `stored`, `persisted`, `loaded`, `user scope`, `app shell`, or `route panels` for user-facing text. Keep domain terms that are part of the app model: `planning`, `execution`, `review`, `pause`, and `highlighted event`.
 
 ## Design Tokens
 
@@ -32,33 +38,33 @@ Theme selection is client-side and progressive:
 
 ## Light Tokens
 
-| Token           | Value                                                        | Usage                              |
-| --------------- | ------------------------------------------------------------ | ---------------------------------- |
-| Page background | `#F8FAFC`, `#EEF2F7`                                         | Near-white app canvas and soft gradients. |
-| Primary         | `#4F46E5`, `#4338CA`                                         | Primary buttons, hero accents, section emphasis. |
-| Support accent  | `#0EA5E9`                                                    | Secondary badges and category support. |
+| Token           | Value                                                        | Usage                                               |
+| --------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| Page background | `#F8FAFC`, `#EEF2F7`                                         | Near-white app canvas and soft gradients.           |
+| Primary         | `#4F46E5`, `#4338CA`                                         | Primary buttons, hero accents, section emphasis.    |
+| Support accent  | `#0EA5E9`                                                    | Secondary badges and category support.              |
 | Card surface    | `#FFFFFF`, `#F1F5F9`, `#EEF2FF`                              | Primary cards, nested panels, light tinted headers. |
-| Card text       | `#0F172A`                                                    | Primary text on light surfaces.    |
-| Muted text      | `#475569`, `#64748B`                                         | Secondary labels and empty states. |
-| Control border  | `rgba(99, 102, 241, 0.22)`                                   | Form controls and focus-adjacent surfaces. |
-| Success/accent  | `#059669`, `#D1FAE5`                                         | Success badges and positive states only. |
-| Radius          | `1rem` to `1.5rem`                                           | Page cards and action cards.       |
-| Spacing         | `clamp()` for page/card padding, `0.65rem` to `1.25rem` gaps | Responsive rhythm.                 |
+| Card text       | `#0F172A`                                                    | Primary text on light surfaces.                     |
+| Muted text      | `#475569`, `#64748B`                                         | Secondary labels and empty states.                  |
+| Control border  | `rgba(99, 102, 241, 0.22)`                                   | Form controls and focus-adjacent surfaces.          |
+| Success/accent  | `#059669`, `#D1FAE5`                                         | Success badges and positive states only.            |
+| Radius          | `1rem` to `1.5rem`                                           | Page cards and action cards.                        |
+| Spacing         | `clamp()` for page/card padding, `0.65rem` to `1.25rem` gaps | Responsive rhythm.                                  |
 
 ## Dark Tokens
 
-| Token           | Value                                                        | Usage                              |
-| --------------- | ------------------------------------------------------------ | ---------------------------------- |
-| Page background | `#0B1120`, `#111827`                                         | Premium dark neutral canvas and gradients. |
+| Token           | Value                                                        | Usage                                                         |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
+| Page background | `#0B1120`, `#111827`                                         | Premium dark neutral canvas and gradients.                    |
 | Primary         | `#818CF8`, `#A5B4FC`                                         | Primary buttons, focus rings, hero accents, section emphasis. |
-| Support accent  | `#38BDF8`                                                    | Secondary badges and category support. |
-| Card surface    | `#111827`, `#1E293B`, `#1E1B4B`                              | Primary cards, nested panels, dark tinted headers. |
-| Card text       | `#E5E7EB`                                                    | Primary text on dark surfaces.     |
-| Muted text      | `#CBD5E1`, `#94A3B8`                                         | Secondary labels and empty states. |
-| Control border  | `rgba(129, 140, 248, 0.38)`                                  | Form controls and focus-adjacent surfaces. |
-| Success/accent  | `#34D399`, `rgba(16, 185, 129, 0.16)`                        | Success badges and positive states only. |
-| Radius          | `1rem` to `1.5rem`                                           | Page cards and action cards.       |
-| Spacing         | `clamp()` for page/card padding, `0.65rem` to `1.25rem` gaps | Responsive rhythm.                 |
+| Support accent  | `#38BDF8`                                                    | Secondary badges and category support.                        |
+| Card surface    | `#111827`, `#1E293B`, `#1E1B4B`                              | Primary cards, nested panels, dark tinted headers.            |
+| Card text       | `#E5E7EB`                                                    | Primary text on dark surfaces.                                |
+| Muted text      | `#CBD5E1`, `#94A3B8`                                         | Secondary labels and empty states.                            |
+| Control border  | `rgba(129, 140, 248, 0.38)`                                  | Form controls and focus-adjacent surfaces.                    |
+| Success/accent  | `#34D399`, `rgba(16, 185, 129, 0.16)`                        | Success badges and positive states only.                      |
+| Radius          | `1rem` to `1.5rem`                                           | Page cards and action cards.                                  |
+| Spacing         | `clamp()` for page/card padding, `0.65rem` to `1.25rem` gaps | Responsive rhythm.                                            |
 
 ## Local Primitives
 
@@ -79,7 +85,7 @@ Theme selection is client-side and progressive:
 
 - Use `box-sizing: border-box` globally and repeat it page-locally when a page has dense forms.
 - Critical app pages must define page-local safe tokens with literal fallbacks, then use those local tokens for backgrounds, surfaces, borders, controls, and text so contrast survives missing or stale global CSS variables in both themes.
-- `/app` redirects lightly to `/app/today`; authenticated app sections live on separate routes: `/app/today`, `/app/planning`, `/app/review`, and `/app/insights`.
+- `/` and `/app` redirect lightly to `/app/today`; authenticated app sections live on separate routes: `/app/today`, `/app/planning`, `/app/review`, and `/app/insights`.
 - Route navigation should stay lightweight inside the shared shell. Do not turn the app into primary tabs or a sidebar-first dashboard.
 - Each route should render only the forms and React islands needed for that section; avoid rebuilding the old all-islands monolith.
 - Add `min-width: 0` to grid children, cards, form labels, and nested grid containers.

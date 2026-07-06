@@ -25,18 +25,19 @@ Use this skill for Chronos UI, `/app` layout, visual polish, responsive fixes, O
 - Optional app-shell interaction sounds must be Web Audio API-only, client-only, visibly muted by default, persisted with `chronos-sound-muted`, keyboard-operable, and silent when unsupported or when reduced motion is requested.
 - Keep authenticated app navigation as lightweight shell/section navigation across `/app/today`, `/app/planning`, `/app/review`, and `/app/insights`; do not convert it into primary tabs or a sidebar-first layout.
 - Keep route pages section-local: do not eagerly render all forms or all React islands on a single route.
+- Chronos is personal-use software, not a product being sold. UI copy should be direct, practical, and operational. Avoid marketing, persuasion, onboarding explanations, and backend terms such as `stored`, `persisted`, `loaded`, `user scope`, `app shell`, and `route panels`. The home page should act as a launchpad/shortcut screen, not a landing page.
 
 ## Decision Gates
 
-| Situation               | Action                                                                       |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| Dense form/card UI      | Enforce border-box sizing, `min-width: 0`, safe grids, and bounded controls. |
-| Larger redesign         | Sketch or inspect with OpenPencil before implementation when available.      |
-| App route split         | Share the shell/navigation, then keep each route's forms and islands local.  |
-| Theme work              | Update semantic tokens first, then shell primitives, then route-local styling only if needed. |
+| Situation               | Action                                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| Dense form/card UI      | Enforce border-box sizing, `min-width: 0`, safe grids, and bounded controls.                   |
+| Larger redesign         | Sketch or inspect with OpenPencil before implementation when available.                        |
+| App route split         | Share the shell/navigation, then keep each route's forms and islands local.                    |
+| Theme work              | Update semantic tokens first, then shell primitives, then route-local styling only if needed.  |
 | Decorative sound        | Keep it opt-in, muted by default, localStorage-backed, and never required for task completion. |
-| Behavior change needed  | Stop and ask; visual work must not silently alter backend semantics.         |
-| New reusable convention | Update `Design.md` and save the decision to Engram.                          |
+| Behavior change needed  | Stop and ask; visual work must not silently alter backend semantics.                           |
+| New reusable convention | Update `Design.md` and save the decision to Engram.                                            |
 
 ## Execution Steps
 
