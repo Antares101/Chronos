@@ -58,29 +58,16 @@ const routes: AppRoute[] = [
   <main class="shell">
     <a class="skip-link" href="#app-content">Skip to content</a>
 
-    <section class="hero ui-card" aria-labelledby="app-title">
-      <div>
+    <section class="command-bar ui-card" aria-labelledby="app-title">
+      <div class="command-bar__identity">
         <p class="eyebrow">{eyebrow}</p>
         <h1 id="app-title">{heading}</h1>
         <p class="summary">
-          {summary} Signed in as <strong>{email}</strong>.
+          {summary} Signed in as <strong>{email}</strong>
         </p>
       </div>
 
-      <div class="hero__actions" aria-label="Account and appearance actions">
-        <button
-          type="button"
-          class="theme-toggle ui-button ui-button--secondary"
-          data-theme-toggle
-          aria-label="Switch to dark theme"
-          aria-pressed="false"
-          aria-disabled="true"
-          disabled
-        >
-          <span class="theme-toggle__icon" aria-hidden="true">◐</span>
-          <span data-theme-toggle-label>Dark mode</span>
-        </button>
-
+      <div class="command-bar__utilities" aria-label="Account and appearance actions">
         <button
           type="button"
           class="sound-toggle ui-button ui-button--secondary"
@@ -94,30 +81,43 @@ const routes: AppRoute[] = [
           <span data-sound-toggle-label>Sound off</span>
         </button>
 
+        <button
+          type="button"
+          class="theme-toggle ui-button ui-button--secondary"
+          data-theme-toggle
+          aria-label="Switch to dark theme"
+          aria-pressed="false"
+          aria-disabled="true"
+          disabled
+        >
+          <span class="theme-toggle__icon" aria-hidden="true">◐</span>
+          <span data-theme-toggle-label>Dark mode</span>
+        </button>
+
         <form method="post" action="/sign-out">
           <button type="submit" class="ui-button">Sign out</button>
         </form>
       </div>
-    </section>
 
-    <nav class="section-nav" aria-label="Chronos app sections">
-      {
-        routes.map((route) => (
-          <a
-            href={route.href}
-            class:list={[
-              { 'section-nav__link--active': currentPath === route.href },
-              'section-nav__link',
-              'ui-nav-link',
-            ]}
-            aria-current={currentPath === route.href ? 'page' : undefined}
-          >
-            <span>{route.label}</span>
-            <small>{route.description}</small>
-          </a>
-        ))
-      }
-    </nav>
+      <nav class="section-nav" aria-label="Chronos app sections">
+        {
+          routes.map((route) => (
+            <a
+              href={route.href}
+              class:list={[
+                { 'section-nav__link--active': currentPath === route.href },
+                'section-nav__link',
+                'ui-nav-link',
+              ]}
+              aria-current={currentPath === route.href ? 'page' : undefined}
+            >
+              <span>{route.label}</span>
+              <small>{route.description}</small>
+            </a>
+          ))
+        }
+      </nav>
+    </section>
 
     {
       actionError && (
@@ -317,25 +317,35 @@ const routes: AppRoute[] = [
     outline: none;
   }
 
-  .hero {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: center;
+  .app-content:focus-visible {
+    border-radius: 1rem;
+    outline: 3px solid var(--app-primary-strong);
+    outline-offset: 0.5rem;
+  }
+
+  .command-bar {
+    display: grid;
+    grid-template-areas:
+      'identity utilities'
+      'nav nav';
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: clamp(0.75rem, 1.6vw, 1rem);
     width: min(100%, var(--app-shell-readable-max));
     margin: 0 auto;
-    padding: clamp(1.25rem, 3vw, 2rem);
+    padding: clamp(0.85rem, 1.8vw, 1.15rem);
     border: 1px solid var(--app-border);
     border-radius: 1.5rem;
-    background: var(--app-surface);
+    background: color-mix(in srgb, var(--app-surface) 92%, transparent);
     color: var(--app-text);
     box-shadow: var(--app-shadow);
     animation: chronos-rise 420ms ease-out both;
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(16px);
   }
 
-  .hero::before,
+  .command-bar::before,
   .actions::before,
   .action-card::before,
   .empty-panel::before {
@@ -348,7 +358,7 @@ const routes: AppRoute[] = [
     opacity: 0.48;
   }
 
-  .hero::after,
+  .command-bar::after,
   .action-card::after,
   .empty-panel::after {
     position: absolute;
@@ -363,22 +373,46 @@ const routes: AppRoute[] = [
     opacity: 0.62;
   }
 
-  .hero__actions {
+  .command-bar__identity {
+    grid-area: identity;
+    min-width: 0;
+  }
+
+  .command-bar__utilities {
     display: flex;
     flex: 0 1 auto;
     flex-wrap: wrap;
+    grid-area: utilities;
     justify-content: flex-end;
-    gap: 0.6rem;
-    min-width: min(100%, 18rem);
+    justify-self: end;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    max-width: min(100%, 13rem);
+    white-space: nowrap;
   }
 
-  .hero__actions form {
+  .sound-toggle {
+    width: 2.75rem;
+    padding-inline: 0;
+  }
+
+  .sound-toggle [data-sound-toggle-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .command-bar__utilities form {
     flex: 0 1 auto;
     margin: 0;
     min-width: 0;
   }
 
-  .hero > *,
+  .command-bar > *,
   .section-nav > *,
   .actions > *,
   .actions__grid > *,
@@ -387,9 +421,9 @@ const routes: AppRoute[] = [
   }
 
   .eyebrow {
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.4rem;
     color: var(--app-primary-strong);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -397,9 +431,9 @@ const routes: AppRoute[] = [
 
   .eyebrow::before {
     display: inline-block;
-    width: 0.55rem;
-    height: 0.55rem;
-    margin-right: 0.5rem;
+    width: 0.48rem;
+    height: 0.48rem;
+    margin-right: 0.45rem;
     border: 1px solid currentColor;
     content: '';
     transform: rotate(45deg);
@@ -409,20 +443,29 @@ const routes: AppRoute[] = [
   h1 {
     margin: 0;
     color: var(--app-text);
-    font-size: clamp(2.1rem, 5vw, 4rem);
+    font-size: clamp(1.35rem, 2.6vw, 2.2rem);
     line-height: 1;
-    letter-spacing: -0.06em;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
   }
 
   .summary {
-    max-width: 58rem;
-    margin: 1rem 0 0;
+    max-width: 32rem;
+    margin: 0.45rem 0 0;
     color: var(--app-text-muted);
-    font-size: 1.05rem;
-    line-height: 1.7;
+    font-size: 0.88rem;
+    line-height: 1.55;
   }
 
-  .section-nav,
+  .summary strong {
+    display: inline-block;
+    max-width: min(100%, 14rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
+
   .notice,
   .alert {
     width: min(100%, var(--app-shell-readable-max));
@@ -437,8 +480,10 @@ const routes: AppRoute[] = [
 
   .section-nav {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-    gap: 0.75rem;
+    grid-area: nav;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    min-width: 0;
   }
 
   .ui-card,
@@ -835,15 +880,19 @@ const routes: AppRoute[] = [
     }
   }
 
+  @media (max-width: 1060px) {
+    .section-nav {
+      grid-template-columns: repeat(4, minmax(min(100%, 7rem), 1fr));
+    }
+  }
+
   @media (max-width: 760px) {
-    .hero {
-      align-items: flex-start;
-      flex-direction: column;
+    .command-bar {
+      gap: 0.85rem;
     }
 
-    .hero__actions {
-      justify-content: flex-start;
-      width: 100%;
+    .section-nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .form-row {
@@ -856,7 +905,7 @@ const routes: AppRoute[] = [
       padding: 0.75rem;
     }
 
-    .hero,
+    .command-bar,
     .actions,
     .action-card,
     .empty-panel {
@@ -867,14 +916,41 @@ const routes: AppRoute[] = [
       width: 100%;
     }
 
-    .hero__actions,
-    .hero__actions form {
-      width: 100%;
+    .command-bar {
+      padding: 0.75rem;
+    }
+
+    .command-bar__utilities,
+    .command-bar__utilities form {
+      width: auto;
+    }
+
+    .command-bar__utilities {
+      max-width: 11.5rem;
+    }
+
+    .command-bar__utilities button,
+    .command-bar__utilities .ui-button {
+      width: auto;
+      padding-inline: 0.8rem;
+    }
+
+    .command-bar__utilities .sound-toggle {
+      width: 2.65rem;
+      padding-inline: 0;
+    }
+
+    .summary strong {
+      max-width: 8.5rem;
+    }
+
+    .section-nav {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero,
+    .command-bar,
     .actions,
     .islands {
       animation: none;
@@ -906,18 +982,22 @@ const routes: AppRoute[] = [
 
     .shell::before,
     .section-nav__link::before,
-    .hero::after,
+    .command-bar::after,
     .action-card::after,
     .empty-panel::after {
       display: none;
     }
 
-    .hero,
+    .command-bar,
     .actions,
     .action-card,
     .empty-panel,
     .section-nav__link {
       box-shadow: none;
+    }
+
+    .command-bar {
+      backdrop-filter: none;
     }
   }
 </style>

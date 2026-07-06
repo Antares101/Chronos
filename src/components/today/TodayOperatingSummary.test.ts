@@ -37,8 +37,10 @@ describe('TodayOperatingSummary', () => {
   it('renders Now, Next, Open time, and day context from the read model', () => {
     const html = renderSummary();
 
-    expect(html).toContain('Today · 2026-06-29');
-    expect(html).toContain('Current time · 09:30');
+    expect(html).toContain('Today · Now board');
+    expect(html).toContain('Snapshot time');
+    expect(html).toContain('09:30');
+    expect(html).toContain('Mon, Jun 29');
     expect(html).toContain('Now');
     expect(html).toContain('Deep work sprint');
     expect(html).toContain('Running until 10:30.');
@@ -62,5 +64,12 @@ describe('TodayOperatingSummary', () => {
     expect(html).toContain('Open time');
     expect(html).toContain('No block is active right now.');
     expect(html).toContain('Open');
+  });
+
+  it('falls back to the raw date label for invalid date snapshots', () => {
+    const html = renderSummary({ date: '2026-02-31' });
+
+    expect(html).toContain('2026-02-31');
+    expect(html).not.toContain('Mar 3');
   });
 });
