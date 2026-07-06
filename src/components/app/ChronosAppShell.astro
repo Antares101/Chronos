@@ -34,34 +34,36 @@ const routes: AppRoute[] = [
   {
     href: chronosAppRoutes.today,
     label: 'Today',
-    description: 'Timeline and active block controls',
+    description: 'Timeline and active block',
   },
   {
     href: chronosAppRoutes.planning,
     label: 'Planning',
-    description: 'Weekly plan and task assignment',
+    description: 'Weekly blocks and tasks',
   },
   {
     href: chronosAppRoutes.review,
     label: 'Review',
-    description: 'Conclusions and review details',
+    description: 'Conclusions and adjustments',
   },
   {
     href: chronosAppRoutes.insights,
     label: 'Insights',
-    description: 'Planned vs actual metrics',
+    description: 'Planned vs actual time',
   },
 ];
 ---
 
 <BaseLayout title={title}>
   <main class="shell">
+    <a class="skip-link" href="#app-content">Skip to content</a>
+
     <section class="hero ui-card" aria-labelledby="app-title">
       <div>
         <p class="eyebrow">{eyebrow}</p>
         <h1 id="app-title">{heading}</h1>
         <p class="summary">
-          {summary} You are signed in as <strong>{email}</strong>.
+          {summary} Signed in as <strong>{email}</strong>.
         </p>
       </div>
 
@@ -124,9 +126,17 @@ const routes: AppRoute[] = [
         </p>
       )
     }
-    {statusMessage && <p class="notice ui-alert ui-alert--success">{statusMessage}</p>}
+    {
+      statusMessage && (
+        <p class="notice ui-alert ui-alert--success" role="status" aria-live="polite">
+          {statusMessage}
+        </p>
+      )
+    }
 
-    <slot />
+    <div id="app-content" class="app-content" tabindex="-1">
+      <slot />
+    </div>
   </main>
 
   <script>
@@ -219,6 +229,10 @@ const routes: AppRoute[] = [
     --app-glow: var(--chronos-glow, 0 0 34px rgba(79, 70, 229, 0.2));
     --app-ornament: var(--chronos-ornament, rgba(79, 70, 229, 0.36));
     --app-radius: var(--radius, 1rem);
+    --app-shell-readable-max: 86rem;
+    --app-route-max: 86rem;
+    --app-route-gap: clamp(0.85rem, 1.8vw, 1.15rem);
+    --app-route-grid-min: 24rem;
     position: relative;
     isolation: isolate;
     min-height: 100vh;
@@ -272,12 +286,43 @@ const routes: AppRoute[] = [
     box-sizing: border-box;
   }
 
+  .skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 10;
+    transform: translateY(-150%);
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    background: var(--app-primary);
+    color: var(--app-button-text);
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: var(--app-shadow-soft);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: none;
+    box-shadow:
+      0 0 0 3px var(--app-ring),
+      var(--app-shadow-soft);
+  }
+
+  .app-content {
+    min-width: 0;
+  }
+
+  .app-content:focus {
+    outline: none;
+  }
+
   .hero {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
     align-items: center;
-    width: min(100%, 86rem);
+    width: min(100%, var(--app-shell-readable-max));
     margin: 0 auto;
     padding: clamp(1.25rem, 3vw, 2rem);
     border: 1px solid var(--app-border);
@@ -320,10 +365,17 @@ const routes: AppRoute[] = [
 
   .hero__actions {
     display: flex;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.6rem;
+    min-width: min(100%, 18rem);
+  }
+
+  .hero__actions form {
+    flex: 0 1 auto;
+    margin: 0;
+    min-width: 0;
   }
 
   .hero > *,
@@ -372,10 +424,14 @@ const routes: AppRoute[] = [
 
   .section-nav,
   .notice,
-  .alert,
+  .alert {
+    width: min(100%, var(--app-shell-readable-max));
+    margin: 1rem auto 0;
+  }
+
   .actions,
   .empty-panel {
-    width: min(100%, 86rem);
+    width: min(100%, var(--app-route-max));
     margin: 1rem auto 0;
   }
 
@@ -584,8 +640,9 @@ const routes: AppRoute[] = [
 
   .actions__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-    gap: clamp(0.85rem, 1.8vw, 1.15rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--app-route-grid-min)), 1fr));
+    align-items: start;
+    gap: var(--app-route-gap);
     margin-top: 1.25rem;
     min-width: 0;
   }
@@ -737,11 +794,16 @@ const routes: AppRoute[] = [
     font-weight: 700;
   }
 
+  .app-route {
+    display: block;
+    min-width: 0;
+  }
+
   .islands {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    width: min(100%, 86rem);
+    gap: var(--app-route-gap);
+    width: min(100%, var(--app-route-max));
     margin: 1rem auto 0;
     animation: chronos-rise 600ms ease-out both;
   }
@@ -755,6 +817,21 @@ const routes: AppRoute[] = [
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @media (min-width: 100rem) {
+    .shell {
+      --app-shell-readable-max: 96rem;
+      --app-route-max: 104rem;
+      --app-route-gap: clamp(1rem, 1.1vw, 1.35rem);
+    }
+  }
+
+  @media (min-width: 120rem) {
+    .shell {
+      --app-route-max: 116rem;
+      --app-route-gap: 1.35rem;
     }
   }
 

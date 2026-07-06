@@ -7,12 +7,14 @@ import {
   events,
   pauses,
   tasks,
+  todayGoals,
   type ActualTimeEntryRow,
   type BlockRow,
   type ConclusionReviewRow,
   type EventRow,
   type PauseRow,
   type TaskRow,
+  type TodayGoalRow,
 } from '../../db/schema';
 import type {
   ActualTimeEntryRepository,
@@ -22,6 +24,8 @@ import type {
   EventRepository,
   PauseRepository,
   TaskRepository,
+  TodayGoalQuery,
+  TodayGoalRepository,
 } from '../../domain/repositories';
 import type {
   BlockPhase,
@@ -32,6 +36,7 @@ import type {
   NewPause,
   NewTask,
   PlannedScheduleUpdate,
+  TaskStatus,
 } from '../../domain/models';
 import type { ChronosDatabase } from '../db';
 
@@ -122,6 +127,60 @@ export class DrizzleTaskRepository implements TaskRepository {
         .returning(),
       'task',
     );
+  }
+
+  async updateStatus(query: {
+    userId: string;
+    taskId: string;
+    status: TaskStatus;
+  }): Promise<TaskRow> {
+    return expectOne(
+      await this.db
+        .update(tasks)
+        .set({ status: query.status, updatedAt: new Date().toISOString() })
+        .where(and(eq(tasks.userId, query.userId), eq(tasks.id, query.taskId)))
+        .returning(),
+      'task',
+    );
+  }
+}
+
+export class DrizzleTodayGoalRepository implements TodayGoalRepository {
+  constructor(private readonly db: ChronosDatabase) {}
+
+  async listForDay(query: TodayGoalQuery): Promise<TodayGoalRow[]> {
+    const rows = await this.db
+      .select()
+      .from(todayGoals)
+      .where(and(eq(todayGoals.userId, query.userId), eq(todayGoals.goalDate, query.goalDate)));
+
+    return rows.sort((first, second) => first.position - second.position);
+  }
+
+  async replaceForDay(query: TodayGoalQuery, goals: readonly string[]): Promise<TodayGoalRow[]> {
+    const normalizedGoals = normalizeTodayGoalTitles(goals);
+
+    return this.db.transaction(async (tx) => {
+      await tx
+        .delete(todayGoals)
+        .where(and(eq(todayGoals.userId, query.userId), eq(todayGoals.goalDate, query.goalDate)));
+
+      if (normalizedGoals.length === 0) {
+        return [];
+      }
+
+      return tx
+        .insert(todayGoals)
+        .values(
+          normalizedGoals.map((title, position) => ({
+            userId: query.userId,
+            goalDate: query.goalDate,
+            title,
+            position,
+          })),
+        )
+        .returning();
+    });
   }
 }
 
@@ -259,6 +318,13 @@ export class DrizzleConclusionReviewRepository implements ConclusionReviewReposi
 
     return rows[0] ?? null;
   }
+}
+
+function normalizeTodayGoalTitles(goals: readonly string[]): string[] {
+  return goals
+    .map((goal) => goal.trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 3);
 }
 
 function expectOne<T>(rows: T[], label: string): T {

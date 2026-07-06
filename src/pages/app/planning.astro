@@ -47,154 +47,183 @@ const defaultEditEndTime = firstPlanningBlock
   title="Chronos Planning"
   eyebrow="Planning"
   heading="Shape the week"
-  summary="Plan blocks, assign tasks, and inspect the weekly calendar without pulling in today's controls."
+  summary="Create weekly blocks, reschedule work, and move unassigned tasks into the right place."
   email={email}
   currentPath={routePath}
   actionError={actionError}
   statusMessage={statusMessage}
 >
-  <section class="actions" aria-labelledby="planning-actions-title">
-    <div class="actions__header">
-      <p class="eyebrow">Planning controls</p>
-      <h2 id="planning-actions-title">Create, reschedule, and assign planned work</h2>
-    </div>
+  <div class="app-route app-route--planning">
+    <section class="actions" aria-labelledby="planning-actions-title">
+      <div class="actions__header">
+        <p class="eyebrow">Planning actions</p>
+        <h2 id="planning-actions-title">Set up blocks and assign tasks</h2>
+      </div>
 
-    <div class="actions__grid">
-      <article class="action-card">
-        <h3>Create planned block</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="create-planned-block" />
-          <label>
-            Title
-            <input name="title" required maxlength="120" placeholder="Deep work" />
-          </label>
-          <label>
-            Category
-            <select name="category" required>
-              {
-                blockCategories.map((category) => (
-                  <option value={category}>{categoryLabels[category]}</option>
-                ))
-              }
-            </select>
-          </label>
-          <div class="form-row">
+      <div class="actions__grid">
+        <article class="action-card">
+          <h3>Create planned block</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="create-planned-block" />
             <label>
-              Day
-              <input type="date" name="date" value={defaultCreateDate} required />
+              Title
+              <input name="title" required maxlength="120" placeholder="Deep work" />
             </label>
             <label>
-              Start
-              <input type="time" name="startTime" value="09:00" required />
+              Category
+              <select name="category" required>
+                {
+                  blockCategories.map((category) => (
+                    <option value={category}>{categoryLabels[category]}</option>
+                  ))
+                }
+              </select>
             </label>
-            <label>
-              End
-              <input type="time" name="endTime" value="10:00" required />
-            </label>
-          </div>
-          <button type="submit">Create planned block</button>
-        </form>
-      </article>
+            <div class="form-row">
+              <label>
+                Day
+                <input type="date" name="date" value={defaultCreateDate} required />
+              </label>
+              <label>
+                Start
+                <input type="time" name="startTime" value="09:00" required />
+              </label>
+              <label>
+                End
+                <input type="time" name="endTime" value="10:00" required />
+              </label>
+            </div>
+            <button type="submit">Create planned block</button>
+          </form>
+        </article>
 
-      <article class="action-card">
-        <h3>Edit planned schedule</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="update-planned-schedule" />
-          <label>
-            Planning block
-            <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
-              {
-                appState.planningBlocks.map((block) => (
-                  <option value={block.id}>
-                    {block.title} · {getDateInputValue(block.plannedStart)}
-                  </option>
-                ))
-              }
-            </select>
-          </label>
-          <div class="form-row">
+        <article class="action-card">
+          <h3>Edit planned schedule</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="update-planned-schedule" />
             <label>
-              New day
-              <input type="date" name="date" value={defaultEditDate} required />
+              Planning block
+              <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
+                {
+                  appState.planningBlocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {getDateInputValue(block.plannedStart)}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <div class="form-row">
+              <label>
+                New day
+                <input type="date" name="date" value={defaultEditDate} required />
+              </label>
+              <label>
+                Start
+                <input type="time" name="startTime" value={defaultEditStartTime} required />
+              </label>
+              <label>
+                End
+                <input type="time" name="endTime" value={defaultEditEndTime} required />
+              </label>
+            </div>
+            <button type="submit" disabled={appState.planningBlocks.length === 0}>
+              Update planned schedule
+            </button>
+          </form>
+        </article>
+
+        <article class="action-card">
+          <h3>Move task into block</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="assign-task" />
+            <label>
+              Unassigned task
+              <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
+                {
+                  appState.assignableTasks.map((task) => (
+                    <option value={task.id}>{task.title}</option>
+                  ))
+                }
+              </select>
             </label>
             <label>
-              Start
-              <input type="time" name="startTime" value={defaultEditStartTime} required />
+              Target block
+              <select name="blockId" required disabled={appState.blocks.length === 0}>
+                {
+                  appState.blocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {block.phase}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
+            >
+              Move task
+            </button>
+          </form>
+        </article>
+
+        <article class="action-card">
+          <h3>Create task inside block</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="create-task" />
+            <label>
+              Target block
+              <select name="blockId" required disabled={appState.blocks.length === 0}>
+                {
+                  appState.blocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {block.phase}
+                    </option>
+                  ))
+                }
+              </select>
             </label>
             <label>
-              End
-              <input type="time" name="endTime" value={defaultEditEndTime} required />
+              Task title
+              <input name="title" required maxlength="120" placeholder="Prepare notes" />
             </label>
-          </div>
-          <button type="submit" disabled={appState.planningBlocks.length === 0}>
-            Update planned schedule
-          </button>
-        </form>
-      </article>
+            <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
+          </form>
+        </article>
+      </div>
+    </section>
 
-      <article class="action-card">
-        <h3>Move task into block</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="assign-task" />
-          <label>
-            Unassigned task
-            <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
-              {
-                appState.assignableTasks.map((task) => (
-                  <option value={task.id}>{task.title}</option>
-                ))
-              }
-            </select>
-          </label>
-          <label>
-            Target block
-            <select name="blockId" required disabled={appState.blocks.length === 0}>
-              {
-                appState.blocks.map((block) => (
-                  <option value={block.id}>
-                    {block.title} · {block.phase}
-                  </option>
-                ))
-              }
-            </select>
-          </label>
-          <button
-            type="submit"
-            disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
-          >
-            Move task
-          </button>
-        </form>
-      </article>
-
-      <article class="action-card">
-        <h3>Create task inside block</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="create-task" />
-          <label>
-            Target block
-            <select name="blockId" required disabled={appState.blocks.length === 0}>
-              {
-                appState.blocks.map((block) => (
-                  <option value={block.id}>
-                    {block.title} · {block.phase}
-                  </option>
-                ))
-              }
-            </select>
-          </label>
-          <label>
-            Task title
-            <input name="title" required maxlength="120" placeholder="Prepare notes" />
-          </label>
-          <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
-        </form>
-      </article>
-    </div>
-  </section>
-
-  <section class="islands" aria-label="Chronos planning surfaces">
-    <WeeklyCalendar {...appState.weeklyCalendar} client:load />
-    <TaskList {...appState.taskList} client:load />
-  </section>
+    <section class="islands planning-islands" aria-label="Chronos planning content">
+      <WeeklyCalendar {...appState.weeklyCalendar} client:load />
+      <TaskList {...appState.taskList} client:load />
+    </section>
+  </div>
 </ChronosAppShell>
+
+<style>
+  .app-route--planning {
+    --app-route-max: 86rem;
+  }
+
+  @media (min-width: 100rem) {
+    .app-route--planning {
+      --app-route-max: 110rem;
+    }
+
+    .app-route--planning .actions__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .planning-islands {
+      align-items: start;
+      grid-template-columns: minmax(0, 2.1fr) minmax(20rem, 0.75fr);
+    }
+  }
+
+  @media (min-width: 120rem) {
+    .app-route--planning {
+      --app-route-max: 116rem;
+    }
+  }
+</style>

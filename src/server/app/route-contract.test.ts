@@ -6,9 +6,11 @@ import {
   chronosAppActionPaths,
   chronosAppRoutes,
   chronosAppSectionPaths,
+  chronosHomeRoute,
   createChronosRouteRepositories,
   resolveChronosActionRouteContext,
   resolveChronosAppIndexRedirect,
+  resolveChronosHomeRedirect,
   resolveChronosReadRouteContext,
   resolveChronosRouteAction,
   resolveChronosRouteAuth,
@@ -18,6 +20,15 @@ import {
 } from './route-contract';
 
 describe('Chronos app route contract', () => {
+  it('redirects / home to the Today section', () => {
+    expect(chronosHomeRoute).toBe('/');
+    expect(resolveChronosHomeRedirect()).toEqual({
+      kind: 'redirect',
+      location: chronosAppRoutes.today,
+      status: 302,
+    });
+  });
+
   it('redirects /app to the Today section', () => {
     expect(resolveChronosAppIndexRedirect()).toEqual({
       kind: 'redirect',
@@ -226,7 +237,7 @@ describe('Chronos app route contract', () => {
     );
   });
 
-  it('keeps route action errors in the resolved route setup', async () => {
+  it('keeps safe route action errors in the resolved route setup', async () => {
     const context = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
       request: createPostRequest('https://chronos.test/app/planning', {
@@ -244,7 +255,7 @@ describe('Chronos app route contract', () => {
       kind: 'ready',
       userId: 'user-1',
       email: 'user@chronos.test',
-      actionError: 'Schedule date must use YYYY-MM-DD format.',
+      actionError: 'That change could not be saved. Check the form and try again.',
       statusMessage: null,
     });
   });
@@ -294,7 +305,7 @@ describe('Chronos app route contract', () => {
     },
   );
 
-  it('returns the route action error instead of redirecting when POST delegation fails', async () => {
+  it('returns safe route action copy instead of redirecting when POST delegation fails', async () => {
     const decision = await resolveChronosRouteAction({
       request: createPostRequest('https://chronos.test/app/planning', {
         action: 'create-planned-block',
@@ -310,12 +321,12 @@ describe('Chronos app route contract', () => {
 
     expect(decision).toEqual({
       kind: 'error',
-      message: 'Schedule date must use YYYY-MM-DD format.',
+      message: 'That change could not be saved. Check the form and try again.',
     });
     expect(
       resolveChronosRouteStatusMessage(
         new URL('https://chronos.test/app/planning?status=created'),
-        'Schedule date must use YYYY-MM-DD format.',
+        'That change could not be saved. Check the form and try again.',
       ),
     ).toBeNull();
   });

@@ -9,6 +9,10 @@ import {
   intervalToTimelineSpan,
 } from '../schedule/time';
 
+// Packing mirrors these CSS minimum heights so short blocks reserve their rendered space.
+const WEEKLY_CALENDAR_LANE_MIN_HEIGHT_REM = 24.25;
+const WEEKLY_CALENDAR_BLOCK_MIN_HEIGHT_REM = 3.2;
+
 export type WeeklyCalendarEvent = {
   id: string;
   title: string;
@@ -56,7 +60,7 @@ export default function WeeklyCalendar({
           <h2 id="weekly-calendar-title">{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="weekly-calendar__status">Stored plan</span>
+        <span className="weekly-calendar__status">Week</span>
       </header>
 
       <div className="weekly-calendar__content">
@@ -112,6 +116,7 @@ type CalendarDayProps = {
 function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
   const dayVisibleStart = createDayBoundaryIso(day.date, visibleStart);
   const dayVisibleEnd = createDayBoundaryIso(day.date, visibleEnd);
+  const packedBlocks = packWeeklyCalendarDayBlocks(day.blocks, dayVisibleStart, dayVisibleEnd);
 
   return (
     <article className="weekly-calendar__day" role="listitem" aria-label={`${day.label} schedule`}>
@@ -120,8 +125,8 @@ function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
         <time dateTime={day.date}>{day.date.slice(5)}</time>
       </header>
       <div className="weekly-calendar__lane">
-        {day.blocks.length === 0 ? <p>No blocks planned</p> : null}
-        {day.blocks.map((block) => (
+        {day.blocks.length === 0 ? <p>No blocks yet</p> : null}
+        {packedBlocks.map((block) => (
           <CalendarBlock
             key={block.id}
             block={block}
@@ -134,12 +139,151 @@ function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
   );
 }
 
+export type PackedWeeklyCalendarBlock = WeeklyCalendarBlock & {
+  laneIndex: number;
+  laneCount: number;
+};
+
+type TimedWeeklyCalendarBlock = {
+  block: WeeklyCalendarBlock;
+  startMs: number;
+  endMs: number;
+  renderedStartMs: number;
+  renderedEndMs: number;
+};
+
+export function packWeeklyCalendarDayBlocks(
+  blocks: readonly WeeklyCalendarBlock[],
+  visibleStart: string,
+  visibleEnd: string,
+): PackedWeeklyCalendarBlock[] {
+  const visibleStartMs = parseIsoTimestamp(visibleStart);
+  const visibleEndMs = parseIsoTimestamp(visibleEnd);
+  const minimumRenderedDurationMs = getMinimumRenderedBlockDurationMs(visibleStartMs, visibleEndMs);
+  const timedBlocks = blocks
+    .map((block) =>
+      createTimedWeeklyCalendarBlock(block, {
+        minimumRenderedDurationMs,
+        visibleEndMs,
+        visibleStartMs,
+      }),
+    )
+    .sort(compareTimedBlocks);
+
+  const packedBlocks: PackedWeeklyCalendarBlock[] = [];
+  let overlapGroup: TimedWeeklyCalendarBlock[] = [];
+  let overlapGroupEndMs = Number.NEGATIVE_INFINITY;
+
+  for (const timedBlock of timedBlocks) {
+    if (overlapGroup.length > 0 && timedBlock.renderedStartMs >= overlapGroupEndMs) {
+      packedBlocks.push(...packOverlapGroup(overlapGroup));
+      overlapGroup = [];
+      overlapGroupEndMs = Number.NEGATIVE_INFINITY;
+    }
+
+    overlapGroup.push(timedBlock);
+    overlapGroupEndMs = Math.max(overlapGroupEndMs, timedBlock.renderedEndMs);
+  }
+
+  if (overlapGroup.length > 0) {
+    packedBlocks.push(...packOverlapGroup(overlapGroup));
+  }
+
+  return packedBlocks;
+}
+
+function compareTimedBlocks(first: TimedWeeklyCalendarBlock, second: TimedWeeklyCalendarBlock) {
+  return (
+    first.renderedStartMs - second.renderedStartMs ||
+    first.startMs - second.startMs ||
+    first.endMs - second.endMs ||
+    first.block.title.localeCompare(second.block.title) ||
+    first.block.id.localeCompare(second.block.id)
+  );
+}
+
+type VisualPackingRange = {
+  minimumRenderedDurationMs: number;
+  visibleEndMs: number;
+  visibleStartMs: number;
+};
+
+function createTimedWeeklyCalendarBlock(
+  block: WeeklyCalendarBlock,
+  { minimumRenderedDurationMs, visibleEndMs, visibleStartMs }: VisualPackingRange,
+): TimedWeeklyCalendarBlock {
+  const startMs = parseIsoTimestamp(block.plannedStart);
+  const endMs = parseIsoTimestamp(block.plannedEnd);
+  const renderedStartMs = Math.max(startMs, visibleStartMs);
+  const renderedEndMs = Math.min(endMs, visibleEndMs);
+
+  if (renderedEndMs <= renderedStartMs) {
+    return {
+      block,
+      endMs,
+      renderedEndMs: endMs,
+      renderedStartMs: startMs,
+      startMs,
+    };
+  }
+
+  return {
+    block,
+    endMs,
+    renderedEndMs: Math.max(renderedEndMs, renderedStartMs + minimumRenderedDurationMs),
+    renderedStartMs,
+    startMs,
+  };
+}
+
+function getMinimumRenderedBlockDurationMs(visibleStartMs: number, visibleEndMs: number): number {
+  const visibleDurationMs = visibleEndMs - visibleStartMs;
+
+  if (visibleDurationMs <= 0) {
+    throw new Error('Visible timeline end must be after start.');
+  }
+
+  return (
+    visibleDurationMs * (WEEKLY_CALENDAR_BLOCK_MIN_HEIGHT_REM / WEEKLY_CALENDAR_LANE_MIN_HEIGHT_REM)
+  );
+}
+
+function parseIsoTimestamp(value: string): number {
+  const timestamp = Date.parse(value);
+
+  if (Number.isNaN(timestamp)) {
+    throw new Error('Time values must be valid ISO date strings.');
+  }
+
+  return timestamp;
+}
+
+function packOverlapGroup(group: readonly TimedWeeklyCalendarBlock[]): PackedWeeklyCalendarBlock[] {
+  const laneEndByIndex: number[] = [];
+  const assignedBlocks = group.map((timedBlock) => {
+    const availableLaneIndex = laneEndByIndex.findIndex(
+      (laneEnd) => laneEnd <= timedBlock.renderedStartMs,
+    );
+    const laneIndex = availableLaneIndex === -1 ? laneEndByIndex.length : availableLaneIndex;
+    laneEndByIndex[laneIndex] = timedBlock.renderedEndMs;
+
+    return { block: timedBlock.block, laneIndex };
+  });
+  const laneCount = laneEndByIndex.length;
+
+  return assignedBlocks.map(({ block, laneIndex }) => ({
+    ...block,
+    laneIndex,
+    laneCount,
+  }));
+}
+
 function createDayBoundaryIso(dayDate: string, timeSourceIso: string): string {
   return `${dayDate}T${timeSourceIso.slice(11)}`;
 }
 
 type CalendarBlockProps = {
-  block: WeeklyCalendarBlock;
+  block: PackedWeeklyCalendarBlock;
   visibleStart: string;
   visibleEnd: string;
 };
@@ -157,9 +301,12 @@ function CalendarBlock({ block, visibleStart, visibleEnd }: CalendarBlockProps) 
   }
 
   const theme = getCategoryTheme(block.category);
+  const laneWidthPercent = 100 / block.laneCount;
   const style: CSSProperties = {
     top: `${span.leftPercent}%`,
     height: `${span.widthPercent}%`,
+    left: `calc(0.35rem + ${block.laneIndex * laneWidthPercent}%)`,
+    width: `calc(${laneWidthPercent}% - ${block.laneCount === 1 ? '0.7rem' : '0.47rem'})`,
     backgroundColor: theme.background,
     borderColor: theme.border,
     color: theme.text,
@@ -190,6 +337,7 @@ function CalendarBlock({ block, visibleStart, visibleEnd }: CalendarBlockProps) 
 
 const weeklyCalendarStyles = `
   .weekly-calendar {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -211,6 +359,11 @@ const weeklyCalendarStyles = `
       --chronos-header-surface,
       linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
     );
+    min-width: 0;
+  }
+
+  .weekly-calendar__header > div {
+    min-width: 0;
   }
 
   .weekly-calendar__eyebrow {
@@ -350,7 +503,7 @@ const weeklyCalendarStyles = `
 
   .weekly-calendar__lane {
     position: relative;
-    min-height: 24.25rem;
+    min-height: ${WEEKLY_CALENDAR_LANE_MIN_HEIGHT_REM}rem;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 16px;
     background:
@@ -369,11 +522,10 @@ const weeklyCalendarStyles = `
 
   .weekly-calendar__block {
     position: absolute;
-    inset-inline: 0.35rem;
     border: 1px solid;
     border-radius: 14px;
     box-sizing: border-box;
-    min-height: 3.2rem;
+    min-height: ${WEEKLY_CALENDAR_BLOCK_MIN_HEIGHT_REM}rem;
     overflow: hidden;
     padding: 0.55rem;
   }

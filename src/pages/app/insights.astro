@@ -25,12 +25,32 @@ const appState = await loadChronosInsightsState(repositories, userId);
 <ChronosAppShell
   title="Chronos Insights"
   eyebrow="Insights"
-  heading="Measure the week"
-  summary="Compare planned blocks with actual time without loading action forms or other route panels."
+  heading="Check the week"
+  summary="Compare planned time with actual time by category, phase, and block."
   email={email}
   currentPath={routePath}
 >
-  <section class="islands" aria-label="Chronos insight surfaces">
-    <WeeklyInsight {...appState.weeklyInsight} client:load />
-  </section>
+  <div class="app-route app-route--insights">
+    <section class="islands insights-islands" aria-label="Chronos insight content">
+      <WeeklyInsight {...appState.weeklyInsight} client:load />
+    </section>
+  </div>
 </ChronosAppShell>
+
+<style>
+  .app-route--insights {
+    --app-route-max: 86rem;
+  }
+
+  @media (min-width: 100rem) {
+    .app-route--insights {
+      --app-route-max: 104rem;
+    }
+  }
+
+  @media (min-width: 120rem) {
+    .app-route--insights {
+      --app-route-max: 112rem;
+    }
+  }
+</style>

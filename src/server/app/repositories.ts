@@ -6,6 +6,7 @@ import {
   DrizzleEventRepository,
   DrizzlePauseRepository,
   DrizzleTaskRepository,
+  DrizzleTodayGoalRepository,
 } from '../repositories/drizzle';
 import type { ChronosAppRepositories } from './chronos-app';
 
@@ -19,5 +20,6 @@ export function createChronosAppRepositories(
     pauses: new DrizzlePauseRepository(db),
     actualTimeEntries: new DrizzleActualTimeEntryRepository(db),
     conclusionReviews: new DrizzleConclusionReviewRepository(db),
+    todayGoals: new DrizzleTodayGoalRepository(db),
   };
 }

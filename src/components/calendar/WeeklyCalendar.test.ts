@@ -2,7 +2,12 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import WeeklyCalendar, { type WeeklyCalendarDay, type WeeklyCalendarProps } from './WeeklyCalendar';
+import WeeklyCalendar, {
+  packWeeklyCalendarDayBlocks,
+  type WeeklyCalendarBlock,
+  type WeeklyCalendarDay,
+  type WeeklyCalendarProps,
+} from './WeeklyCalendar';
 
 const weekDays: readonly WeeklyCalendarDay[] = [
   {
@@ -30,7 +35,7 @@ const weekDays: readonly WeeklyCalendarDay[] = [
 const weeklyCalendarProps = {
   eyebrow: 'Weekly planning',
   title: 'Visible weekly plan',
-  description: 'A deterministic weekly planning surface.',
+  description: 'Weekly blocks and highlighted events for the test week.',
   visibleStart: '2026-06-29T08:00:00.000Z',
   visibleEnd: '2026-06-29T18:00:00.000Z',
   days: weekDays,
@@ -63,6 +68,106 @@ describe('WeeklyCalendar', () => {
     const html = renderWeeklyCalendar({ days: emptyWeek });
 
     expect(countMatches(html, /class="weekly-calendar__day"/g)).toBe(7);
-    expect(countMatches(html, /No blocks planned/g)).toBe(7);
+    expect(countMatches(html, /No blocks yet/g)).toBe(7);
+  });
+
+  it('packs overlapping day blocks into deterministic side-by-side lanes', () => {
+    const overlappingBlocks: WeeklyCalendarBlock[] = [
+      {
+        id: 'later-overlap',
+        title: 'Later overlap',
+        category: 'work',
+        plannedStart: '2026-06-29T10:00:00.000Z',
+        plannedEnd: '2026-06-29T12:00:00.000Z',
+      },
+      {
+        id: 'early-overlap',
+        title: 'Early overlap',
+        category: 'home',
+        plannedStart: '2026-06-29T09:00:00.000Z',
+        plannedEnd: '2026-06-29T11:00:00.000Z',
+      },
+      {
+        id: 'touching-next',
+        title: 'Touching next',
+        category: 'training',
+        plannedStart: '2026-06-29T12:00:00.000Z',
+        plannedEnd: '2026-06-29T13:00:00.000Z',
+      },
+    ];
+
+    expect(
+      packWeeklyCalendarDayBlocks(
+        overlappingBlocks,
+        '2026-06-29T08:00:00.000Z',
+        '2026-06-29T18:00:00.000Z',
+      ),
+    ).toMatchObject([
+      { id: 'early-overlap', laneIndex: 0, laneCount: 2 },
+      { id: 'later-overlap', laneIndex: 1, laneCount: 2 },
+      { id: 'touching-next', laneIndex: 0, laneCount: 1 },
+    ]);
+  });
+
+  it('packs near-adjacent short blocks into lanes when their minimum rendered heights collide', () => {
+    const nearAdjacentBlocks: WeeklyCalendarBlock[] = [
+      {
+        id: 'local-work-plan',
+        title: 'Plan local Chronos work',
+        category: 'work',
+        plannedStart: '2026-06-29T09:00:00.000Z',
+        plannedEnd: '2026-06-29T10:00:00.000Z',
+      },
+      {
+        id: 'qa-checkpoint',
+        title: 'Check the active block',
+        category: 'work',
+        plannedStart: '2026-06-29T10:30:00.000Z',
+        plannedEnd: '2026-06-29T12:00:00.000Z',
+      },
+    ];
+
+    expect(
+      packWeeklyCalendarDayBlocks(
+        nearAdjacentBlocks,
+        '2026-06-29T00:00:00.000Z',
+        '2026-06-29T23:59:00.000Z',
+      ),
+    ).toMatchObject([
+      { id: 'local-work-plan', laneIndex: 0, laneCount: 2 },
+      { id: 'qa-checkpoint', laneIndex: 1, laneCount: 2 },
+    ]);
+  });
+
+  it('renders packed overlap lane offsets in block styles', () => {
+    const html = renderWeeklyCalendar({
+      days: [
+        {
+          date: '2026-06-29',
+          label: 'Mon',
+          blocks: [
+            {
+              id: 'early-overlap',
+              title: 'Early overlap',
+              category: 'home',
+              plannedStart: '2026-06-29T09:00:00.000Z',
+              plannedEnd: '2026-06-29T11:00:00.000Z',
+            },
+            {
+              id: 'later-overlap',
+              title: 'Later overlap',
+              category: 'work',
+              plannedStart: '2026-06-29T10:00:00.000Z',
+              plannedEnd: '2026-06-29T12:00:00.000Z',
+            },
+          ],
+        },
+        ...weekDays.slice(1),
+      ],
+    });
+
+    expect(html).toContain('left:calc(0.35rem + 0%)');
+    expect(html).toContain('left:calc(0.35rem + 50%)');
+    expect(html).toContain('width:calc(50% - 0.47rem)');
   });
 });

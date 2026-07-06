@@ -59,6 +59,6 @@ describe('ConclusionPanel', () => {
 
     expect(html).toContain('No tasks were marked complete.');
     expect(html).toContain('No notes were added for this block.');
-    expect(html).toContain('No new adjustment was logged.');
+    expect(html).toContain('No next adjustment was added.');
   });
 });

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -67,5 +70,19 @@ describe('Drizzle repository guards', () => {
     expect(() =>
       enforceHighlightedEvent({ ...event, highlighted: false } as unknown as typeof event),
     ).toThrow(/must be highlighted/);
+  });
+});
+
+describe('DrizzleTodayGoalRepository', () => {
+  it('replaces day goals inside a database transaction', () => {
+    const source = readFileSync(join(process.cwd(), 'src/server/repositories/drizzle.ts'), 'utf8');
+    const repositorySection = source.slice(
+      source.indexOf('export class DrizzleTodayGoalRepository'),
+      source.indexOf('export class DrizzleEventRepository'),
+    );
+
+    expect(repositorySection).toContain('this.db.transaction');
+    expect(repositorySection).toContain('eq(todayGoals.userId, query.userId)');
+    expect(repositorySection).toContain('eq(todayGoals.goalDate, query.goalDate)');
   });
 });

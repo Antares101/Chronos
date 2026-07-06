@@ -88,6 +88,16 @@ export type ConclusionReview = {
   updatedAt: string;
 };
 
+export type TodayGoal = {
+  id: string;
+  userId: string;
+  goalDate: string;
+  title: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type NewBlock = Omit<Block, 'id' | 'createdAt' | 'updatedAt'>;
 export type PlannedScheduleUpdate = Pick<Block, 'plannedStart' | 'plannedEnd'>;
 export type NewTask = Omit<ChronosTask, 'id' | 'createdAt' | 'updatedAt'>;
@@ -95,3 +105,4 @@ export type NewEvent = Omit<ChronosEvent, 'id' | 'createdAt' | 'updatedAt'>;
 export type NewPause = Omit<Pause, 'id' | 'createdAt' | 'updatedAt'>;
 export type NewActualTimeEntry = Omit<ActualTimeEntry, 'id' | 'createdAt' | 'updatedAt'>;
 export type NewConclusionReview = Omit<ConclusionReview, 'id' | 'createdAt' | 'updatedAt'>;
+export type NewTodayGoal = Omit<TodayGoal, 'id' | 'createdAt' | 'updatedAt'>;

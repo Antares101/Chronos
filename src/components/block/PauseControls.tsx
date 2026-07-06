@@ -58,14 +58,14 @@ export default function PauseControls({
             canLogPause ? 'enabled' : 'disabled'
           }`}
         >
-          {canLogPause ? 'Execution active' : 'Execution not active'}
+          {canLogPause ? 'Active' : 'Not active'}
         </span>
       </header>
 
       <p className="pause-controls__phase" aria-live="polite">
         {canLogPause
-          ? 'Pause logging is available while the block is in execution.'
-          : 'Pause logging is only available while block phase is execution.'}
+          ? 'Pause buttons are available while this block is active.'
+          : 'Start this block before logging pauses.'}
       </p>
 
       <div className="pause-controls__actions" role="group" aria-label="Pause actions">
@@ -92,9 +92,9 @@ export default function PauseControls({
         )}
       </div>
 
-      <h4 className="pause-controls__history-title">Recent pause entries</h4>
+      <h4 className="pause-controls__history-title">Recent pauses</h4>
       {sortedPauses.length === 0 ? (
-        <p className="pause-controls__empty">No pauses have been logged yet.</p>
+        <p className="pause-controls__empty">No pauses recorded yet.</p>
       ) : (
         <ul role="list" className="pause-controls__history" aria-label="Pause history">
           {sortedPauses.map((pause) => {
@@ -151,12 +151,13 @@ function formatPauseDuration(startedAt: string, endedAt: string): string {
 
     return `${formatDurationMinutes(durationMinutes)}`;
   } catch {
-    return 'duration unknown';
+    return 'unknown duration';
   }
 }
 
 const pauseControlsStyles = `
   .pause-controls {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -286,6 +287,8 @@ const pauseControlsStyles = `
     font-size: 0.83rem;
     gap: 0.75rem;
     color: var(--chronos-text-muted, #475569);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .pause-controls__history-item span:nth-of-type(2) {

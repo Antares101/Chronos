@@ -30,6 +30,7 @@ export type BlockDetailProps = {
   highlightedEvents: readonly BlockDetailEvent[];
   pauses: readonly PauseControlsPause[];
   pauseActionPath?: string;
+  taskActionPath?: string;
 };
 
 const categoryLabelByCode: Record<BlockCategory, string> = {
@@ -52,6 +53,7 @@ export default function BlockDetail({
   highlightedEvents,
   pauses,
   pauseActionPath,
+  taskActionPath,
 }: BlockDetailProps) {
   const sortedTasks = [...tasks].sort((first, second) => {
     if (first.status === second.status) {
@@ -97,6 +99,27 @@ export default function BlockDetail({
               <li key={task.id} className={`block-detail__task block-detail__task--${task.status}`}>
                 <span>{task.title}</span>
                 <span>{taskStatusLabels[task.status]}</span>
+                {taskActionPath ? (
+                  <form method="post" action={taskActionPath}>
+                    <input type="hidden" name="action" value="today-set-task-status" />
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <input
+                      type="hidden"
+                      name="status"
+                      value={task.status === 'todo' ? 'done' : 'todo'}
+                    />
+                    <button
+                      type="submit"
+                      aria-label={
+                        task.status === 'todo'
+                          ? `Mark ${task.title} done`
+                          : `Mark ${task.title} to do`
+                      }
+                    >
+                      {task.status === 'todo' ? 'Mark done' : 'Mark to do'}
+                    </button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -107,7 +130,7 @@ export default function BlockDetail({
         <h3 id="block-detail-events-title">Highlighted events</h3>
 
         {sortedEvents.length === 0 ? (
-          <p className="block-detail__empty">No highlighted events attached.</p>
+          <p className="block-detail__empty">No highlighted events for this block yet.</p>
         ) : null}
 
         {sortedEvents.length > 0 ? (
@@ -127,9 +150,9 @@ export default function BlockDetail({
       </section>
 
       <PauseControls
-        eyebrow="Active block interruptions"
+        eyebrow="Pauses"
         title="Pause controls"
-        description="Log pause activity without moving planned block boundaries."
+        description="Record short breaks or an open pause for this block."
         blockPhase={block.phase}
         pauses={pauses}
         blockId={block.id}
@@ -143,6 +166,7 @@ export default function BlockDetail({
 
 const blockDetailStyles = `
   .block-detail {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -166,6 +190,11 @@ const blockDetailStyles = `
       --chronos-header-surface,
       linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
     );
+    min-width: 0;
+  }
+
+  .block-detail__header > div {
+    min-width: 0;
   }
 
   .block-detail__eyebrow {
@@ -240,6 +269,7 @@ const blockDetailStyles = `
     display: flex;
     justify-content: space-between;
     gap: 0.7rem;
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 12px;
     padding: 0.65rem 0.75rem;
@@ -252,11 +282,33 @@ const blockDetailStyles = `
     text-decoration: line-through;
   }
 
-  .block-detail__task span:last-child,
+  .block-detail__task > span:first-child,
+  .block-detail__event span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .block-detail__task > span:nth-of-type(2),
   .block-detail__event span {
     font-size: 0.82rem;
     font-weight: 800;
     color: var(--chronos-success-text, #065f46);
+    white-space: nowrap;
+  }
+
+  .block-detail__task form {
+    margin: 0;
+  }
+
+  .block-detail__task button {
+    border: 1px solid var(--chronos-border-strong, rgba(99, 102, 241, 0.22));
+    border-radius: 999px;
+    background: var(--chronos-primary-soft, #e0e7ff);
+    color: var(--chronos-primary-strong, #312e81);
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 850;
+    padding: 0.45rem 0.65rem;
     white-space: nowrap;
   }
 

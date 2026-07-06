@@ -15,24 +15,24 @@ const routeChecks = [
     semanticChecks: [
       { name: 'app heading', text: 'Run the day' },
       {
-        name: 'today actions',
-        selector: 'section[aria-labelledby="today-actions-title"]',
-        text: 'Start blocks and record active context',
+        name: 'today actions heading',
+        selector: '#today-actions-title',
+        text: 'Start, shape, and capture work',
       },
       {
         name: 'daily timeline heading',
-        selector: 'section[aria-labelledby="daily-timeline-title"]',
-        text: 'Your persisted day',
+        selector: '#daily-timeline-title',
+        text: "Today's timeline",
       },
       {
         name: 'block detail heading',
-        selector: 'section[aria-labelledby="block-detail-title"]',
-        text: 'Block context and controls',
+        selector: '#block-detail-title',
+        text: 'Selected block',
       },
       {
         name: 'active block context',
         selector: 'article[aria-label="Active block context"]',
-        text: 'Exercise the app shell',
+        text: 'Check the active block',
       },
     ],
     hydrationTargets: [
@@ -45,28 +45,28 @@ const routeChecks = [
     semanticChecks: [
       { name: 'app heading', text: 'Shape the week' },
       {
-        name: 'planning actions',
-        selector: 'section[aria-labelledby="planning-actions-title"]',
-        text: 'Create, reschedule, and assign planned work',
+        name: 'planning actions heading',
+        selector: '#planning-actions-title',
+        text: 'Set up blocks and assign tasks',
       },
       {
         name: 'weekly calendar heading',
-        selector: 'section[aria-labelledby="weekly-calendar-title"]',
-        text: 'Stored weekly plan',
+        selector: '#weekly-calendar-title',
+        text: 'Weekly plan',
       },
       {
         name: 'weekly planned blocks',
         selector: '[aria-label="Weekly planned blocks"]',
-        text: 'Exercise the app shell',
+        text: 'Check the active block',
       },
       {
         name: 'task list heading',
-        selector: 'section[aria-labelledby="task-list-title"]',
-        text: 'General task list',
+        selector: '#task-list-title',
+        text: 'Unassigned tasks',
       },
       {
-        name: 'general task backlog',
-        selector: '[aria-label="General task backlog"]',
+        name: 'unassigned task list',
+        selector: '[aria-label="Unassigned tasks"]',
         text: 'Draft tomorrow priorities',
       },
     ],
@@ -80,14 +80,14 @@ const routeChecks = [
     semanticChecks: [
       { name: 'app heading', text: 'Close the loop' },
       {
-        name: 'review actions',
-        selector: 'section[aria-labelledby="review-actions-title"]',
-        text: 'Conclude execution blocks',
+        name: 'review actions heading',
+        selector: '#review-actions-title',
+        text: 'Finish blocks and save conclusions',
       },
       {
         name: 'conclusion panel heading',
-        selector: 'section[aria-labelledby="conclusion-panel-title"]',
-        text: 'Block conclusion',
+        selector: '#conclusion-panel-title',
+        text: 'Last review',
       },
       {
         name: 'conclusion summary',
@@ -95,9 +95,9 @@ const routeChecks = [
         text: 'Review local fixture outcomes',
       },
       {
-        name: 'conclusion notes',
-        selector: 'section[aria-labelledby="conclusion-notes-title"]',
-        text: 'Local fixture review for authenticated app exploration',
+        name: 'conclusion notes heading',
+        selector: '#conclusion-notes-title',
+        text: 'Notes',
       },
     ],
     hydrationTargets: [{ name: 'conclusion-panel', selector: '.conclusion-panel' }],
@@ -215,6 +215,7 @@ async function main() {
   try {
     smokeTarget = await resolveSmokeTarget();
     const baseUrl = smokeTarget.baseUrl;
+    const rootRedirectResult = await verifyRootRedirect(baseUrl);
     const debuggingPort = await getFreePort();
     userDataDir = await mkdtemp(path.join(tmpdir(), 'chronos-browser-smoke-'));
     chrome = spawn(
@@ -256,7 +257,7 @@ async function main() {
 
     console.log(
       JSON.stringify(
-        { baseUrl, serverMode: smokeTarget.mode, routeResults, signInResult },
+        { baseUrl, serverMode: smokeTarget.mode, rootRedirectResult, routeResults, signInResult },
         null,
         2,
       ),
@@ -280,6 +281,23 @@ async function resolveSmokeTarget() {
   }
 
   return startOwnedDevServer();
+}
+
+async function verifyRootRedirect(baseUrl) {
+  const response = await fetch(`${baseUrl}/`, { redirect: 'manual' });
+  const location = response.headers.get('location');
+
+  if (response.status !== 302 || location !== '/app/today') {
+    throw new Error(
+      `Root redirect smoke failed: expected HTTP 302 with Location /app/today, received HTTP ${response.status} with Location ${location ?? '<missing>'}.`,
+    );
+  }
+
+  return {
+    path: '/',
+    status: response.status,
+    location,
+  };
 }
 
 async function startOwnedDevServer() {
@@ -520,34 +538,118 @@ async function verifySignInTargets(client, baseUrl) {
   await client.send('Emulation.setDeviceMetricsOverride', mobileViewport);
   await navigate(client, `${baseUrl}/sign-in`);
 
-  const result = await evaluate(
+  try {
+    return await waitForSignInAssertions(client);
+  } finally {
+    await client.send('Emulation.clearDeviceMetricsOverride');
+  }
+}
+
+async function waitForSignInAssertions(client) {
+  const deadline = Date.now() + 5000;
+  let result;
+  let failures = [];
+
+  while (Date.now() < deadline) {
+    result = await collectSignInState(client);
+    failures = getSignInFailures(result);
+
+    if (failures.length === 0) {
+      return result;
+    }
+
+    await delay(100);
+  }
+
+  throw new Error(
+    `Sign-in smoke failed: ${JSON.stringify(
+      {
+        failures,
+        result,
+      },
+      null,
+      2,
+    )}`,
+  );
+}
+
+async function collectSignInState(client) {
+  return evaluate(
     client,
     `(() => {
+    const expectedHeadingText = 'Sign in to open Chronos.';
+    const expectedSubmitText = 'Send sign-in link';
+    const normalize = (value) => (value ?? '').replace(/\\s+/g, ' ').trim();
+    const visibleText = (element) => normalize(element?.innerText ?? element?.textContent ?? '');
+    const heading = document.querySelector('#sign-in-title');
     const email = document.querySelector('input[type="email"][name="email"]');
+    const emailLabel = email?.closest('label') ?? null;
     const submit = document.querySelector('button[type="submit"]');
-    const bodyText = document.body.innerText.replace(/\\s+/g, ' ').trim();
+    const headingText = visibleText(heading);
+    const emailLabelText = visibleText(emailLabel);
+    const submitText = visibleText(submit);
 
     return {
-      hasHeading: bodyText.includes('Sign in to continue.'),
-      hasEmailLabel: bodyText.includes('Email'),
-      hasSubmitText: bodyText.includes('Send sign-in link'),
+      pathname: location.pathname,
+      bodyFound: Boolean(document.body),
+      headingFound: Boolean(heading),
+      emailFound: Boolean(email),
+      submitFound: Boolean(submit),
+      hasHeading: headingText.includes(expectedHeadingText),
+      hasEmailLabel: emailLabelText.includes('Email'),
+      hasSubmitText: submitText.includes(expectedSubmitText),
+      headingText,
+      emailLabelText,
+      submitText,
       emailHeight: email?.getBoundingClientRect().height ?? 0,
       submitHeight: submit?.getBoundingClientRect().height ?? 0,
     };
   })()`,
   );
+}
 
-  await client.send('Emulation.clearDeviceMetricsOverride');
+function getSignInFailures(result) {
+  const failures = [];
 
-  if (!result.hasHeading || !result.hasEmailLabel || !result.hasSubmitText) {
-    throw new Error(`Sign-in semantic checks failed: ${JSON.stringify(result)}`);
+  if (result.pathname !== '/sign-in') {
+    failures.push(`expected pathname /sign-in, received ${result.pathname}`);
   }
 
-  if (result.emailHeight < 44 || result.submitHeight < 44) {
-    throw new Error(`Sign-in target heights are below 44px: ${JSON.stringify(result)}`);
+  if (!result.bodyFound) {
+    failures.push('expected document.body to be available');
   }
 
-  return result;
+  if (!result.headingFound) {
+    failures.push('expected heading selector #sign-in-title to exist');
+  } else if (!result.hasHeading) {
+    failures.push('expected #sign-in-title to include "Sign in to open Chronos."');
+  }
+
+  if (!result.emailFound) {
+    failures.push('expected input[type="email"][name="email"] to exist');
+  } else if (!result.hasEmailLabel) {
+    failures.push('expected email input label to include "Email"');
+  }
+
+  if (!result.submitFound) {
+    failures.push('expected button[type="submit"] to exist');
+  } else if (!result.hasSubmitText) {
+    failures.push('expected submit button to include "Send sign-in link"');
+  }
+
+  if (result.emailFound && result.emailHeight < 44) {
+    failures.push(
+      `expected email input height to be at least 44px, received ${result.emailHeight}`,
+    );
+  }
+
+  if (result.submitFound && result.submitHeight < 44) {
+    failures.push(
+      `expected submit button height to be at least 44px, received ${result.submitHeight}`,
+    );
+  }
+
+  return failures;
 }
 
 async function navigate(client, url) {

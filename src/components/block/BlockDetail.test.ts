@@ -83,11 +83,25 @@ describe('BlockDetail', () => {
     expect(html).toContain('aria-label="5m pause at 2026-06-29T09:10:00.000Z"');
   });
 
+  it('renders Today task status forms without changing pause controls', () => {
+    const html = renderBlockDetail({ pauseActionPath: '/app/today', taskActionPath: '/app/today' });
+
+    expect(html).toContain('action="/app/today"');
+    expect(html).toContain('name="action" value="today-set-task-status"');
+    expect(html).toContain('name="taskId" value="block-todo"');
+    expect(html).toContain('name="status" value="done"');
+    expect(html).toContain('aria-label="Mark Ship component done"');
+    expect(html).toContain('name="taskId" value="block-done"');
+    expect(html).toContain('name="status" value="todo"');
+    expect(html).toContain('aria-label="Mark Ship test scaffolding to do"');
+    expect(html).toContain('name="action" value="log-pause"');
+  });
+
   it('shows empty states when no block tasks or events are provided', () => {
     const html = renderBlockDetail({ tasks: [], highlightedEvents: [] });
 
     expect(html).toContain('No tasks are attached to this block yet.');
-    expect(html).toContain('No highlighted events attached.');
-    expect(countMatches(html, /No highlighted events attached/g)).toBe(1);
+    expect(html).toContain('No highlighted events for this block yet.');
+    expect(countMatches(html, /No highlighted events for this block yet/g)).toBe(1);
   });
 });

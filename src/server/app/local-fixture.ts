@@ -12,8 +12,10 @@ import type {
   NewTask,
   Pause,
   PlannedScheduleUpdate,
+  TaskStatus,
+  TodayGoal,
 } from '../../domain/models';
-import type { BlockQuery } from '../../domain/repositories';
+import type { BlockQuery, TodayGoalQuery } from '../../domain/repositories';
 import type { ChronosAppRepositories } from './chronos-app';
 
 const persistedAt = '2026-07-02T08:00:00.000Z';
@@ -25,6 +27,7 @@ type MemoryStore = {
   pauses: Pause[];
   actualEntries: ActualTimeEntry[];
   reviews: ConclusionReview[];
+  todayGoals: TodayGoal[];
 };
 
 export function createMockLocalChronosAppRepositories(userId: string): ChronosAppRepositories {
@@ -110,6 +113,24 @@ export function createMockLocalChronosAppRepositories(userId: string): ChronosAp
 
         task.blockId = query.blockId;
         task.source = 'block';
+        task.updatedAt = persistedAt;
+
+        return task;
+      },
+      async updateStatus(query: {
+        userId: string;
+        taskId: string;
+        status: TaskStatus;
+      }): Promise<ChronosTask> {
+        const task = store.tasks.find(
+          (candidate) => candidate.userId === query.userId && candidate.id === query.taskId,
+        );
+
+        if (!task) {
+          throw new Error('Task was not found.');
+        }
+
+        task.status = query.status;
         task.updatedAt = persistedAt;
 
         return task;
@@ -233,6 +254,32 @@ export function createMockLocalChronosAppRepositories(userId: string): ChronosAp
         );
       },
     },
+    todayGoals: {
+      async listForDay(query: TodayGoalQuery): Promise<TodayGoal[]> {
+        return store.todayGoals
+          .filter((goal) => goal.userId === query.userId && goal.goalDate === query.goalDate)
+          .sort((first, second) => first.position - second.position);
+      },
+      async replaceForDay(query: TodayGoalQuery, goals: readonly string[]): Promise<TodayGoal[]> {
+        store.todayGoals = store.todayGoals.filter(
+          (goal) => goal.userId !== query.userId || goal.goalDate !== query.goalDate,
+        );
+
+        const createdGoals = normalizeTodayGoalTitles(goals).map<TodayGoal>((title, position) => ({
+          userId: query.userId,
+          goalDate: query.goalDate,
+          title,
+          position,
+          id: nextId('local-today-goal'),
+          createdAt: persistedAt,
+          updatedAt: persistedAt,
+        }));
+
+        store.todayGoals.push(...createdGoals);
+
+        return createdGoals;
+      },
+    },
   };
 }
 
@@ -250,7 +297,7 @@ function createInitialStore(userId: string): MemoryStore {
       blockFixture(userId, {
         id: 'local-execution-block',
         category: 'training',
-        title: 'Exercise the app shell',
+        title: 'Check the active block',
         plannedStart: '2026-07-02T10:30:00.000Z',
         plannedEnd: '2026-07-02T12:00:00.000Z',
         phase: 'execution',
@@ -329,6 +376,20 @@ function createInitialStore(userId: string): MemoryStore {
         endedAt: '2026-07-01T15:50:00.000Z',
       }),
     ],
+    todayGoals: [
+      todayGoalFixture(userId, {
+        id: 'local-today-goal-1',
+        goalDate: '2026-07-02',
+        title: 'Keep today focused',
+        position: 0,
+      }),
+      todayGoalFixture(userId, {
+        id: 'local-today-goal-2',
+        goalDate: '2026-07-02',
+        title: 'Review the active block',
+        position: 1,
+      }),
+    ],
     reviews: [
       {
         id: 'local-review-1',
@@ -389,6 +450,19 @@ function eventFixture(userId: string, overrides: Partial<ChronosEvent> = {}): Ch
   };
 }
 
+function todayGoalFixture(userId: string, overrides: Partial<TodayGoal> = {}): TodayGoal {
+  return {
+    id: 'local-today-goal',
+    userId,
+    goalDate: '2026-07-02',
+    title: 'Local today goal',
+    position: 0,
+    createdAt: persistedAt,
+    updatedAt: persistedAt,
+    ...overrides,
+  };
+}
+
 function pauseFixture(userId: string, overrides: Partial<Pause> = {}): Pause {
   return {
     id: 'local-pause',
@@ -421,6 +495,13 @@ function actualEntryFixture(
     updatedAt: persistedAt,
     ...overrides,
   };
+}
+
+function normalizeTodayGoalTitles(goals: readonly string[]): string[] {
+  return goals
+    .map((goal) => goal.trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 3);
 }
 
 function createIdSequence(): (prefix: string) => string {

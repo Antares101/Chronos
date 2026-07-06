@@ -52,6 +52,19 @@ export const tasks = pgTable(
   (table) => [index('tasks_user_idx').on(table.userId), index('tasks_block_idx').on(table.blockId)],
 );
 
+export const todayGoals = pgTable(
+  'today_goals',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').notNull(),
+    goalDate: text('goal_date').notNull(),
+    title: text('title').notNull(),
+    position: integer('position').notNull(),
+    ...timestamps,
+  },
+  (table) => [index('today_goals_user_date_idx').on(table.userId, table.goalDate)],
+);
+
 export const events = pgTable(
   'events',
   {
@@ -181,3 +194,5 @@ export type ActualTimeEntryRow = typeof actualTimeEntries.$inferSelect;
 export type NewActualTimeEntryRow = typeof actualTimeEntries.$inferInsert;
 export type ConclusionReviewRow = typeof conclusionReviews.$inferSelect;
 export type NewConclusionReviewRow = typeof conclusionReviews.$inferInsert;
+export type TodayGoalRow = typeof todayGoals.$inferSelect;
+export type NewTodayGoalRow = typeof todayGoals.$inferInsert;

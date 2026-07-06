@@ -11,8 +11,11 @@ import type {
   NewEvent,
   NewPause,
   NewTask,
+  NewTodayGoal,
   Pause,
   PlannedScheduleUpdate,
+  TaskStatus,
+  TodayGoal,
 } from './models';
 
 export type UserScopedQuery = {
@@ -21,6 +24,10 @@ export type UserScopedQuery = {
 
 export type BlockQuery = UserScopedQuery & {
   blockId: string;
+};
+
+export type TodayGoalQuery = UserScopedQuery & {
+  goalDate: string;
 };
 
 export interface BlockRepository {
@@ -36,6 +43,9 @@ export interface TaskRepository {
   listForUser(userId: string): Promise<ChronosTask[]>;
   listForBlock(query: BlockQuery): Promise<ChronosTask[]>;
   assignToBlock(query: BlockQuery & { taskId: string }): Promise<ChronosTask>;
+  updateStatus(
+    query: UserScopedQuery & { taskId: string; status: TaskStatus },
+  ): Promise<ChronosTask>;
 }
 
 export interface EventRepository {
@@ -59,4 +69,10 @@ export interface ActualTimeEntryRepository {
 export interface ConclusionReviewRepository {
   create(input: NewConclusionReview): Promise<ConclusionReview>;
   findForBlock(query: BlockQuery): Promise<ConclusionReview | null>;
+}
+
+export interface TodayGoalRepository {
+  listForDay(query: TodayGoalQuery): Promise<TodayGoal[]>;
+  replaceForDay(query: TodayGoalQuery, goals: readonly string[]): Promise<TodayGoal[]>;
+  create?(input: NewTodayGoal): Promise<TodayGoal>;
 }

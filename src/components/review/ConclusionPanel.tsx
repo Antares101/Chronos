@@ -89,14 +89,14 @@ export default function ConclusionPanel({
       </article>
 
       <section className="conclusion-panel__group" aria-labelledby="conclusion-tasks-title">
-        <h3 id="conclusion-tasks-title">Completed block tasks</h3>
+        <h3 id="conclusion-tasks-title">Completed tasks</h3>
 
         {completedTaskIds.length === 0 ? (
           <p className="conclusion-panel__empty">No tasks were marked complete.</p>
         ) : null}
 
         {completedTaskIds.length > 0 ? (
-          <ul className="conclusion-panel__tasks" role="list" aria-label="Completed block tasks">
+          <ul className="conclusion-panel__tasks" role="list" aria-label="Completed tasks">
             {sortedCompletedTasks.map((task) => (
               <li key={task.id} className="conclusion-panel__task">
                 {task.title}
@@ -107,13 +107,13 @@ export default function ConclusionPanel({
       </section>
 
       <section className="conclusion-panel__group" aria-labelledby="conclusion-notes-title">
-        <h3 id="conclusion-notes-title">Conclusion notes</h3>
+        <h3 id="conclusion-notes-title">Notes</h3>
         <p>{notes || 'No notes were added for this block.'}</p>
       </section>
 
       <section className="conclusion-panel__group" aria-labelledby="conclusion-next-title">
-        <h3 id="conclusion-next-title">Suggested next adjustment</h3>
-        <p>{nextAdjustment ?? 'No new adjustment was logged.'}</p>
+        <h3 id="conclusion-next-title">Next adjustment</h3>
+        <p>{nextAdjustment ?? 'No next adjustment was added.'}</p>
       </section>
 
       <style>{conclusionPanelStyles}</style>
@@ -123,6 +123,7 @@ export default function ConclusionPanel({
 
 const conclusionPanelStyles = `
   .conclusion-panel {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -146,6 +147,11 @@ const conclusionPanelStyles = `
       --chronos-header-surface,
       linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
     );
+    min-width: 0;
+  }
+
+  .conclusion-panel__header > div {
+    min-width: 0;
   }
 
   .conclusion-panel__eyebrow {
@@ -274,6 +280,7 @@ const conclusionPanelStyles = `
     color: var(--chronos-text-muted, #475569);
     line-height: 1.55;
     font-size: 0.88rem;
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 760px) {

@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest';
 import PauseControls, { type PauseControlsProps } from './PauseControls';
 
 const pauseControlsProps = {
-  eyebrow: 'Active block interruptions',
+  eyebrow: 'Pauses',
   title: 'Pause controls',
-  description: 'Capture pauses without adjusting planned windows.',
+  description: 'Record short breaks or an open pause for this block.',
   blockPhase: 'execution',
   pauses: [
     {
@@ -39,8 +39,8 @@ describe('PauseControls', () => {
   it('renders action buttons in enabled state during execution', () => {
     const html = renderPauseControls();
 
-    expect(html).toContain('Execution active');
-    expect(html).toContain('Pause logging is available while the block is in execution.');
+    expect(html).toContain('Active');
+    expect(html).toContain('Pause buttons are available while this block is active.');
     expect(html).toContain('aria-label="Log 5-minute pause"');
     expect(html).toContain('aria-label="Log 10-minute pause"');
     expect(html).toContain('aria-label="Start untimed pause"');
@@ -80,9 +80,9 @@ describe('PauseControls', () => {
   it('renders disabled controls and open-state text when block not in execution', () => {
     const html = renderPauseControls({ blockPhase: 'planning' });
 
-    expect(html).toContain('Execution not active');
+    expect(html).toContain('Not active');
     expect(countMatches(html, /disabled=""/g)).toBe(3);
-    expect(html).toContain('Pause logging is only available while block phase is execution.');
+    expect(html).toContain('Start this block before logging pauses.');
     expect(html).toContain('aria-label="Start untimed pause"');
   });
 });

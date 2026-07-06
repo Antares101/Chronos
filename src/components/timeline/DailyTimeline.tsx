@@ -17,6 +17,8 @@ export type DailyTimelineBlock = {
   phase: BlockPhase;
   plannedStart: string;
   plannedEnd: string;
+  displayStart?: string;
+  displayEnd?: string;
   note?: string;
 };
 
@@ -60,6 +62,9 @@ export default function DailyTimeline({
     (first, second) => Date.parse(first.plannedStart) - Date.parse(second.plannedStart),
   );
   const ticks = getTimelineTicks(visibleStart, visibleEnd, 120);
+  const offWindowBlocks = sortedBlocks.filter(
+    (block) => !isBlockVisibleInWindow(block, visibleStart, visibleEnd),
+  );
   const currentPercent = currentTime
     ? timeToTimelinePercent(currentTime, visibleStart, visibleEnd)
     : null;
@@ -79,7 +84,7 @@ export default function DailyTimeline({
           <h2 id="daily-timeline-title">{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="daily-timeline__status">Stored data</span>
+        <span className="daily-timeline__status">Today</span>
       </header>
 
       <div className="daily-timeline__axis" aria-hidden="true">
@@ -89,6 +94,20 @@ export default function DailyTimeline({
           </span>
         ))}
       </div>
+
+      {offWindowBlocks.length > 0 ? (
+        <div
+          className="daily-timeline__off-window"
+          aria-label="Blocks outside this timeline window"
+        >
+          <span>Blocks outside this timeline window</span>
+          <ul>
+            {offWindowBlocks.map((block) => (
+              <li key={block.id}>{getOffWindowBlockLabel(block, visibleStart)}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="daily-timeline__track" aria-label={trackLabel}>
         {currentTime && currentPercent !== null ? (
@@ -103,9 +122,7 @@ export default function DailyTimeline({
         ) : null}
 
         {sortedBlocks.length === 0 ? (
-          <p className="daily-timeline__empty">
-            No planned blocks yet. The time rail stays visible.
-          </p>
+          <p className="daily-timeline__empty">No blocks planned for today yet.</p>
         ) : null}
 
         {sortedBlocks.map((block) => (
@@ -121,8 +138,8 @@ export default function DailyTimeline({
       </div>
 
       <div className="daily-timeline__notes" aria-label="Timeline notes">
-        <p>Pauses are displayed inside their active block and do not move the planned schedule.</p>
-        <p>Gaps stay visible so partially planned days still feel bounded.</p>
+        <p>Pauses stay inside the block where they happened.</p>
+        <p>Open gaps show where the day still has room.</p>
       </div>
 
       <style>{dailyTimelineStyles}</style>
@@ -145,12 +162,9 @@ function TimelineBlock({
   visibleStart,
   visibleEnd,
 }: TimelineBlockProps) {
-  const span = intervalToTimelineSpan(
-    block.plannedStart,
-    block.plannedEnd,
-    visibleStart,
-    visibleEnd,
-  );
+  const blockStart = getBlockDisplayStart(block);
+  const blockEnd = getBlockDisplayEnd(block);
+  const span = intervalToTimelineSpan(blockStart, blockEnd, visibleStart, visibleEnd);
 
   if (!span.visible) {
     return null;
@@ -166,12 +180,18 @@ function TimelineBlock({
   };
   const duration = getDurationLabel(block.plannedStart, block.plannedEnd);
   const timeRange = `${formatTimeLabel(block.plannedStart)} to ${formatTimeLabel(block.plannedEnd)}`;
+  const displayTimeRange = `${formatTimeLabel(blockStart)} to ${formatTimeLabel(blockEnd)}`;
+  const displayDetail =
+    blockStart !== block.plannedStart || blockEnd !== block.plannedEnd
+      ? ` Shown in this window from ${displayTimeRange}.`
+      : '';
+  const temporalState = getBlockTemporalState(block, currentTime, blockStart);
 
   return (
     <article
-      className={`daily-timeline__block daily-timeline__block--${block.phase}`}
+      className={`daily-timeline__block daily-timeline__block--${block.phase} daily-timeline__block--${temporalState}`}
       style={style}
-      aria-label={`${block.title}, ${theme.label}, ${block.phase} phase, planned ${timeRange}, ${duration}.`}
+      aria-label={`${block.title}, ${theme.label}, ${block.phase} phase, ${temporalState} block, planned ${timeRange}, ${duration}.${displayDetail}`}
     >
       <span className="daily-timeline__block-title">{block.title}</span>
       <span className="daily-timeline__block-meta">
@@ -185,7 +205,14 @@ function TimelineBlock({
           aria-label={`Pause segments recorded inside ${block.title}.`}
         >
           {pauses.map((pause) => (
-            <PauseSegment key={pause.id} block={block} currentTime={currentTime} pause={pause} />
+            <PauseSegment
+              key={pause.id}
+              block={block}
+              blockEnd={blockEnd}
+              blockStart={blockStart}
+              currentTime={currentTime}
+              pause={pause}
+            />
           ))}
         </div>
       ) : null}
@@ -195,23 +222,78 @@ function TimelineBlock({
 
 type PauseSegmentProps = {
   block: DailyTimelineBlock;
+  blockStart: string;
+  blockEnd: string;
   currentTime: string | null;
   pause: DailyTimelinePause;
 };
 
-function PauseSegment({ block, currentTime, pause }: PauseSegmentProps) {
+function getBlockDisplayStart(block: DailyTimelineBlock): string {
+  return block.displayStart ?? block.plannedStart;
+}
+
+function getBlockDisplayEnd(block: DailyTimelineBlock): string {
+  return block.displayEnd ?? block.plannedEnd;
+}
+
+function isBlockVisibleInWindow(
+  block: DailyTimelineBlock,
+  visibleStart: string,
+  visibleEnd: string,
+): boolean {
+  return intervalToTimelineSpan(
+    getBlockDisplayStart(block),
+    getBlockDisplayEnd(block),
+    visibleStart,
+    visibleEnd,
+  ).visible;
+}
+
+function getOffWindowBlockLabel(block: DailyTimelineBlock, visibleStart: string): string {
+  const blockStart = getBlockDisplayStart(block);
+  const blockEnd = getBlockDisplayEnd(block);
+  const position =
+    Date.parse(blockEnd) <= Date.parse(visibleStart) ? 'Before window' : 'After window';
+
+  return `${position}: ${block.title}, ${formatTimeLabel(blockStart)} to ${formatTimeLabel(blockEnd)}`;
+}
+
+function getBlockTemporalState(
+  block: DailyTimelineBlock,
+  currentTime: string | null,
+  blockStart: string,
+): 'past' | 'current' | 'upcoming' {
+  if (!currentTime) {
+    return 'upcoming';
+  }
+
+  const currentMs = Date.parse(currentTime);
+  const startMs = Date.parse(blockStart);
+  const endMs = Date.parse(block.plannedEnd);
+
+  if (block.phase === 'conclusion') {
+    return 'past';
+  }
+
+  if (block.phase === 'execution') {
+    return 'current';
+  }
+
+  if (currentMs >= startMs && currentMs < endMs) {
+    return 'current';
+  }
+
+  return endMs <= currentMs ? 'past' : 'upcoming';
+}
+
+function PauseSegment({ block, blockEnd, blockStart, currentTime, pause }: PauseSegmentProps) {
   const pauseEnd = pause.endedAt ?? currentTime;
 
   if (!pauseEnd) {
     return null;
   }
 
-  const span = intervalToTimelineSpan(
-    pause.startedAt,
-    pauseEnd,
-    block.plannedStart,
-    block.plannedEnd,
-  );
+  const span = intervalToTimelineSpan(pause.startedAt, pauseEnd, blockStart, blockEnd);
 
   if (!span.visible) {
     return null;
@@ -239,6 +321,7 @@ function PauseSegment({ block, currentTime, pause }: PauseSegmentProps) {
 
 const dailyTimelineStyles = `
   .daily-timeline {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -260,6 +343,11 @@ const dailyTimelineStyles = `
       --chronos-header-surface,
       linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
     );
+    min-width: 0;
+  }
+
+  .daily-timeline__header > div {
+    min-width: 0;
   }
 
   .daily-timeline__eyebrow {
@@ -317,6 +405,43 @@ const dailyTimelineStyles = `
     transform: translateX(-100%);
   }
 
+  .daily-timeline__off-window {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0 0 0.75rem;
+    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
+    border-radius: 16px;
+    background: var(--chronos-surface-muted, #f1f5f9);
+    color: var(--chronos-text-muted, #475569);
+    font-size: 0.78rem;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .daily-timeline__off-window > span {
+    color: var(--chronos-primary, #4f46e5);
+    font-weight: 850;
+  }
+
+  .daily-timeline__off-window ul {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .daily-timeline__off-window li {
+    border-radius: 999px;
+    background: var(--chronos-surface, #ffffff);
+    color: var(--chronos-text, #0f172a);
+    font-weight: 750;
+    padding: 0.3rem 0.55rem;
+  }
+
   .daily-timeline__track {
     position: relative;
     min-height: 12rem;
@@ -361,8 +486,18 @@ const dailyTimelineStyles = `
     box-sizing: border-box;
   }
 
-  .daily-timeline__block--execution {
-    box-shadow: inset 0 -4px 0 rgba(79, 70, 229, 0.18);
+  .daily-timeline__block--execution,
+  .daily-timeline__block--current {
+    box-shadow: inset 0 -4px 0 rgba(79, 70, 229, 0.18), 0 0 0 2px rgba(79, 70, 229, 0.18);
+  }
+
+  .daily-timeline__block--past {
+    filter: saturate(0.7);
+    opacity: 0.58;
+  }
+
+  .daily-timeline__block--upcoming {
+    opacity: 0.94;
   }
 
   .daily-timeline__block-title,

@@ -31,8 +31,10 @@ if (Astro.request.method === 'POST') {
   <main class="shell">
     <section class="panel" aria-labelledby="sign-in-title">
       <p class="eyebrow">Chronos</p>
-      <h1 id="sign-in-title">Sign in to continue.</h1>
-      <p class="summary">Use a Supabase magic link to access the protected Chronos app shell.</p>
+      <h1 id="sign-in-title">Sign in to open Chronos.</h1>
+      <p class="summary">
+        Enter my email and use the sign-in link to get back to my planning space.
+      </p>
 
       {
         errorMessage && (

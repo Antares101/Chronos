@@ -6,8 +6,10 @@ import type {
   ChronosTask,
   Pause,
   PauseKind,
+  TaskStatus,
+  TodayGoal,
 } from '../../domain/models';
-import { blockCategories, pauseKinds } from '../../domain/models';
+import { blockCategories, pauseKinds, taskStatuses } from '../../domain/models';
 import type {
   ActualTimeEntryRepository,
   BlockQuery,
@@ -16,6 +18,7 @@ import type {
   EventRepository,
   PauseRepository,
   TaskRepository,
+  TodayGoalRepository,
 } from '../../domain/repositories';
 import { orderBlocksForChronogram } from '../../domain/services/chronogram';
 import {
@@ -35,6 +38,11 @@ import type { WeeklyInsightProps } from '../../components/metrics/WeeklyInsight'
 import type { ConclusionPanelProps } from '../../components/review/ConclusionPanel';
 import type { TaskListProps } from '../../components/tasks/TaskList';
 import type { DailyTimelineProps } from '../../components/timeline/DailyTimeline';
+import type { TodayOperatingSummaryProps } from '../../components/today/TodayOperatingSummary';
+import type {
+  TodayTaskPanelProps,
+  TodayTaskPanelTask,
+} from '../../components/today/TodayTaskPanel';
 
 export type ChronosAppRepositories = {
   blocks: BlockRepository;
@@ -43,6 +51,7 @@ export type ChronosAppRepositories = {
   pauses: PauseRepository;
   actualTimeEntries: ActualTimeEntryRepository;
   conclusionReviews: ConclusionReviewRepository;
+  todayGoals: TodayGoalRepository;
 };
 
 export type ChronosAppState = {
@@ -60,6 +69,12 @@ export type ChronosAppState = {
   weeklyInsight: WeeklyInsightProps;
 };
 
+export type TodayQuickBlockDefaults = {
+  date: string;
+  startTime: string;
+  endTime: string;
+};
+
 export type ChronosTodayState = Pick<
   ChronosAppState,
   | 'blocks'
@@ -70,7 +85,12 @@ export type ChronosTodayState = Pick<
   | 'todayDate'
   | 'dailyTimeline'
   | 'blockDetail'
->;
+> & {
+  todayOperatingSummary: TodayOperatingSummaryProps;
+  todayGoals: TodayGoal[];
+  todayTaskPanel: TodayTaskPanelProps;
+  quickBlockDefaults: TodayQuickBlockDefaults;
+};
 
 export type ChronosPlanningState = Pick<
   ChronosAppState,
@@ -106,7 +126,9 @@ export type ChronosAppActionStatus =
   | 'pause-logged'
   | 'pause-ended'
   | 'event-created'
-  | 'concluded';
+  | 'concluded'
+  | 'goals-saved'
+  | 'task-updated';
 
 export type ChronosAppActionResult = {
   status: ChronosAppActionStatus;
@@ -115,15 +137,17 @@ export type ChronosAppActionResult = {
 type Clock = () => string;
 
 const statusMessages: Record<ChronosAppActionStatus, string> = {
-  created: 'Planned block created.',
-  rescheduled: 'Planned block schedule updated.',
-  'task-created': 'Block task created.',
-  assigned: 'Task moved into the selected block.',
+  created: 'Block added.',
+  rescheduled: 'Schedule updated.',
+  'task-created': 'Task added.',
+  assigned: 'Task moved.',
   started: 'Block started.',
   'pause-logged': 'Pause logged.',
-  'pause-ended': 'Untimed pause ended.',
-  'event-created': 'Highlighted event created.',
-  concluded: 'Block conclusion saved.',
+  'pause-ended': 'Pause ended.',
+  'event-created': 'Event added.',
+  concluded: 'Review saved.',
+  'goals-saved': 'Goals saved.',
+  'task-updated': 'Task updated.',
 };
 
 const categoryLabels: Record<BlockCategory, string> = {
@@ -184,20 +208,32 @@ export async function loadChronosTodayState(
   now: Clock = () => new Date().toISOString(),
 ): Promise<ChronosTodayState> {
   const baseState = await loadChronosBaseState(repositories, userId, now);
-  const { blocks, tasksByBlockId, todayDate, nowIso } = baseState;
-  const selectedBlock = selectPrimaryBlock(blocks);
+  const { blocks, tasks, tasksByBlockId, todayDate, nowIso } = baseState;
   const dailyBlocks = blocks.filter((block) => getDateKey(block.plannedStart) === todayDate);
+  const carryOverBlocks = blocks.filter(
+    (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < todayDate,
+  );
+  const todaySelection = selectTodayBlocks(dailyBlocks, carryOverBlocks, nowIso);
+  const { selectedBlock } = todaySelection;
+  const todayBlocks = uniqueBlocks([
+    ...dailyBlocks,
+    ...(todaySelection.currentBlock &&
+    !dailyBlocks.some((block) => block.id === todaySelection.currentBlock?.id)
+      ? [todaySelection.currentBlock]
+      : []),
+  ]);
   const childBlocks = uniqueBlocks([...dailyBlocks, ...(selectedBlock ? [selectedBlock] : [])]);
   const [eventsByBlockId, pausesByBlockId] = await loadBlockChildren(
     repositories,
     userId,
     childBlocks,
   );
+  const todayGoals = await repositories.todayGoals.listForDay({ userId, goalDate: todayDate });
 
   return {
-    blocks,
-    planningBlocks: baseState.planningBlocks,
-    executionBlocks: baseState.executionBlocks,
+    blocks: todayBlocks,
+    planningBlocks: todayBlocks.filter((block) => block.phase === 'planning'),
+    executionBlocks: todayBlocks.filter((block) => block.phase === 'execution'),
     assignableTasks: baseState.assignableTasks,
     tasksByBlockId,
     todayDate,
@@ -210,6 +246,10 @@ export async function loadChronosTodayState(
           pausesByBlockId.get(selectedBlock.id) ?? [],
         )
       : null,
+    todayOperatingSummary: buildTodayOperatingSummary(todayDate, nowIso, todaySelection),
+    todayGoals,
+    todayTaskPanel: buildTodayTaskPanel(tasks, todayBlocks, todaySelection.currentBlock),
+    quickBlockDefaults: getQuickBlockDefaults(nowIso),
   };
 }
 
@@ -440,6 +480,23 @@ export async function handleChronosAppAction(
 
       return { status: 'event-created' };
     }
+    case 'today-save-goals': {
+      const goalDate = selectTodayDate(now());
+      const goals = normalizeTodayGoalTitles(readStringList(formData, 'goals'));
+      await repositories.todayGoals.replaceForDay({ userId, goalDate }, goals);
+
+      return { status: 'goals-saved' };
+    }
+    case 'today-set-task-status': {
+      const status = readTaskStatus(formData);
+      await repositories.tasks.updateStatus({
+        userId,
+        taskId: requireFormString(formData, 'taskId'),
+        status,
+      });
+
+      return { status: 'task-updated' };
+    }
     case 'conclude-block': {
       const block = await findRequiredBlock(repositories.blocks, {
         userId,
@@ -502,24 +559,42 @@ function buildDailyTimelineProps(
   nowIso: string,
 ): DailyTimelineProps {
   const dailyBlocks = blocks.filter((block) => getDateKey(block.plannedStart) === date);
-  const dailyPauses = dailyBlocks.flatMap((block) => pausesByBlockId.get(block.id) ?? []);
+  const carryOverBlocks = blocks.filter(
+    (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < date,
+  );
+  const timelineBlocks = uniqueBlocks([...dailyBlocks, ...carryOverBlocks]);
+  const dailyPauses = timelineBlocks.flatMap((block) => pausesByBlockId.get(block.id) ?? []);
   const currentTime = getDateKey(nowIso) === date ? nowIso : null;
+  const window = getCenteredTimelineWindow(date, nowIso, currentTime);
 
   return {
     eyebrow: `Today · ${date}`,
-    title: 'Your persisted day',
-    description: 'Stored blocks and pauses are loaded for your signed-in day.',
-    visibleStart: `${date}T00:00:00.000Z`,
-    visibleEnd: `${date}T23:59:59.999Z`,
+    title: "Today's timeline",
+    description: 'Blocks, pauses, and the current time for this day.',
+    ...window,
     currentTime,
-    blocks: dailyBlocks.map((block) => ({
-      id: block.id,
-      title: block.title,
-      category: block.category,
-      phase: block.phase,
-      plannedStart: block.plannedStart,
-      plannedEnd: block.plannedEnd,
-    })),
+    blocks: timelineBlocks.map((block) => {
+      const isCarryOver = carryOverBlocks.some((carryOverBlock) => carryOverBlock.id === block.id);
+      const blockPauses = pausesByBlockId.get(block.id) ?? [];
+      const displayInterval = getTimelineBlockDisplayInterval(
+        block,
+        isCarryOver,
+        window,
+        currentTime,
+        blockPauses,
+      );
+
+      return {
+        id: block.id,
+        title: block.title,
+        category: block.category,
+        phase: block.phase,
+        plannedStart: block.plannedStart,
+        plannedEnd: block.plannedEnd,
+        ...displayInterval,
+        ...(isCarryOver ? { note: 'Started before today; still running.' } : {}),
+      };
+    }),
     pauses: dailyPauses.map((pause) => ({
       id: pause.id,
       blockId: pause.blockId,
@@ -529,6 +604,302 @@ function buildDailyTimelineProps(
       note: pause.note ?? undefined,
     })),
   };
+}
+
+type TodayBlockSelection = {
+  dailyBlocks: Block[];
+  currentBlock: Block | null;
+  nextBlock: Block | null;
+  selectedBlock: Block | null;
+};
+
+function getTimelineBlockDisplayInterval(
+  block: Block,
+  isCarryOver: boolean,
+  window: { visibleStart: string; visibleEnd: string },
+  currentTime: string | null,
+  pauses: readonly Pause[],
+): { displayStart?: string; displayEnd?: string } {
+  if (isCarryOver) {
+    return {
+      displayStart: window.visibleStart,
+      displayEnd: window.visibleEnd,
+    };
+  }
+
+  if (block.phase !== 'execution' || !currentTime) {
+    return {};
+  }
+
+  const currentMs = Date.parse(currentTime);
+  const plannedStartMs = Date.parse(block.plannedStart);
+  const plannedEndMs = Date.parse(block.plannedEnd);
+  const earliestVisiblePauseStart = getEarliestVisiblePauseStart(pauses, window, currentTime);
+
+  if (currentMs < plannedStartMs) {
+    return {
+      displayStart: earliestVisiblePauseStart ?? currentTime,
+      displayEnd: block.plannedEnd,
+    };
+  }
+
+  const displayStart =
+    earliestVisiblePauseStart && Date.parse(earliestVisiblePauseStart) < plannedStartMs
+      ? earliestVisiblePauseStart
+      : block.plannedStart;
+
+  if (currentMs > plannedEndMs) {
+    return { displayStart, displayEnd: currentTime };
+  }
+
+  return displayStart === block.plannedStart ? {} : { displayStart };
+}
+
+function getEarliestVisiblePauseStart(
+  pauses: readonly Pause[],
+  window: { visibleStart: string; visibleEnd: string },
+  currentTime: string,
+): string | null {
+  const currentMs = Date.parse(currentTime);
+  const visibleStartMs = Date.parse(window.visibleStart);
+  const visibleEndMs = Date.parse(window.visibleEnd);
+  let earliestVisiblePauseStartMs: number | null = null;
+
+  for (const pause of pauses) {
+    const pauseStartMs = Date.parse(pause.startedAt);
+    const pauseEndMs = Date.parse(pause.endedAt ?? currentTime);
+
+    if (pauseStartMs >= currentMs || pauseEndMs <= visibleStartMs || pauseStartMs >= visibleEndMs) {
+      continue;
+    }
+
+    const visiblePauseStartMs = Math.max(pauseStartMs, visibleStartMs);
+
+    if (earliestVisiblePauseStartMs === null || visiblePauseStartMs < earliestVisiblePauseStartMs) {
+      earliestVisiblePauseStartMs = visiblePauseStartMs;
+    }
+  }
+
+  return earliestVisiblePauseStartMs === null
+    ? null
+    : new Date(earliestVisiblePauseStartMs).toISOString();
+}
+
+function selectTodayBlocks(
+  dailyBlocks: Block[],
+  carryOverBlocks: Block[],
+  nowIso: string,
+): TodayBlockSelection {
+  const sortedDailyBlocks = orderBlocksForChronogram(dailyBlocks);
+  const sortedCarryOverBlocks = orderBlocksForChronogram(carryOverBlocks);
+  const operationalDailyBlocks = sortedDailyBlocks.filter((block) => block.phase !== 'conclusion');
+  const nowMs = Date.parse(nowIso);
+  const timeCurrentBlock = operationalDailyBlocks.find(
+    (block) => Date.parse(block.plannedStart) <= nowMs && nowMs < Date.parse(block.plannedEnd),
+  );
+  const runningBlock = [...operationalDailyBlocks, ...sortedCarryOverBlocks].find(
+    (block) => block.phase === 'execution',
+  );
+  const currentBlock = runningBlock ?? timeCurrentBlock ?? null;
+  const nextBlock =
+    operationalDailyBlocks.find(
+      (block) => block.id !== currentBlock?.id && Date.parse(block.plannedStart) > nowMs,
+    ) ?? null;
+
+  return {
+    dailyBlocks: sortedDailyBlocks,
+    currentBlock,
+    nextBlock,
+    selectedBlock: currentBlock ?? nextBlock ?? sortedDailyBlocks[0] ?? null,
+  };
+}
+
+function buildTodayOperatingSummary(
+  todayDate: string,
+  nowIso: string,
+  selection: TodayBlockSelection,
+): TodayOperatingSummaryProps {
+  const { currentBlock, dailyBlocks, nextBlock, selectedBlock } = selection;
+  const openTime = calculateOpenTime(todayDate, nowIso, currentBlock, nextBlock);
+
+  return {
+    date: todayDate,
+    nowLabel: getTimeInputValue(nowIso),
+    now: currentBlock
+      ? {
+          label: 'Now',
+          title: currentBlock.title,
+          detail:
+            currentBlock.phase === 'execution' &&
+            Date.parse(nowIso) >= Date.parse(currentBlock.plannedEnd)
+              ? `Running overtime since ${getTimeInputValue(currentBlock.plannedEnd)}.`
+              : `${currentBlock.phase === 'execution' ? 'Running' : 'Planned now'} until ${getTimeInputValue(currentBlock.plannedEnd)}.`,
+          status: currentBlock.phase === 'execution' ? 'running' : 'planned-now',
+        }
+      : {
+          label: 'Now',
+          title: 'Open time',
+          detail:
+            dailyBlocks.length === 0
+              ? 'No blocks are planned for today.'
+              : 'No block is active right now.',
+          status: 'open-time',
+        },
+    next: nextBlock
+      ? {
+          label: 'Next',
+          title: nextBlock.title,
+          detail: `Starts at ${getTimeInputValue(nextBlock.plannedStart)}.`,
+          blockId: nextBlock.id,
+        }
+      : {
+          label: 'Next',
+          title: 'No next block',
+          detail: 'Nothing else is planned today.',
+          blockId: null,
+        },
+    openTime: {
+      label: 'Open time',
+      title:
+        openTime.minutes === null
+          ? 'No open gap calculated'
+          : `${formatMinutes(openTime.minutes)} ${openTime.title}`,
+      detail: openTime.detail,
+      minutes: openTime.minutes,
+    },
+    currentBlockId: currentBlock?.id ?? null,
+    selectedBlockId: selectedBlock?.id ?? null,
+  };
+}
+
+function calculateOpenTime(
+  todayDate: string,
+  nowIso: string,
+  currentBlock: Block | null,
+  nextBlock: Block | null,
+): { title: string; detail: string; minutes: number | null } {
+  const startMs = currentBlock
+    ? Math.max(Date.parse(nowIso), Date.parse(currentBlock.plannedEnd))
+    : Date.parse(nowIso);
+  const endIso = nextBlock?.plannedStart ?? `${todayDate}T23:59:59.999Z`;
+  const minutes = Math.max(0, Math.round((Date.parse(endIso) - startMs) / 60_000));
+
+  if (nextBlock) {
+    return {
+      title: currentBlock ? 'after this block' : 'until next block',
+      detail: currentBlock
+        ? `Next open gap before ${nextBlock.title}.`
+        : `Open until ${nextBlock.title}.`,
+      minutes,
+    };
+  }
+
+  return {
+    title: 'left today',
+    detail: 'Open time until the day ends.',
+    minutes,
+  };
+}
+
+function buildTodayTaskPanel(
+  tasks: ChronosTask[],
+  dailyBlocks: Block[],
+  currentBlock: Block | null,
+): TodayTaskPanelProps {
+  const dailyBlockById = new Map(dailyBlocks.map((block) => [block.id, block]));
+  const todayTasks: TodayTaskPanelTask[] = tasks
+    .filter((task) => task.blockId === null || dailyBlockById.has(task.blockId))
+    .map((task) => {
+      const block = task.blockId ? (dailyBlockById.get(task.blockId) ?? null) : null;
+      const placement: TodayTaskPanelProps['tasks'][number]['placement'] =
+        task.blockId === currentBlock?.id
+          ? 'current-block'
+          : task.blockId && block
+            ? 'today-block'
+            : 'unassigned';
+
+      return {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        placement,
+        blockId: task.blockId,
+        blockTitle: block?.title ?? null,
+      };
+    });
+
+  return {
+    title: 'Today tasks',
+    description: 'Place open work into the block you are running now.',
+    currentBlockId: currentBlock?.id ?? null,
+    currentBlockTitle: currentBlock?.title ?? null,
+    actionPath: '/app/today',
+    tasks: todayTasks,
+  };
+}
+
+function getCenteredTimelineWindow(
+  date: string,
+  nowIso: string,
+  currentTime: string | null,
+): { visibleStart: string; visibleEnd: string } {
+  if (!currentTime) {
+    return { visibleStart: `${date}T08:00:00.000Z`, visibleEnd: `${date}T20:00:00.000Z` };
+  }
+
+  const dayStartMs = Date.parse(`${date}T00:00:00.000Z`);
+  const dayEndMs = Date.parse(`${date}T23:59:59.999Z`);
+  const windowMs = 8 * 60 * 60 * 1000;
+  const halfWindowMs = windowMs / 2;
+  const nowMs = Date.parse(nowIso);
+  let visibleStartMs = nowMs - halfWindowMs;
+  let visibleEndMs = nowMs + halfWindowMs;
+
+  if (visibleStartMs < dayStartMs) {
+    visibleStartMs = dayStartMs;
+    visibleEndMs = Math.min(dayEndMs, dayStartMs + windowMs);
+  }
+
+  if (visibleEndMs > dayEndMs) {
+    visibleEndMs = dayEndMs;
+    visibleStartMs = Math.max(dayStartMs, dayEndMs - windowMs);
+  }
+
+  return {
+    visibleStart: new Date(visibleStartMs).toISOString(),
+    visibleEnd: new Date(visibleEndMs).toISOString(),
+  };
+}
+
+function getQuickBlockDefaults(nowIso: string): TodayQuickBlockDefaults {
+  const nowMs = Date.parse(nowIso);
+  const date = getDateKey(nowIso);
+  const dayStartMs = Date.parse(`${date}T00:00:00.000Z`);
+  const dayEndMs = Date.parse(`${date}T23:59:00.000Z`);
+  const quarterHourMs = 15 * 60_000;
+  const defaultDurationMs = 60 * 60_000;
+  const latestStartMs = Date.parse(`${date}T23:45:00.000Z`);
+  const roundedStartMs = Math.ceil(nowMs / quarterHourMs) * quarterHourMs;
+  const startMs = Math.min(Math.max(roundedStartMs, dayStartMs), latestStartMs);
+  const endMs = Math.min(startMs + defaultDurationMs, dayEndMs);
+  const start = new Date(startMs);
+  const end = new Date(endMs);
+
+  return {
+    date,
+    startTime: getTimeInputValue(start.toISOString()),
+    endTime: getTimeInputValue(end.toISOString()),
+  };
+}
+
+function formatMinutes(minutes: number): string {
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainder = minutes % 60;
+    return remainder === 0 ? `${hours}h` : `${hours}h ${remainder}m`;
+  }
+
+  return `${minutes}m`;
 }
 
 function buildWeeklyCalendarProps(
@@ -561,8 +932,8 @@ function buildWeeklyCalendarProps(
 
   return {
     eyebrow: 'Weekly planning',
-    title: 'Stored weekly plan',
-    description: 'Create and reschedule persisted blocks before they enter execution.',
+    title: 'Weekly plan',
+    description: 'Planned blocks and highlighted events for the week.',
     visibleStart: `${weekStart}T00:00:00.000Z`,
     visibleEnd: `${weekStart}T23:59:59.999Z`,
     days,
@@ -572,8 +943,8 @@ function buildWeeklyCalendarProps(
 function buildTaskListProps(tasks: ChronosTask[]): TaskListProps {
   return {
     eyebrow: 'Backlog',
-    title: 'General task list',
-    description: 'Unassigned tasks can be moved into persisted blocks.',
+    title: 'Unassigned tasks',
+    description: 'Tasks waiting for a planning block.',
     tasks: tasks
       .filter((task) => task.blockId === null)
       .map((task) => ({ id: task.id, title: task.title, status: task.status })),
@@ -588,9 +959,8 @@ function buildBlockDetailProps(
 ): BlockDetailProps {
   return {
     eyebrow: 'Selected block',
-    title: 'Block context and controls',
-    description:
-      'Block tasks, highlighted events, and pause controls are loaded from persisted data.',
+    title: 'Selected block',
+    description: 'Tasks, highlighted events, and pause controls for this block.',
     block: {
       id: block.id,
       title: block.title,
@@ -603,7 +973,7 @@ function buildBlockDetailProps(
     highlightedEvents: events.map((event) => ({
       id: event.id,
       title: event.title,
-      note: event.occurredAt ? `Occurred at ${event.occurredAt}` : undefined,
+      note: event.occurredAt ? `Occurred ${formatEventTimestamp(event.occurredAt)}` : undefined,
     })),
     pauses: pauses.map((pause) => ({
       id: pause.id,
@@ -625,9 +995,9 @@ function buildConclusionPanelProps(
   const completedTaskIds = new Set(review.completedTaskIds);
 
   return {
-    eyebrow: 'Conclusion view',
-    title: 'Block conclusion',
-    description: 'Stored conclusion review for the selected block.',
+    eyebrow: 'Last review',
+    title: 'Last review',
+    description: 'Conclusion notes, completed tasks, and timing for this block.',
     block: {
       id: block.id,
       title: block.title,
@@ -650,8 +1020,8 @@ function buildWeeklyInsightProps(
 ): WeeklyInsightProps {
   return {
     eyebrow: 'Weekly summary',
-    title: 'Planned vs actual',
-    description: 'Stored block and actual-time data summarized by category, block, and phase.',
+    title: 'Week summary',
+    description: 'Planned time compared with actual time by category, block, and phase.',
     summary: calculatePlannedVsActual(blocks, actualEntries),
   };
 }
@@ -803,7 +1173,7 @@ async function findRequiredBlock(repository: BlockRepository, query: BlockQuery)
   const block = await repository.findById(query);
 
   if (!block) {
-    throw new Error('Block was not found in the current user scope.');
+    throw new Error('Block was not found for this account.');
   }
 
   return block;
@@ -817,7 +1187,7 @@ async function findRequiredPause(
   const pause = pauses.find((candidate) => candidate.id === query.pauseId);
 
   if (!pause) {
-    throw new Error('Pause was not found in the current user scope.');
+    throw new Error('Pause was not found for this account.');
   }
 
   return pause;
@@ -887,6 +1257,16 @@ function readCategory(formData: FormData): BlockCategory {
   return category as BlockCategory;
 }
 
+function readTaskStatus(formData: FormData): TaskStatus {
+  const status = requireFormString(formData, 'status');
+
+  if (!taskStatuses.includes(status as TaskStatus)) {
+    throw new Error('Task status is invalid.');
+  }
+
+  return status as TaskStatus;
+}
+
 function readPauseKind(formData: FormData): PauseKind {
   const kind = requireFormString(formData, 'pauseKind');
 
@@ -923,6 +1303,13 @@ function readStringList(formData: FormData, fieldName: string): string[] {
     .filter((value): value is string => typeof value === 'string')
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function normalizeTodayGoalTitles(goals: readonly string[]): string[] {
+  return goals
+    .map((goal) => goal.trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 3);
 }
 
 function combineDateAndTime(date: string, time: string): string {
@@ -965,6 +1352,17 @@ function getWeekdayLabel(date: string): string {
   return new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(
     new Date(`${date}T00:00:00.000Z`),
   );
+}
+
+function formatEventTimestamp(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  }).format(new Date(iso));
 }
 
 export { categoryLabels };

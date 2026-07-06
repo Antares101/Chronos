@@ -12,12 +12,16 @@ import type {
   NewEvent,
   NewPause,
   NewTask,
+  NewTodayGoal,
   Pause,
   PlannedScheduleUpdate,
+  TaskStatus,
+  TodayGoal,
 } from '../../domain/models';
-import type { BlockQuery } from '../../domain/repositories';
-import type { ChronosAppRepositories } from './chronos-app';
+import type { BlockQuery, TodayGoalQuery } from '../../domain/repositories';
+import type { ChronosAppActionStatus, ChronosAppRepositories } from './chronos-app';
 import {
+  getChronosAppStatusMessage,
   handleChronosAppAction,
   loadChronosAppState,
   loadChronosInsightsState,
@@ -35,6 +39,7 @@ type MemoryStore = {
   pauses: Pause[];
   actualEntries: ActualTimeEntry[];
   reviews: ConclusionReview[];
+  todayGoals: TodayGoal[];
 };
 
 function createMemoryRepositories(initialStore: Partial<MemoryStore> = {}) {
@@ -45,6 +50,7 @@ function createMemoryRepositories(initialStore: Partial<MemoryStore> = {}) {
     pauses: initialStore.pauses ?? [],
     actualEntries: initialStore.actualEntries ?? [],
     reviews: initialStore.reviews ?? [],
+    todayGoals: initialStore.todayGoals ?? [],
   };
   const nextId = createIdSequence();
   const repositories: ChronosAppRepositories = {
@@ -126,6 +132,24 @@ function createMemoryRepositories(initialStore: Partial<MemoryStore> = {}) {
 
         task.blockId = query.blockId;
         task.source = 'block';
+        task.updatedAt = persistedAt;
+
+        return task;
+      },
+      async updateStatus(query: {
+        userId: string;
+        taskId: string;
+        status: TaskStatus;
+      }): Promise<ChronosTask> {
+        const task = store.tasks.find(
+          (candidate) => candidate.userId === query.userId && candidate.id === query.taskId,
+        );
+
+        if (!task) {
+          throw new Error('Task was not found.');
+        }
+
+        task.status = query.status;
         task.updatedAt = persistedAt;
 
         return task;
@@ -248,12 +272,59 @@ function createMemoryRepositories(initialStore: Partial<MemoryStore> = {}) {
         );
       },
     },
+    todayGoals: {
+      async listForDay(query: TodayGoalQuery): Promise<TodayGoal[]> {
+        return store.todayGoals
+          .filter((goal) => goal.userId === query.userId && goal.goalDate === query.goalDate)
+          .sort((first, second) => first.position - second.position);
+      },
+      async replaceForDay(query: TodayGoalQuery, goals: readonly string[]): Promise<TodayGoal[]> {
+        store.todayGoals = store.todayGoals.filter(
+          (goal) => goal.userId !== query.userId || goal.goalDate !== query.goalDate,
+        );
+
+        const normalizedGoals = goals.slice(0, 3).map<NewTodayGoal>((title, position) => ({
+          userId: query.userId,
+          goalDate: query.goalDate,
+          title,
+          position,
+        }));
+
+        const createdGoals = normalizedGoals.map<TodayGoal>((goal) => ({
+          ...goal,
+          id: nextId('today-goal'),
+          createdAt: persistedAt,
+          updatedAt: persistedAt,
+        }));
+
+        store.todayGoals.push(...createdGoals);
+
+        return createdGoals;
+      },
+    },
   };
 
   return { repositories, store };
 }
 
 describe('Chronos app backend actions', () => {
+  it.each([
+    ['created', 'Block added.'],
+    ['rescheduled', 'Schedule updated.'],
+    ['task-created', 'Task added.'],
+    ['assigned', 'Task moved.'],
+    ['started', 'Block started.'],
+    ['pause-logged', 'Pause logged.'],
+    ['pause-ended', 'Pause ended.'],
+    ['event-created', 'Event added.'],
+    ['concluded', 'Review saved.'],
+  ] satisfies [ChronosAppActionStatus, string][])(
+    'returns practical status copy for %s',
+    (status, message) => {
+      expect(getChronosAppStatusMessage(status)).toBe(message);
+    },
+  );
+
   it('loads backend-scoped app state instead of sample data', async () => {
     const { repositories } = createMemoryRepositories({
       blocks: [
@@ -445,7 +516,9 @@ describe('Chronos app backend actions', () => {
     );
 
     expect(state.blockDetail?.tasks).toMatchObject([{ title: 'Draft handoff' }]);
-    expect(state.blockDetail?.highlightedEvents).toMatchObject([{ title: 'Customer escalation' }]);
+    expect(state.blockDetail?.highlightedEvents).toMatchObject([
+      { title: 'Customer escalation', note: 'Occurred Jun 29, 09:20' },
+    ]);
     expect(
       state.weeklyCalendar.days.flatMap((day) =>
         day.blocks.flatMap((block) => block.highlightedEvents ?? []),
@@ -561,7 +634,7 @@ describe('Chronos app backend actions', () => {
     );
 
     expect(historicalState.todayDate).toBe('2026-06-29');
-    expect(historicalState.dailyTimeline.visibleStart).toBe('2026-06-29T00:00:00.000Z');
+    expect(historicalState.dailyTimeline.visibleStart).toBe('2026-06-29T05:30:00.000Z');
     expect(historicalState.dailyTimeline.currentTime).toBe('2026-06-29T09:30:00.000Z');
     expect(historicalState.dailyTimeline.blocks).toEqual([]);
     expect(historicalState.weeklyCalendar.visibleStart).toBe('2026-06-29T00:00:00.000Z');
@@ -575,7 +648,7 @@ describe('Chronos app backend actions', () => {
     );
 
     expect(emptyState.todayDate).toBe('2026-06-29');
-    expect(emptyState.dailyTimeline.visibleStart).toBe('2026-06-29T00:00:00.000Z');
+    expect(emptyState.dailyTimeline.visibleStart).toBe('2026-06-29T05:30:00.000Z');
     expect(emptyState.weeklyCalendar.visibleStart).toBe('2026-06-29T00:00:00.000Z');
   });
 
@@ -602,6 +675,450 @@ describe('Chronos app backend actions', () => {
     expect(state.dailyTimeline.blocks).toHaveLength(1);
     expect(state.blockDetail?.tasks).toMatchObject([{ title: 'Task' }]);
     expect(state.blockDetail?.highlightedEvents).toMatchObject([{ title: 'Event' }]);
+  });
+
+  it('keeps Today empty when only non-today blocks exist', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'old-planning-block',
+          title: 'Old planning block',
+          plannedStart: '2026-06-28T09:00:00.000Z',
+          plannedEnd: '2026-06-28T10:00:00.000Z',
+          phase: 'planning',
+        }),
+      ],
+      tasks: [taskFixture({ id: 'old-task', blockId: 'old-planning-block' })],
+      events: [eventFixture({ id: 'old-event', blockId: 'old-planning-block' })],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.dailyTimeline.blocks).toEqual([]);
+    expect(state.blocks).toEqual([]);
+    expect(state.planningBlocks).toEqual([]);
+    expect(state.blockDetail).toBeNull();
+    expect(state.todayOperatingSummary.now.detail).toBe('No blocks are planned for today.');
+    expect(state.todayTaskPanel.tasks).toEqual([]);
+  });
+
+  it('does not treat concluded blocks as Today current before their planned end', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'concluded-block',
+          title: 'Concluded early',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+          plannedEnd: '2026-06-29T10:30:00.000Z',
+          phase: 'conclusion',
+        }),
+        blockFixture({
+          id: 'next-block',
+          title: 'Training block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'planning',
+        }),
+      ],
+      tasks: [taskFixture({ id: 'concluded-task', blockId: 'concluded-block' })],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.todayOperatingSummary.now).toMatchObject({
+      label: 'Now',
+      title: 'Open time',
+      status: 'open-time',
+    });
+    expect(state.todayOperatingSummary.currentBlockId).toBeNull();
+    expect(state.todayOperatingSummary.next).toMatchObject({
+      title: 'Training block',
+      blockId: 'next-block',
+    });
+    expect(state.todayOperatingSummary.openTime).toMatchObject({
+      title: '1h 30m until next block',
+      minutes: 90,
+    });
+    expect(state.todayTaskPanel.currentBlockId).toBeNull();
+    expect(state.todayTaskPanel.tasks).toMatchObject([
+      { id: 'concluded-task', placement: 'today-block', blockId: 'concluded-block' },
+    ]);
+  });
+
+  it('keeps running carry-over blocks available on Today without falling back to old planned blocks', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'carry-over-block',
+          title: 'Carry-over execution',
+          plannedStart: '2026-06-28T22:00:00.000Z',
+          plannedEnd: '2026-06-28T23:00:00.000Z',
+          phase: 'execution',
+        }),
+        blockFixture({
+          id: 'old-planning-block',
+          title: 'Old planning block',
+          plannedStart: '2026-06-28T09:00:00.000Z',
+          plannedEnd: '2026-06-28T10:00:00.000Z',
+          phase: 'planning',
+        }),
+      ],
+      tasks: [
+        taskFixture({ id: 'carry-over-task', blockId: 'carry-over-block' }),
+        taskFixture({ id: 'old-task', blockId: 'old-planning-block' }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.blocks.map((block) => block.id)).toEqual(['carry-over-block']);
+    expect(state.dailyTimeline.blocks).toMatchObject([
+      {
+        id: 'carry-over-block',
+        phase: 'execution',
+        displayStart: '2026-06-29T05:30:00.000Z',
+        displayEnd: '2026-06-29T13:30:00.000Z',
+        note: 'Started before today; still running.',
+      },
+    ]);
+    expect(state.planningBlocks).toEqual([]);
+    expect(state.blockDetail?.block.id).toBe('carry-over-block');
+    expect(state.todayTaskPanel.tasks).toMatchObject([
+      { id: 'carry-over-task', placement: 'current-block', blockId: 'carry-over-block' },
+    ]);
+  });
+
+  it('expands Today timeline display interval for early-started execution blocks', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'early-running-block',
+          title: 'Early running block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'execution',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.todayOperatingSummary.now).toMatchObject({
+      title: 'Early running block',
+      detail: 'Running until 12:00.',
+      status: 'running',
+    });
+    expect(state.dailyTimeline.blocks).toMatchObject([
+      {
+        id: 'early-running-block',
+        phase: 'execution',
+        displayStart: '2026-06-29T09:30:00.000Z',
+        displayEnd: '2026-06-29T12:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('keeps early-started execution pauses visible when they were logged before now', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'early-running-block',
+          title: 'Early running block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'execution',
+        }),
+      ],
+      pauses: [
+        pauseFixture({
+          id: 'early-pause',
+          blockId: 'early-running-block',
+          kind: '10m',
+          startedAt: '2026-06-29T09:15:00.000Z',
+          endedAt: '2026-06-29T09:25:00.000Z',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.dailyTimeline.blocks).toMatchObject([
+      {
+        id: 'early-running-block',
+        phase: 'execution',
+        displayStart: '2026-06-29T09:15:00.000Z',
+        displayEnd: '2026-06-29T12:00:00.000Z',
+      },
+    ]);
+    expect(state.dailyTimeline.pauses).toMatchObject([
+      {
+        id: 'early-pause',
+        blockId: 'early-running-block',
+        startedAt: '2026-06-29T09:15:00.000Z',
+        endedAt: '2026-06-29T09:25:00.000Z',
+      },
+    ]);
+  });
+
+  it('keeps early-started execution pauses visible after the planned start', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'early-running-block',
+          title: 'Early running block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'execution',
+        }),
+      ],
+      pauses: [
+        pauseFixture({
+          id: 'early-pause',
+          blockId: 'early-running-block',
+          kind: '10m',
+          startedAt: '2026-06-29T09:15:00.000Z',
+          endedAt: '2026-06-29T09:25:00.000Z',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T11:30:00.000Z',
+    );
+
+    expect(state.dailyTimeline.blocks).toMatchObject([
+      {
+        id: 'early-running-block',
+        phase: 'execution',
+        displayStart: '2026-06-29T09:15:00.000Z',
+      },
+    ]);
+  });
+
+  it('calculates open time from now when a running block is past its planned end', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'running-block',
+          title: 'Overtime block',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+          plannedEnd: '2026-06-29T10:00:00.000Z',
+          phase: 'execution',
+        }),
+        blockFixture({
+          id: 'next-block',
+          title: 'Next block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'planning',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T10:45:00.000Z',
+    );
+
+    expect(state.todayOperatingSummary.now).toMatchObject({
+      title: 'Overtime block',
+      detail: 'Running overtime since 10:00.',
+      status: 'running',
+    });
+    expect(state.todayOperatingSummary.openTime).toMatchObject({
+      title: '15m after this block',
+      minutes: 15,
+    });
+    expect(state.dailyTimeline.blocks).toMatchObject([
+      {
+        id: 'running-block',
+        phase: 'execution',
+        displayStart: '2026-06-29T09:00:00.000Z',
+        displayEnd: '2026-06-29T10:45:00.000Z',
+      },
+      {
+        id: 'next-block',
+      },
+    ]);
+  });
+
+  it('keeps quick block defaults practical when rounding near hour and day boundaries', async () => {
+    const nearHourState = await loadChronosTodayState(
+      createMemoryRepositories().repositories,
+      'user-1',
+      () => '2026-06-29T19:46:00.000Z',
+    );
+
+    expect(nearHourState.quickBlockDefaults).toEqual({
+      date: '2026-06-29',
+      startTime: '20:00',
+      endTime: '21:00',
+    });
+
+    const nearMidnightState = await loadChronosTodayState(
+      createMemoryRepositories().repositories,
+      'user-1',
+      () => '2026-06-29T23:50:00.000Z',
+    );
+
+    expect(nearMidnightState.quickBlockDefaults).toEqual({
+      date: '2026-06-29',
+      startTime: '23:45',
+      endTime: '23:59',
+    });
+  });
+
+  it('loads Today goals, centered-now bounds, operating summary, and task placement data', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'past-block',
+          title: 'Past admin',
+          plannedStart: '2026-06-29T07:00:00.000Z',
+          plannedEnd: '2026-06-29T08:00:00.000Z',
+          phase: 'conclusion',
+        }),
+        blockFixture({
+          id: 'current-block',
+          title: 'Deep work sprint',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+          plannedEnd: '2026-06-29T10:30:00.000Z',
+          phase: 'planning',
+        }),
+        blockFixture({
+          id: 'next-block',
+          title: 'Training block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'planning',
+        }),
+      ],
+      tasks: [
+        taskFixture({ id: 'current-task', blockId: 'current-block', title: 'Already placed' }),
+        taskFixture({ id: 'open-task', blockId: null, title: 'Pull into focus' }),
+      ],
+      todayGoals: [
+        todayGoalFixture({ id: 'goal-1', goalDate: '2026-06-29', title: 'Ship Today slice' }),
+        todayGoalFixture({
+          id: 'other-date-goal',
+          goalDate: '2026-06-30',
+          title: 'Hidden tomorrow',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T09:30:00.000Z',
+    );
+
+    expect(state.dailyTimeline.visibleStart).toBe('2026-06-29T05:30:00.000Z');
+    expect(state.dailyTimeline.visibleEnd).toBe('2026-06-29T13:30:00.000Z');
+    expect(state.todayOperatingSummary.now).toMatchObject({
+      label: 'Now',
+      title: 'Deep work sprint',
+      status: 'planned-now',
+    });
+    expect(state.todayOperatingSummary.next).toMatchObject({
+      label: 'Next',
+      title: 'Training block',
+      blockId: 'next-block',
+    });
+    expect(state.todayOperatingSummary.openTime).toMatchObject({
+      label: 'Open time',
+      minutes: 30,
+    });
+    expect(state.todayGoals.map((goal) => goal.title)).toEqual(['Ship Today slice']);
+    expect(state.todayTaskPanel.tasks).toMatchObject([
+      { id: 'current-task', placement: 'current-block', blockId: 'current-block' },
+      { id: 'open-task', placement: 'unassigned', blockId: null },
+    ]);
+  });
+
+  it('saves Today goals with server-scoped user and date normalization', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      todayGoals: [
+        todayGoalFixture({ id: 'same-day-existing', title: 'Replace me' }),
+        todayGoalFixture({ id: 'other-user-goal', userId: 'user-2', title: 'Other user goal' }),
+        todayGoalFixture({ id: 'other-day-goal', goalDate: '2026-06-30', title: 'Tomorrow goal' }),
+      ],
+    });
+    const goalsForm = new FormData();
+    goalsForm.set('action', 'today-save-goals');
+    goalsForm.append('goals', '  First outcome  ');
+    goalsForm.append('goals', '');
+    goalsForm.append('goals', 'Second outcome');
+    goalsForm.append('goals', 'Third outcome');
+    goalsForm.append('goals', 'Fourth outcome');
+    goalsForm.set('userId', 'user-2');
+
+    await expect(
+      handleChronosAppAction(repositories, 'user-1', goalsForm, () => '2026-06-29T09:30:00.000Z'),
+    ).resolves.toEqual({ status: 'goals-saved' });
+
+    expect(
+      store.todayGoals
+        .filter((goal) => goal.userId === 'user-1' && goal.goalDate === '2026-06-29')
+        .map((goal) => goal.title),
+    ).toEqual(['First outcome', 'Second outcome', 'Third outcome']);
+    expect(store.todayGoals.find((goal) => goal.id === 'other-user-goal')?.title).toBe(
+      'Other user goal',
+    );
+    expect(store.todayGoals.find((goal) => goal.id === 'other-day-goal')?.title).toBe(
+      'Tomorrow goal',
+    );
+  });
+
+  it('updates global task status from Today for the authenticated user only', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      tasks: [
+        taskFixture({ id: 'task-1', userId: 'user-1', status: 'todo' }),
+        taskFixture({ id: 'task-2', userId: 'user-2', status: 'todo' }),
+      ],
+    });
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'today-set-task-status', taskId: 'task-1', status: 'done' }),
+      ),
+    ).resolves.toEqual({ status: 'task-updated' });
+
+    expect(store.tasks.find((task) => task.id === 'task-1')?.status).toBe('done');
+    expect(store.tasks.find((task) => task.id === 'task-2')?.status).toBe('todo');
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'today-set-task-status', taskId: 'task-1', status: 'blocked' }),
+      ),
+    ).rejects.toThrow('Task status is invalid.');
   });
 
   it('loads planning state without pause, metrics, or review dependencies', async () => {
@@ -736,6 +1253,19 @@ function taskFixture(overrides: Partial<ChronosTask> = {}): ChronosTask {
     title: 'Task',
     status: 'todo',
     source: 'general',
+    createdAt: persistedAt,
+    updatedAt: persistedAt,
+    ...overrides,
+  };
+}
+
+function todayGoalFixture(overrides: Partial<TodayGoal> = {}): TodayGoal {
+  return {
+    id: 'today-goal-1',
+    userId: 'user-1',
+    goalDate: '2026-06-29',
+    title: 'Goal',
+    position: 0,
     createdAt: persistedAt,
     updatedAt: persistedAt,
     ...overrides,

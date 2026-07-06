@@ -77,13 +77,21 @@ export type ChronosReadRouteContext = {
 export type ChronosActionRouteResolution = ChronosRouteRedirectDecision | ChronosActionRouteContext;
 export type ChronosReadRouteResolution = ChronosRouteRedirectDecision | ChronosReadRouteContext;
 
-const routeActionErrorMessage = 'The Chronos action could not be saved.';
+const routeActionErrorMessage = 'That change could not be saved. Check the form and try again.';
 
-export const chronosAppIndexRedirect = {
+export const chronosHomeRoute = '/' as const;
+
+export const chronosHomeRedirect = {
   kind: 'redirect',
   location: chronosAppRoutes.today,
   status: 302,
 } as const satisfies ChronosRouteRedirectDecision;
+
+export const chronosAppIndexRedirect = chronosHomeRedirect;
+
+export function resolveChronosHomeRedirect(): ChronosRouteRedirectDecision {
+  return chronosHomeRedirect;
+}
 
 export function resolveChronosAppIndexRedirect(): ChronosRouteRedirectDecision {
   return chronosAppIndexRedirect;
@@ -210,10 +218,10 @@ export async function resolveChronosRouteAction({
     const result = await actionHandler(repositories, userId, formData);
 
     return resolveChronosRouteActionRedirect(currentUrl, routePath, result.status);
-  } catch (error) {
+  } catch {
     return {
       kind: 'error',
-      message: error instanceof Error ? error.message : routeActionErrorMessage,
+      message: routeActionErrorMessage,
     };
   }
 }

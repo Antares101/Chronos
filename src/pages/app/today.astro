@@ -2,6 +2,9 @@
 import BlockDetail from '../../components/block/BlockDetail';
 import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
 import DailyTimeline from '../../components/timeline/DailyTimeline';
+import TodayGoalsPanel from '../../components/today/TodayGoalsPanel';
+import TodayOperatingSummary from '../../components/today/TodayOperatingSummary';
+import TodayTaskPanel from '../../components/today/TodayTaskPanel';
 import type { ChronosAuthLocals } from '../../server/auth';
 import { loadChronosTodayState } from '../../server/app/chronos-app';
 import {
@@ -24,106 +27,318 @@ if (routeContext.kind === 'redirect') {
 
 const { actionError, email, repositories, statusMessage, userId } = routeContext;
 const appState = await loadChronosTodayState(repositories, userId);
+const hasPlanningBlocks = appState.planningBlocks.length > 0;
+const hasBlocks = appState.blocks.length > 0;
+const startBlockHelperId = 'start-block-helper';
+const createTaskHelperId = 'create-task-helper';
+const highlightedEventHelperId = 'highlighted-event-helper';
 ---
 
 <ChronosAppShell
   title="Chronos Today"
   eyebrow="Today"
   heading="Run the day"
-  summary="Timeline, active block context, pause controls, and quick block additions stay focused on today."
+  summary="Run today from now, next, tasks, and blocks."
   email={email}
   currentPath={routePath}
   actionError={actionError}
   statusMessage={statusMessage}
 >
-  <section class="actions" aria-labelledby="today-actions-title">
-    <div class="actions__header">
-      <p class="eyebrow">Today actions</p>
-      <h2 id="today-actions-title">Start blocks and record active context</h2>
+  <div class="app-route app-route--today">
+    <div class="today-summary-block">
+      <TodayOperatingSummary {...appState.todayOperatingSummary} />
     </div>
 
-    <div class="actions__grid">
-      <article class="action-card">
-        <h3>Start planned block</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="start-block" />
-          <label>
-            Planning block
-            <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
-              {
-                appState.planningBlocks.map((block) => (
-                  <option value={block.id}>{block.title}</option>
-                ))
-              }
-            </select>
-          </label>
-          <button type="submit" disabled={appState.planningBlocks.length === 0}>Start block</button>
-        </form>
-      </article>
+    <section class="actions" aria-labelledby="today-actions-title">
+      <div class="actions__header">
+        <p class="eyebrow">Today actions</p>
+        <h2 id="today-actions-title">Start, shape, and capture work</h2>
+      </div>
 
-      <article class="action-card">
-        <h3>Create task inside block</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="create-task" />
-          <label>
-            Target block
-            <select name="blockId" required disabled={appState.blocks.length === 0}>
-              {
-                appState.blocks.map((block) => (
-                  <option value={block.id}>
-                    {block.title} · {block.phase}
-                  </option>
-                ))
-              }
-            </select>
-          </label>
-          <label>
-            Task title
-            <input name="title" required maxlength="120" placeholder="Prepare notes" />
-          </label>
-          <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
-        </form>
-      </article>
+      <div class="actions__grid">
+        <article class="action-card">
+          <h3>Start planned block</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="start-block" />
+            <label>
+              Planning block
+              <select
+                name="blockId"
+                required
+                disabled={!hasPlanningBlocks}
+                aria-describedby={!hasPlanningBlocks ? startBlockHelperId : undefined}
+              >
+                {
+                  hasPlanningBlocks ? (
+                    appState.planningBlocks.map((block) => (
+                      <option value={block.id}>{block.title}</option>
+                    ))
+                  ) : (
+                    <option value="">No planned blocks ready to start</option>
+                  )
+                }
+              </select>
+            </label>
+            {
+              !hasPlanningBlocks && (
+                <p id={startBlockHelperId} class="empty-copy start-block-helper">
+                  No planned blocks ready to start.
+                </p>
+              )
+            }
+            <button
+              type="submit"
+              disabled={!hasPlanningBlocks}
+              aria-describedby={!hasPlanningBlocks ? startBlockHelperId : undefined}
+              >Start block</button
+            >
+          </form>
+        </article>
 
-      <article class="action-card">
-        <h3>Add highlighted event</h3>
-        <form method="post">
-          <input type="hidden" name="action" value="create-highlighted-event" />
-          <label>
-            Target block
-            <select name="blockId" required disabled={appState.blocks.length === 0}>
-              {
-                appState.blocks.map((block) => (
-                  <option value={block.id}>
-                    {block.title} · {block.phase}
-                  </option>
-                ))
-              }
-            </select>
-          </label>
-          <label>
-            Event title
-            <input name="title" required maxlength="120" placeholder="Important handoff" />
-          </label>
-          <button type="submit" disabled={appState.blocks.length === 0}
-            >Add highlighted event</button
-          >
-        </form>
-      </article>
-    </div>
-  </section>
+        <article class="action-card">
+          <h3>Create block here</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="create-planned-block" />
+            <label>
+              Title
+              <input name="title" required maxlength="120" placeholder="Focused work" />
+            </label>
+            <label>
+              Category
+              <select name="category" required>
+                <option value="work">Work</option>
+                <option value="home">Home</option>
+                <option value="training">Training</option>
+              </select>
+            </label>
+            <div class="form-row">
+              <label>
+                Date
+                <input name="date" type="date" required value={appState.quickBlockDefaults.date} />
+              </label>
+              <label>
+                Start
+                <input
+                  name="startTime"
+                  type="time"
+                  required
+                  value={appState.quickBlockDefaults.startTime}
+                />
+              </label>
+              <label>
+                End
+                <input
+                  name="endTime"
+                  type="time"
+                  required
+                  value={appState.quickBlockDefaults.endTime}
+                />
+              </label>
+            </div>
+            <button type="submit">Create block</button>
+          </form>
+        </article>
 
-  <section class="islands" aria-label="Chronos today surfaces">
-    <DailyTimeline {...appState.dailyTimeline} client:load />
-    {
-      appState.blockDetail ? (
-        <BlockDetail {...appState.blockDetail} pauseActionPath={routePath} client:load />
-      ) : (
-        <section class="empty-panel">
-          <h2>No block selected yet</h2>
-          <p>Create a planned block to populate the block context and pause controls.</p>
-        </section>
-      )
-    }
-  </section>
+        <article class="action-card">
+          <h3>Create task inside block</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="create-task" />
+            <label>
+              Target block
+              <select
+                name="blockId"
+                required
+                disabled={!hasBlocks}
+                aria-describedby={!hasBlocks ? createTaskHelperId : undefined}
+              >
+                {
+                  hasBlocks ? (
+                    appState.blocks.map((block) => (
+                      <option value={block.id}>
+                        {block.title} · {block.phase}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled selected>
+                      Create or start a block first
+                    </option>
+                  )
+                }
+              </select>
+            </label>
+            <label>
+              Task title
+              <input
+                name="title"
+                required
+                maxlength="120"
+                placeholder="Prepare notes"
+                disabled={!hasBlocks}
+                aria-describedby={!hasBlocks ? createTaskHelperId : undefined}
+              />
+            </label>
+            {
+              !hasBlocks && (
+                <p id={createTaskHelperId} class="empty-copy">
+                  Create or start a block before adding tasks or events.
+                </p>
+              )
+            }
+            <button
+              type="submit"
+              disabled={!hasBlocks}
+              aria-describedby={!hasBlocks ? createTaskHelperId : undefined}>Create task</button
+            >
+          </form>
+        </article>
+
+        <article class="action-card">
+          <h3>Add highlighted event</h3>
+          <form method="post">
+            <input type="hidden" name="action" value="create-highlighted-event" />
+            <label>
+              Target block
+              <select
+                name="blockId"
+                required
+                disabled={!hasBlocks}
+                aria-describedby={!hasBlocks ? highlightedEventHelperId : undefined}
+              >
+                {
+                  hasBlocks ? (
+                    appState.blocks.map((block) => (
+                      <option value={block.id}>
+                        {block.title} · {block.phase}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled selected>
+                      Create or start a block first
+                    </option>
+                  )
+                }
+              </select>
+            </label>
+            <label>
+              Event title
+              <input
+                name="title"
+                required
+                maxlength="120"
+                placeholder="Important handoff"
+                disabled={!hasBlocks}
+                aria-describedby={!hasBlocks ? highlightedEventHelperId : undefined}
+              />
+            </label>
+            {
+              !hasBlocks && (
+                <p id={highlightedEventHelperId} class="empty-copy">
+                  Create or start a block before adding tasks or events.
+                </p>
+              )
+            }
+            <button
+              type="submit"
+              disabled={!hasBlocks}
+              aria-describedby={!hasBlocks ? highlightedEventHelperId : undefined}
+              >Add highlighted event</button
+            >
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <section class="islands" aria-label="Chronos today content">
+      <DailyTimeline {...appState.dailyTimeline} client:load />
+      <div class="today-grid">
+        <TodayGoalsPanel
+          title="Goals for today"
+          description="Pick up to three outcomes for today."
+          goals={appState.todayGoals}
+          maxGoals={3}
+          actionPath={routePath}
+        />
+        <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
+      </div>
+      {
+        appState.blockDetail ? (
+          <BlockDetail
+            {...appState.blockDetail}
+            pauseActionPath={routePath}
+            taskActionPath={routePath}
+            client:load
+          />
+        ) : (
+          <section class="empty-panel">
+            <h2>No block selected yet</h2>
+            <p>
+              Create or start a planning block to see its tasks, events, and pause controls here.
+            </p>
+          </section>
+        )
+      }
+    </section>
+  </div>
 </ChronosAppShell>
+
+<style>
+  .app-route--today {
+    --app-route-max: 86rem;
+  }
+
+  .today-summary-block {
+    width: min(100%, var(--app-route-max));
+    max-width: var(--app-route-max);
+    margin: 1rem auto 0;
+    min-width: 0;
+  }
+
+  .today-summary-block :global(.today-summary) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .start-block-helper {
+    margin: -0.2rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
+  .today-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: clamp(1rem, 2vw, 1.25rem);
+    min-width: 0;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .form-row label {
+    min-width: 0;
+  }
+
+  @media (min-width: 100rem) {
+    .app-route--today {
+      --app-route-max: 104rem;
+    }
+
+    .app-route--today .actions__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .today-grid {
+      grid-template-columns: minmax(22rem, 0.82fr) minmax(0, 1.18fr);
+    }
+  }
+
+  @media (min-width: 120rem) {
+    .app-route--today {
+      --app-route-max: 116rem;
+    }
+  }
+</style>

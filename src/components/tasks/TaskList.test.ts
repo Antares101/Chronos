@@ -44,13 +44,13 @@ describe('TaskList', () => {
   it('displays todo count in the header', () => {
     const html = renderTaskList();
 
-    expect(html).toContain('<span class="task-list__status">1 unassigned tasks</span>');
+    expect(html).toContain('<span class="task-list__status">1 unassigned task</span>');
   });
 
   it('renders an empty state when no tasks are supplied', () => {
     const html = renderTaskList({ tasks: [] });
 
-    expect(html).toContain('No general tasks are waiting in the backlog.');
+    expect(html).toContain('No unassigned tasks right now.');
     expect(countMatches(html, /class="task-list__item/g)).toBe(0);
   });
 });

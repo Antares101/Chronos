@@ -47,11 +47,7 @@ export default function WeeklyInsight({
           <h3>By category</h3>
           <ul role="list" className="weekly-insight__metric-list">
             {categories.map(([category, value]) => (
-              <li
-                key={category}
-                className="weekly-insight__metric-item"
-                aria-label={`Category ${categoryLabelByCode[category as BlockCategory]}`}
-              >
+              <li key={category} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">
                   {categoryLabelByCode[category as BlockCategory]}
                 </span>
@@ -84,7 +80,7 @@ export default function WeeklyInsight({
           <h3>By phase</h3>
           <ul role="list" className="weekly-insight__metric-list">
             {phases.map(([phase, value]) => (
-              <li key={phase} className="weekly-insight__metric-item" aria-label={`Phase ${phase}`}>
+              <li key={phase} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">{phase}</span>
                 <span className="weekly-insight__metric-dim">planned {value.plannedMinutes}m</span>
                 <span>actual {value.actualMinutes}m</span>
@@ -111,11 +107,7 @@ export default function WeeklyInsight({
         ) : (
           <ul role="list" className="weekly-insight__metric-list">
             {allBlocksSorted.map(([blockId, value]) => (
-              <li
-                key={blockId}
-                className="weekly-insight__metric-item"
-                aria-label={`Block ${blockId}`}
-              >
+              <li key={blockId} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">{value.key}</span>
                 <span className="weekly-insight__metric-dim">planned {value.plannedMinutes}m</span>
                 <span>actual {value.actualMinutes}m</span>
@@ -142,6 +134,7 @@ export default function WeeklyInsight({
 
 const weeklyInsightStyles = `
   .weekly-insight {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -163,6 +156,11 @@ const weeklyInsightStyles = `
       --chronos-header-surface,
       linear-gradient(135deg, var(--chronos-surface, #ffffff) 0%, var(--chronos-surface-tinted, #eef2ff) 100%)
     );
+    min-width: 0;
+  }
+
+  .weekly-insight__header > div {
+    min-width: 0;
   }
 
   .weekly-insight__eyebrow {
@@ -214,19 +212,22 @@ const weeklyInsightStyles = `
   }
 
   .weekly-insight__metric-item {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 12px;
     padding: 0.6rem 0.7rem;
     background: var(--chronos-surface, #ffffff);
     color: var(--chronos-text-muted, #475569);
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr auto;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
     gap: 0.6rem;
     align-items: center;
     font-size: 0.85rem;
   }
 
   .weekly-insight__metric-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 800;
     color: var(--chronos-text, #0f172a);
     text-transform: capitalize;
@@ -236,6 +237,12 @@ const weeklyInsightStyles = `
     color: var(--chronos-text-muted, #475569);
     white-space: nowrap;
     font-weight: 700;
+  }
+
+  @media (min-width: 100rem) {
+    .weekly-insight__grids {
+      gap: 1rem;
+    }
   }
 
   .weekly-insight__metric-delta--up {

@@ -28,6 +28,7 @@ export default function TaskList({ eyebrow, title, description, tasks }: TaskLis
   });
 
   const todoCount = tasks.filter((task) => task.status === 'todo').length;
+  const todoCountLabel = `${todoCount} unassigned ${todoCount === 1 ? 'task' : 'tasks'}`;
 
   return (
     <section className="task-list" aria-labelledby="task-list-title">
@@ -37,18 +38,18 @@ export default function TaskList({ eyebrow, title, description, tasks }: TaskLis
           <h2 id="task-list-title">{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="task-list__status">{todoCount} unassigned tasks</span>
+        <span className="task-list__status">{todoCountLabel}</span>
       </header>
 
       <div className="task-list__content">
         {sortedTasks.length === 0 ? (
           <p className="task-list__empty" aria-live="polite">
-            No general tasks are waiting in the backlog.
+            No unassigned tasks right now.
           </p>
         ) : null}
 
         {sortedTasks.length > 0 ? (
-          <ul className="task-list__items" role="list" aria-label="General task backlog">
+          <ul className="task-list__items" role="list" aria-label="Unassigned tasks">
             {sortedTasks.map((task) => (
               <li
                 key={task.id}
@@ -70,6 +71,7 @@ export default function TaskList({ eyebrow, title, description, tasks }: TaskLis
 
 const taskListStyles = `
   .task-list {
+    min-width: 0;
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 24px;
     background: var(--chronos-surface, #ffffff);
@@ -152,6 +154,7 @@ const taskListStyles = `
     border-radius: 14px;
     padding: 0.75rem 0.9rem;
     background: var(--chronos-surface-muted, #f1f5f9);
+    min-width: 0;
   }
 
   .task-list__item--done {
@@ -160,6 +163,8 @@ const taskListStyles = `
   }
 
   .task-list__item-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 700;
   }
 

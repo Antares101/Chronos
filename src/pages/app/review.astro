@@ -33,75 +33,99 @@ function getBlockTasks(blockId: string) {
   title="Chronos Review"
   eyebrow="Review"
   heading="Close the loop"
-  summary="Close execution blocks and capture conclusions without mixing planning, pause detail, or metrics."
+  summary="Close execution blocks, mark completed tasks, and save the notes I need next time."
   email={email}
   currentPath={routePath}
   actionError={actionError}
   statusMessage={statusMessage}
 >
-  <section class="actions" aria-labelledby="review-actions-title">
-    <div class="actions__header">
-      <p class="eyebrow">Review controls</p>
-      <h2 id="review-actions-title">Conclude execution blocks</h2>
-    </div>
+  <div class="app-route app-route--review">
+    <section class="actions" aria-labelledby="review-actions-title">
+      <div class="actions__header">
+        <p class="eyebrow">Review actions</p>
+        <h2 id="review-actions-title">Finish blocks and save conclusions</h2>
+      </div>
 
-    <div class="actions__grid">
-      <article class="action-card action-card--wide">
-        <h3>Conclude execution block</h3>
-        {
-          appState.executionBlocks.length === 0 ? (
-            <p class="empty-copy">No execution blocks are ready to conclude.</p>
-          ) : (
-            appState.executionBlocks.map((block) => (
-              <form method="post" class="conclusion-form">
-                <input type="hidden" name="action" value="conclude-block" />
-                <input type="hidden" name="blockId" value={block.id} />
-                <p class="form-heading">{block.title}</p>
-                <fieldset>
-                  <legend>Completed tasks</legend>
-                  {getBlockTasks(block.id).length === 0 ? (
-                    <p class="empty-copy">No tasks are attached to this block.</p>
-                  ) : (
-                    getBlockTasks(block.id).map((task) => (
-                      <label class="checkbox-label">
-                        <input
-                          type="checkbox"
-                          name="completedTaskIds"
-                          value={task.id}
-                          checked={task.status === 'done'}
-                        />
-                        {task.title}
-                      </label>
-                    ))
-                  )}
-                </fieldset>
-                <label>
-                  Notes
-                  <textarea name="notes" required rows="3" placeholder="What happened?" />
-                </label>
-                <label>
-                  Next adjustment
-                  <input name="nextAdjustment" placeholder="Optional follow-up" />
-                </label>
-                <button type="submit">Save conclusion</button>
-              </form>
-            ))
-          )
-        }
-      </article>
-    </div>
-  </section>
+      <div class="actions__grid">
+        <article class="action-card action-card--wide">
+          <h3>Conclude execution block</h3>
+          {
+            appState.executionBlocks.length === 0 ? (
+              <p class="empty-copy">No execution blocks are ready to conclude.</p>
+            ) : (
+              appState.executionBlocks.map((block) => (
+                <form method="post" class="conclusion-form">
+                  <input type="hidden" name="action" value="conclude-block" />
+                  <input type="hidden" name="blockId" value={block.id} />
+                  <p class="form-heading">{block.title}</p>
+                  <fieldset>
+                    <legend>Completed tasks</legend>
+                    {getBlockTasks(block.id).length === 0 ? (
+                      <p class="empty-copy">No tasks are attached to this block.</p>
+                    ) : (
+                      getBlockTasks(block.id).map((task) => (
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            name="completedTaskIds"
+                            value={task.id}
+                            checked={task.status === 'done'}
+                          />
+                          {task.title}
+                        </label>
+                      ))
+                    )}
+                  </fieldset>
+                  <label>
+                    Notes
+                    <textarea name="notes" required rows="3" placeholder="What happened?" />
+                  </label>
+                  <label>
+                    Next adjustment
+                    <input name="nextAdjustment" placeholder="Optional follow-up" />
+                  </label>
+                  <button type="submit">Save conclusion</button>
+                </form>
+              ))
+            )
+          }
+        </article>
+      </div>
+    </section>
 
-  <section class="islands" aria-label="Chronos review surfaces">
-    {
-      appState.conclusionPanel ? (
-        <ConclusionPanel {...appState.conclusionPanel} client:load />
-      ) : (
-        <section class="empty-panel">
-          <h2>No conclusion review yet</h2>
-          <p>Conclude an execution block to show its persisted review.</p>
-        </section>
-      )
-    }
-  </section>
+    <section class="islands review-islands" aria-label="Chronos review content">
+      {
+        appState.conclusionPanel ? (
+          <ConclusionPanel {...appState.conclusionPanel} client:load />
+        ) : (
+          <section class="empty-panel">
+            <h2>No conclusion review yet</h2>
+            <p>Conclude an execution block to see its notes, timing, and next adjustment here.</p>
+          </section>
+        )
+      }
+    </section>
+  </div>
 </ChronosAppShell>
+
+<style>
+  .app-route--review {
+    --app-route-max: 86rem;
+  }
+
+  @media (min-width: 100rem) {
+    .app-route--review {
+      --app-route-max: 100rem;
+    }
+
+    .app-route--review .action-card--wide {
+      padding: clamp(1.15rem, 1.4vw, 1.45rem);
+    }
+  }
+
+  @media (min-width: 120rem) {
+    .app-route--review {
+      --app-route-max: 104rem;
+    }
+  }
+</style>
