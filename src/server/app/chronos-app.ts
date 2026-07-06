@@ -1313,15 +1313,42 @@ function normalizeTodayGoalTitles(goals: readonly string[]): string[] {
 }
 
 function combineDateAndTime(date: string, time: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  const validDate = parseScheduleDate(date);
+  const validTime = parseScheduleTime(time);
+
+  return `${validDate}T${validTime}:00.000Z`;
+}
+
+function parseScheduleDate(date: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+
+  if (!match) {
     throw new Error('Schedule date must use YYYY-MM-DD format.');
   }
 
-  if (!/^\d{2}:\d{2}$/.test(time)) {
-    throw new Error('Schedule time must use HH:mm format.');
+  const [, yearValue, monthValue, dayValue] = match;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new Error('Schedule date must be a real YYYY-MM-DD date.');
   }
 
-  return `${date}T${time}:00.000Z`;
+  return date;
+}
+
+function parseScheduleTime(time: string): string {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+    throw new Error('Schedule time must use a real HH:mm value.');
+  }
+
+  return time;
 }
 
 function isChronosAppActionStatus(value: string | null): value is ChronosAppActionStatus {

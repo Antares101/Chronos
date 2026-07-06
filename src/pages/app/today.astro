@@ -5,6 +5,7 @@ import DailyTimeline from '../../components/timeline/DailyTimeline';
 import TodayGoalsPanel from '../../components/today/TodayGoalsPanel';
 import TodayOperatingSummary from '../../components/today/TodayOperatingSummary';
 import TodayTaskPanel from '../../components/today/TodayTaskPanel';
+import { buildQuickSchedulePreview } from '../../components/today/quick-schedule-selector';
 import type { ChronosAuthLocals } from '../../server/auth';
 import { loadChronosTodayState } from '../../server/app/chronos-app';
 import {
@@ -27,6 +28,12 @@ if (routeContext.kind === 'redirect') {
 
 const { actionError, email, repositories, statusMessage, userId } = routeContext;
 const appState = await loadChronosTodayState(repositories, userId);
+const quickBlockPreview = buildQuickSchedulePreview({
+  date: appState.quickBlockDefaults.date,
+  todayDate: appState.todayDate,
+  startTime: appState.quickBlockDefaults.startTime,
+  endTime: appState.quickBlockDefaults.endTime,
+});
 const hasPlanningBlocks = appState.planningBlocks.length > 0;
 const hasBlocks = appState.blocks.length > 0;
 const startBlockHelperId = 'start-block-helper';
@@ -111,30 +118,98 @@ const highlightedEventHelperId = 'highlighted-event-helper';
                 <option value="training">Training</option>
               </select>
             </label>
-            <div class="form-row">
-              <label>
-                Date
-                <input name="date" type="date" required value={appState.quickBlockDefaults.date} />
-              </label>
-              <label>
-                Start
-                <input
-                  name="startTime"
-                  type="time"
-                  required
-                  value={appState.quickBlockDefaults.startTime}
-                />
-              </label>
-              <label>
-                End
-                <input
-                  name="endTime"
-                  type="time"
-                  required
-                  value={appState.quickBlockDefaults.endTime}
-                />
-              </label>
-            </div>
+            <fieldset
+              class="quick-schedule"
+              data-quick-schedule-selector
+              data-today-date={appState.todayDate}
+            >
+              <legend>Schedule</legend>
+              <p id="quick-schedule-help" class="quick-schedule__helper">
+                Check the block window before creating it.
+              </p>
+              <output
+                id="quick-schedule-preview"
+                class="quick-schedule__preview"
+                for="quick-block-date quick-block-start quick-block-end"
+                aria-live="polite"
+              >
+                <span class="quick-schedule__eyebrow">Block window</span>
+                <strong data-quick-schedule-window>{quickBlockPreview.windowLabel}</strong>
+                <span data-quick-schedule-duration>{quickBlockPreview.durationLabel}</span>
+              </output>
+              <div
+                class="quick-schedule__fields"
+                aria-describedby="quick-schedule-help quick-schedule-status"
+              >
+                <div class="quick-schedule__control quick-schedule__control--date">
+                  <label for="quick-block-date">Date</label>
+                  <input
+                    id="quick-block-date"
+                    data-quick-schedule-date
+                    name="date"
+                    type="date"
+                    required
+                    aria-describedby="quick-schedule-help quick-schedule-status"
+                    value={appState.quickBlockDefaults.date}
+                  />
+                </div>
+                <div class="quick-schedule__control">
+                  <label for="quick-block-start">Start</label>
+                  <input
+                    id="quick-block-start"
+                    data-quick-schedule-start
+                    name="startTime"
+                    type="time"
+                    required
+                    aria-describedby="quick-schedule-help quick-schedule-status"
+                    value={appState.quickBlockDefaults.startTime}
+                  />
+                </div>
+                <div class="quick-schedule__control">
+                  <label for="quick-block-end">End</label>
+                  <input
+                    id="quick-block-end"
+                    data-quick-schedule-end
+                    name="endTime"
+                    type="time"
+                    required
+                    aria-describedby="quick-schedule-help quick-schedule-status"
+                    value={appState.quickBlockDefaults.endTime}
+                  />
+                </div>
+              </div>
+              <div class="quick-schedule__shortcuts" role="group" aria-label="Duration shortcuts">
+                <button
+                  type="button"
+                  data-duration-minutes="30"
+                  aria-label="Set duration to 30 minutes">30m</button
+                >
+                <button
+                  type="button"
+                  data-duration-minutes="60"
+                  aria-label="Set duration to 60 minutes">1h</button
+                >
+                <button
+                  type="button"
+                  data-duration-minutes="90"
+                  aria-label="Set duration to 90 minutes">1h 30m</button
+                >
+                <button
+                  type="button"
+                  data-duration-minutes="120"
+                  aria-label="Set duration to 120 minutes">2h</button
+                >
+              </div>
+              <p
+                id="quick-schedule-status"
+                class="quick-schedule__status"
+                data-quick-schedule-status
+                role="status"
+                aria-live="polite"
+              >
+                {quickBlockPreview.statusLabel}
+              </p>
+            </fieldset>
             <button type="submit">Create block</button>
           </form>
         </article>
@@ -281,6 +356,18 @@ const highlightedEventHelperId = 'highlighted-event-helper';
   </div>
 </ChronosAppShell>
 
+<script>
+  import { bindQuickScheduleSelectors } from '../../components/today/quick-schedule-selector';
+
+  const bindQuickSchedule = () => bindQuickScheduleSelectors(document);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindQuickSchedule, { once: true });
+  } else {
+    bindQuickSchedule();
+  }
+</script>
+
 <style>
   .app-route--today {
     --app-route-max: 86rem;
@@ -311,15 +398,125 @@ const highlightedEventHelperId = 'highlighted-event-helper';
     min-width: 0;
   }
 
-  .form-row {
+  .quick-schedule {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+    gap: 0.8rem;
+    min-width: 0;
+    margin: 0;
+    padding: clamp(0.85rem, 2vw, 1rem);
+    border: 1px solid var(--app-border, rgba(99, 102, 241, 0.22));
+    border-radius: 1rem;
+    background: linear-gradient(
+      135deg,
+      var(--app-surface-muted, rgba(241, 245, 249, 0.86)),
+      var(--app-surface-tinted, rgba(238, 242, 255, 0.72))
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  }
+
+  .quick-schedule legend {
+    padding: 0 0.35rem;
+    color: var(--app-text, var(--foreground, #0f172a));
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .quick-schedule__helper,
+  .quick-schedule__status {
+    margin: 0;
+    color: var(--app-text-muted, var(--muted-foreground, #64748b));
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .quick-schedule__preview {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--app-border, rgba(99, 102, 241, 0.2));
+    border-left: 0.28rem solid var(--primary, #4f46e5);
+    border-radius: 0.85rem;
+    background: var(--app-surface, var(--card, #ffffff));
+    color: var(--app-text, var(--foreground, #0f172a));
+  }
+
+  .quick-schedule__preview strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: clamp(1rem, 2vw, 1.1rem);
+  }
+
+  .quick-schedule__preview span:last-child {
+    color: var(--app-text-muted, var(--muted-foreground, #64748b));
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .quick-schedule__eyebrow {
+    color: var(--app-accent, var(--primary, #4f46e5));
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .quick-schedule__fields,
+  .quick-schedule__shortcuts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
     gap: 0.75rem;
     min-width: 0;
   }
 
-  .form-row label {
+  .quick-schedule__shortcuts {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.75rem), 1fr));
+  }
+
+  .quick-schedule__control {
+    display: grid;
+    gap: 0.35rem;
     min-width: 0;
+  }
+
+  .quick-schedule__control label {
+    min-width: 0;
+    color: var(--app-text-muted, var(--muted-foreground, #64748b));
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .quick-schedule__control input,
+  .quick-schedule__shortcuts button {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .quick-schedule__shortcuts button {
+    min-height: 2.35rem;
+    border: 1px solid var(--app-border-strong, rgba(99, 102, 241, 0.32));
+    border-radius: 999px;
+    background: var(--app-surface, var(--card, #ffffff));
+    color: var(--app-text, var(--foreground, #0f172a));
+    font-weight: 800;
+  }
+
+  .quick-schedule__shortcuts button:hover,
+  .quick-schedule__shortcuts button:focus-visible {
+    border-color: var(--primary, #4f46e5);
+  }
+
+  @media (max-width: 40rem) {
+    .quick-schedule__fields {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-schedule__control--date {
+      grid-column: 1 / -1;
+    }
   }
 
   @media (min-width: 100rem) {

@@ -351,6 +351,28 @@ describe('Chronos app backend actions', () => {
     expect(state.taskList.tasks).toEqual([{ id: 'task-1', title: 'Move me', status: 'todo' }]);
   });
 
+  it.each([
+    ['startTime', '24:00', 'Schedule time must use a real HH:mm value.'],
+    ['endTime', '12:60', 'Schedule time must use a real HH:mm value.'],
+    ['date', '2026-02-30', 'Schedule date must be a real YYYY-MM-DD date.'],
+  ])('rejects invalid create-planned-block %s value %s', async (fieldName, value, message) => {
+    const { repositories, store } = createMemoryRepositories();
+    const values = {
+      action: 'create-planned-block',
+      title: 'Invalid schedule',
+      category: 'work',
+      date: '2026-06-29',
+      startTime: '09:00',
+      endTime: '10:00',
+      [fieldName]: value,
+    };
+
+    await expect(handleChronosAppAction(repositories, 'user-1', formData(values))).rejects.toThrow(
+      message,
+    );
+    expect(store.blocks).toHaveLength(0);
+  });
+
   it('runs MVP mutations through user-scoped repository and domain boundaries', async () => {
     const { repositories, store } = createMemoryRepositories({
       tasks: [
