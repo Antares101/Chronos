@@ -1,5 +1,6 @@
 ---
 import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
+import DailyReviewCards from '../../components/review/DailyReviewCards';
 import ConclusionPanel from '../../components/review/ConclusionPanel';
 import type { ChronosAuthLocals } from '../../server/auth';
 import { loadChronosReviewState } from '../../server/app/chronos-app';
@@ -23,17 +24,13 @@ if (routeContext.kind === 'redirect') {
 
 const { actionError, email, repositories, statusMessage, userId } = routeContext;
 const appState = await loadChronosReviewState(repositories, userId);
-
-function getBlockTasks(blockId: string) {
-  return appState.tasksByBlockId[blockId] ?? [];
-}
 ---
 
 <ChronosAppShell
   title="Chronos Review"
   eyebrow="Review"
-  heading="Close the loop"
-  summary="Close execution blocks, mark completed tasks, and save the notes I need next time."
+  heading="Close a block"
+  summary="Review one active block at a time, mark what finished, and note the adjustment for tomorrow."
   email={email}
   currentPath={routePath}
   actionError={actionError}
@@ -42,55 +39,21 @@ function getBlockTasks(blockId: string) {
   <div class="app-route app-route--review">
     <section class="actions" aria-labelledby="review-actions-title">
       <div class="actions__header">
-        <p class="eyebrow">Review actions</p>
-        <h2 id="review-actions-title">Finish blocks and save conclusions</h2>
+        <p class="eyebrow">Daily Review</p>
+        <h2 id="review-actions-title">Close one block at a time</h2>
       </div>
 
-      <div class="actions__grid">
-        <article class="action-card action-card--wide">
-          <h3>Conclude execution block</h3>
-          {
-            appState.executionBlocks.length === 0 ? (
-              <p class="empty-copy">No execution blocks are ready to conclude.</p>
-            ) : (
-              appState.executionBlocks.map((block) => (
-                <form method="post" class="conclusion-form">
-                  <input type="hidden" name="action" value="conclude-block" />
-                  <input type="hidden" name="blockId" value={block.id} />
-                  <p class="form-heading">{block.title}</p>
-                  <fieldset>
-                    <legend>Completed tasks</legend>
-                    {getBlockTasks(block.id).length === 0 ? (
-                      <p class="empty-copy">No tasks are attached to this block.</p>
-                    ) : (
-                      getBlockTasks(block.id).map((task) => (
-                        <label class="checkbox-label">
-                          <input
-                            type="checkbox"
-                            name="completedTaskIds"
-                            value={task.id}
-                            checked={task.status === 'done'}
-                          />
-                          {task.title}
-                        </label>
-                      ))
-                    )}
-                  </fieldset>
-                  <label>
-                    Notes
-                    <textarea name="notes" required rows="3" placeholder="What happened?" />
-                  </label>
-                  <label>
-                    Next adjustment
-                    <input name="nextAdjustment" placeholder="Optional follow-up" />
-                  </label>
-                  <button type="submit">Save conclusion</button>
-                </form>
-              ))
-            )
-          }
-        </article>
-      </div>
+      <DailyReviewCards
+        blocks={appState.executionBlocks.map((block) => ({
+          id: block.id,
+          title: block.title,
+          tasks: (appState.tasksByBlockId[block.id] ?? []).map((task) => ({
+            id: task.id,
+            title: task.title,
+            status: task.status,
+          })),
+        }))}
+      />
     </section>
 
     <section class="islands review-islands" aria-label="Chronos review content">
