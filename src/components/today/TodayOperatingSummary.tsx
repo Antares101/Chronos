@@ -318,6 +318,7 @@ const styles = `
   .today-now-board__side-card h3 {
     margin-top: 0.35rem;
     font-size: clamp(1.1rem, 2vw, 1.45rem);
+    letter-spacing: -0.01em;
     line-height: 1.1;
   }
 
