@@ -4,6 +4,7 @@ import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
 import DailyTimeline from '../../components/timeline/DailyTimeline';
 import TodayGoalsPanel from '../../components/today/TodayGoalsPanel';
 import TodayOperatingSummary from '../../components/today/TodayOperatingSummary';
+import QuickTaskCapture from '../../components/today/QuickTaskCapture';
 import TodayTaskPanel from '../../components/today/TodayTaskPanel';
 import { buildQuickSchedulePreview } from '../../components/today/quick-schedule-selector';
 import type { ChronosAuthLocals } from '../../server/auth';
@@ -61,6 +62,12 @@ const highlightedEventHelperId = 'highlighted-event-helper';
         <p class="eyebrow">Today actions</p>
         <h2 id="today-actions-title">Start, shape, and capture work</h2>
       </div>
+
+      <QuickTaskCapture
+        blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
+        currentBlockId={appState.todayTaskPanel.currentBlockId}
+        currentBlockTitle={appState.todayTaskPanel.currentBlockTitle}
+      />
 
       <div class="actions__grid">
         <article class="action-card">
