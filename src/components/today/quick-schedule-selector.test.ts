@@ -106,9 +106,13 @@ function readTodayPageSource(): string {
   return readFileSync(new URL('../../pages/app/today.astro', import.meta.url), 'utf8');
 }
 
-function getCreateBlockSource(source = readTodayPageSource()): string {
+function readTodayActionsGridSource(): string {
+  return readFileSync(new URL('./TodayActionsGrid.tsx', import.meta.url), 'utf8');
+}
+
+function getCreateBlockSource(source = readTodayActionsGridSource()): string {
   const sectionStart = source.indexOf('<h3>Create block here</h3>');
-  const sectionEnd = source.indexOf('<article class="action-card">', sectionStart + 1);
+  const sectionEnd = source.indexOf('<article className="action-card">', sectionStart + 1);
 
   expect(sectionStart).toBeGreaterThanOrEqual(0);
   expect(sectionEnd).toBeGreaterThan(sectionStart);
@@ -414,10 +418,10 @@ describe('Today page quick schedule source contract', () => {
     const createBlockSource = getCreateBlockSource();
 
     expect(createBlockSource).toMatch(/<fieldset[\s\S]*data-quick-schedule-selector/);
-    expect(createBlockSource).toContain('data-today-date={appState.todayDate}');
+    expect(createBlockSource).toContain('data-today-date={todayDate}');
     expect(createBlockSource).toMatch(/<legend>\s*Schedule\s*<\/legend>/);
     expect(createBlockSource).toMatch(
-      /<output[\s\S]*for="quick-block-date quick-block-start quick-block-end"[\s\S]*aria-live="polite"/,
+      /<output[\s\S]*htmlFor="quick-block-date quick-block-start quick-block-end"[\s\S]*aria-live="polite"/,
     );
     expect(createBlockSource).toMatch(/data-quick-schedule-window/);
     expect(createBlockSource).toMatch(/data-quick-schedule-duration/);
@@ -438,7 +442,7 @@ describe('Today page quick schedule source contract', () => {
     }
 
     expect(createBlockSource).toMatch(
-      /<div class="quick-schedule__shortcuts"[\s\S]*role="group"[\s\S]*aria-label="Duration shortcuts"/,
+      /<div className="quick-schedule__shortcuts"[\s\S]*role="group"[\s\S]*aria-label="Duration shortcuts"/,
     );
 
     for (const [durationMinutes, ariaLabel] of [
@@ -471,14 +475,15 @@ describe('Today page quick schedule source contract', () => {
 
   it('keeps explicit labels for each schedule input and wires the production binder after markup exists', () => {
     const todaySource = readTodayPageSource();
-    const createBlockSource = getCreateBlockSource(todaySource);
+    const actionsGridSource = readTodayActionsGridSource();
+    const createBlockSource = getCreateBlockSource(actionsGridSource);
 
     for (const [id, labelText] of [
       ['quick-block-date', 'Date'],
       ['quick-block-start', 'Start'],
       ['quick-block-end', 'End'],
     ]) {
-      const labelSource = `<label for="${id}">${labelText}</label>`;
+      const labelSource = `<label htmlFor="${id}">${labelText}</label>`;
       const labelIndex = createBlockSource.indexOf(labelSource);
       const inputIndex = createBlockSource.indexOf(`id="${id}"`);
 
@@ -492,13 +497,13 @@ describe('Today page quick schedule source contract', () => {
     }
 
     expect(createBlockSource).toContain(
-      '<div class="quick-schedule__control quick-schedule__control--date">',
+      '<div className="quick-schedule__control quick-schedule__control--date">',
     );
-    expect(todaySource).toMatch(
+    expect(actionsGridSource).toMatch(
       /@media \(max-width: 40rem\)[\s\S]*\.quick-schedule__control--date/,
     );
 
-    const selectorIndex = todaySource.indexOf('data-quick-schedule-selector');
+    const selectorIndex = todaySource.indexOf('<TodayActionsGrid');
     const binderCallIndex = todaySource.indexOf('bindQuickScheduleSelectors(document)');
 
     expect(todaySource).toContain(

@@ -6,16 +6,19 @@ function readTodaySource() {
 }
 
 describe('Today quick task capture placement', () => {
-  it('renders QuickTaskCapture after the actions header and before the existing actions grid', () => {
+  it('renders QuickTaskCapture after the actions header and before the Today actions grid component', () => {
     const source = readTodaySource();
 
     expect(source).toContain(
       "import QuickTaskCapture from '../../components/today/QuickTaskCapture';",
     );
+    expect(source).toContain(
+      "import TodayActionsGrid from '../../components/today/TodayActionsGrid';",
+    );
 
     const headerIndex = source.indexOf('<div class="actions__header">');
     const captureIndex = source.indexOf('<QuickTaskCapture');
-    const gridIndex = source.indexOf('<div class="actions__grid">');
+    const gridIndex = source.indexOf('<TodayActionsGrid');
 
     expect(headerIndex).toBeGreaterThanOrEqual(0);
     expect(captureIndex).toBeGreaterThan(headerIndex);
@@ -23,30 +26,33 @@ describe('Today quick task capture placement', () => {
 
     const captureEndIndex = source.indexOf('/>', captureIndex);
     const captureSource = source.slice(captureIndex, captureEndIndex);
+    const gridEndIndex = source.indexOf('/>', gridIndex);
+    const gridSource = source.slice(gridIndex, gridEndIndex);
 
     expect(captureEndIndex).toBeLessThan(gridIndex);
     expect(captureSource).not.toContain('client:');
+    expect(gridSource).not.toContain('client:');
   });
 
-  it('passes Today blocks and current block context without changing existing action cards', () => {
+  it('passes Today route data to QuickTaskCapture and TodayActionsGrid without restoring inline task creation', () => {
     const source = readTodaySource();
-    const captureIndex = source.indexOf('<QuickTaskCapture');
 
     expect(source).toContain(
       'blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}',
     );
     expect(source).toContain('currentBlockId={appState.todayTaskPanel.currentBlockId}');
     expect(source).toContain('currentBlockTitle={appState.todayTaskPanel.currentBlockTitle}');
+    expect(source).toContain('planningBlocks={appState.planningBlocks}');
+    expect(source).toContain('todayDate={appState.todayDate}');
+    expect(source).toContain('quickBlockDefaults={appState.quickBlockDefaults}');
+    expect(source).toContain('quickBlockPreview={quickBlockPreview}');
+    expect(source).not.toContain('Create task inside block');
+    expect(source).not.toContain('value="create-task"');
+  });
 
-    for (const actionValue of [
-      'start-block',
-      'create-planned-block',
-      'create-task',
-      'create-highlighted-event',
-    ]) {
-      const actionIndex = source.indexOf(`value="${actionValue}"`);
+  it('does not force a fixed four-column Today actions grid', () => {
+    const source = readTodaySource();
 
-      expect(actionIndex).toBeGreaterThan(captureIndex);
-    }
+    expect(source).not.toContain('repeat(4, minmax(0, 1fr))');
   });
 });
