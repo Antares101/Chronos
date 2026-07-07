@@ -49,6 +49,9 @@ export default function ConclusionPanel({
   const sortedCompletedTasks = [...completedTasks].sort((first, second) =>
     first.title.localeCompare(second.title),
   );
+  const displayedNextAdjustment = nextAdjustment?.trim()
+    ? nextAdjustment
+    : 'No adjustment was added for tomorrow planning.';
 
   return (
     <section className="conclusion-panel" aria-labelledby="conclusion-panel-title">
@@ -112,8 +115,11 @@ export default function ConclusionPanel({
       </section>
 
       <section className="conclusion-panel__group" aria-labelledby="conclusion-next-title">
-        <h3 id="conclusion-next-title">Next adjustment</h3>
-        <p>{nextAdjustment ?? 'No next adjustment was added.'}</p>
+        <h3 id="conclusion-next-title">Adjustment for tomorrow planning</h3>
+        <p>{displayedNextAdjustment}</p>
+        <p className="conclusion-panel__guidance">
+          Use Planning to decide what moves, waits, or changes next.
+        </p>
       </section>
 
       <style>{conclusionPanelStyles}</style>
@@ -281,6 +287,10 @@ const conclusionPanelStyles = `
     line-height: 1.55;
     font-size: 0.88rem;
     overflow-wrap: anywhere;
+  }
+
+  .conclusion-panel__group .conclusion-panel__guidance {
+    margin-top: 0.45rem;
   }
 
   @media (max-width: 760px) {

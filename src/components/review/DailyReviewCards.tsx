@@ -37,6 +37,8 @@ type DailyReviewCardProps = {
 function DailyReviewCard({ block }: DailyReviewCardProps) {
   const openTasks = block.tasks.filter((task) => task.status !== 'done');
   const openItemsTitleId = `${block.id}-open-items`;
+  const nextAdjustmentId = `${block.id}-next-adjustment`;
+  const nextAdjustmentHelpId = `${block.id}-next-adjustment-help`;
 
   return (
     <article className="action-card daily-review-card">
@@ -77,12 +79,13 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
         </fieldset>
 
         <section className="daily-review-card__area" aria-labelledby={openItemsTitleId}>
-          <h4 id={openItemsTitleId}>Open before this review</h4>
+          <h4 id={openItemsTitleId}>Still open for tomorrow planning</h4>
           <p className="daily-review-card__helper">
-            These tasks were open when this review loaded. Check them above if they finished.
+            These tasks were open when this review loaded. Check them above if they finished;
+            Planning decides what happens next.
           </p>
           {openTasks.length === 0 ? (
-            <p className="empty-copy">No open items for this block.</p>
+            <p className="empty-copy">No open tasks for this block.</p>
           ) : (
             <ul className="daily-review-card__open-list" role="list">
               {openTasks.map((task) => (
@@ -97,10 +100,18 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
           <textarea name="notes" required rows={3} placeholder="What changed?" />
         </label>
 
-        <label className="daily-review-card__area daily-review-card__control">
-          <span>Tomorrow adjustment</span>
-          <input name="nextAdjustment" placeholder="What should change next time?" />
-        </label>
+        <div className="daily-review-card__area daily-review-card__control">
+          <label htmlFor={nextAdjustmentId}>Adjustment for tomorrow planning</label>
+          <p id={nextAdjustmentHelpId} className="daily-review-card__helper">
+            Optional. Capture what tomorrow planning should account for.
+          </p>
+          <input
+            id={nextAdjustmentId}
+            name="nextAdjustment"
+            aria-describedby={nextAdjustmentHelpId}
+            placeholder="What should change next time?"
+          />
+        </div>
 
         <button type="submit">Save review</button>
       </form>
@@ -163,7 +174,8 @@ const dailyReviewCardsStyles = `
 
   .daily-review-card__area legend,
   .daily-review-card__area h4,
-  .daily-review-card__control > span {
+  .daily-review-card__control > span,
+  .daily-review-card__control > label {
     margin: 0 0 0.45rem;
     color: var(--chronos-text, #0f172a);
     font-size: 1rem;

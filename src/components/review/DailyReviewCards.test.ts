@@ -41,9 +41,10 @@ describe('DailyReviewCards', () => {
     expect(html).toContain('Admin window');
     expect(html.match(/<form(?=[^>]*method="post")[^>]*>/gu)).toHaveLength(2);
     expect(html).toContain('Finished tasks');
-    expect(html).toContain('Open before this review');
+    expect(html).toContain('Still open for tomorrow planning');
     expect(html).toContain('Notes (required)');
-    expect(html).toContain('Tomorrow adjustment');
+    expect(html).toContain('Adjustment for tomorrow planning');
+    expect(html).toContain('Optional. Capture what tomorrow planning should account for.');
     expect(html).toMatch(
       /<input(?=[^>]*type="hidden")(?=[^>]*name="action")(?=[^>]*value="conclude-block")[^>]*>/u,
     );
@@ -51,7 +52,10 @@ describe('DailyReviewCards', () => {
       /<input(?=[^>]*type="hidden")(?=[^>]*name="blockId")(?=[^>]*value="morning-focus")[^>]*>/u,
     );
     expect(html).toMatch(/<textarea(?=[^>]*name="notes")(?=[^>]*required="")/u);
-    expect(html).toMatch(/<input(?=[^>]*name="nextAdjustment")[^>]*>/u);
+    expect(html).toMatch(
+      /<input(?=[^>]*id="morning-focus-next-adjustment")(?=[^>]*name="nextAdjustment")(?=[^>]*aria-describedby="morning-focus-next-adjustment-help")[^>]*>/u,
+    );
+    expect(html).not.toMatch(/<input(?=[^>]*name="nextAdjustment")(?=[^>]*required)[^>]*>/u);
     expect(html).not.toContain('name="openItems"');
     expect(html).not.toContain('name="remainingTaskIds"');
     expect(html).not.toContain('name="tomorrowTasks"');
@@ -75,9 +79,9 @@ describe('DailyReviewCards', () => {
   it('shows static display-only open items without implying a live checkbox summary', () => {
     const html = renderDailyReviewCards();
 
-    expect(html).toContain('Open before this review');
+    expect(html).toContain('Still open for tomorrow planning');
     expect(html).toContain(
-      'These tasks were open when this review loaded. Check them above if they finished.',
+      'These tasks were open when this review loaded. Check them above if they finished; Planning decides what happens next.',
     );
     expect(html).not.toContain('currently unchecked before you save');
     expect(html).toMatch(
@@ -103,13 +107,14 @@ describe('DailyReviewCards', () => {
 
     expect(html).toContain('All done block');
     expect(getInputTagByValue(html, 'done-only')).toContain('checked=""');
-    expect(html).toContain('No open items for this block.');
+    expect(html).toContain('No open tasks for this block.');
     expect(html).toContain('No tasks are attached to this block.');
     expect(html).toMatch(
       /<input(?=[^>]*type="hidden")(?=[^>]*name="blockId")(?=[^>]*value="empty-block")[^>]*>/u,
     );
     expect(html).toMatch(/<textarea(?=[^>]*name="notes")(?=[^>]*required="")/u);
     expect(html).toMatch(/<input(?=[^>]*name="nextAdjustment")[^>]*>/u);
+    expect(html).not.toMatch(/<input(?=[^>]*name="nextAdjustment")(?=[^>]*required)[^>]*>/u);
   });
 
   it('marks notes as visibly required while preserving the required textarea contract', () => {

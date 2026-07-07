@@ -46,7 +46,9 @@ describe('ConclusionPanel', () => {
     expect(html).toContain('Book focus room');
     expect(html).toContain('Answer user feedback');
     expect(html).toContain('I kept momentum during the first hour.');
+    expect(html).toContain('Adjustment for tomorrow planning');
     expect(html).toContain('Split deep work into two sessions.');
+    expect(html).toContain('Use Planning to decide what moves, waits, or changes next.');
   });
 
   it('shows empty-state text when no tasks were completed', () => {
@@ -59,6 +61,15 @@ describe('ConclusionPanel', () => {
 
     expect(html).toContain('No tasks were marked complete.');
     expect(html).toContain('No notes were added for this block.');
-    expect(html).toContain('No next adjustment was added.');
+    expect(html).toContain('No adjustment was added for tomorrow planning.');
+  });
+
+  it('uses the tomorrow planning fallback when the optional adjustment is blank', () => {
+    expect(renderConclusionPanel({ nextAdjustment: '' })).toContain(
+      'No adjustment was added for tomorrow planning.',
+    );
+    expect(renderConclusionPanel({ nextAdjustment: '   ' })).toContain(
+      'No adjustment was added for tomorrow planning.',
+    );
   });
 });
