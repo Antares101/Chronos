@@ -37,8 +37,10 @@ describe('TodayOperatingSummary', () => {
   it('renders Now, Next, Open time, and day context from the read model', () => {
     const html = renderSummary();
 
-    expect(html).toContain('Today · Now board');
-    expect(html).toContain('Snapshot time');
+    expect(html).toContain('Operating strip');
+    expect(html).toContain('Now, next, and open space');
+    expect(html).toContain('Current status');
+    expect(html).toContain('Clock');
     expect(html).toContain('09:30');
     expect(html).toContain('Mon, Jun 29');
     expect(html).toContain('Now');

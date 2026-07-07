@@ -42,7 +42,7 @@ const quickBlockPreview = buildQuickSchedulePreview({
   title="Chronos Today"
   eyebrow="Today"
   heading="Run the day"
-  summary="Run today from now, next, tasks, and blocks."
+  summary="Run today from now, timeline, tasks, and blocks."
   email={email}
   currentPath={routePath}
   actionError={actionError}
@@ -53,56 +53,61 @@ const quickBlockPreview = buildQuickSchedulePreview({
       <TodayOperatingSummary {...appState.todayOperatingSummary} />
     </div>
 
-    <section class="actions" aria-labelledby="today-actions-title">
-      <div class="actions__header">
-        <p class="eyebrow">Today actions</p>
-        <h2 id="today-actions-title">Start, shape, and capture work</h2>
+    <section class="islands today-workspace" aria-label="Chronos today workspace">
+      <div class="today-workspace__timeline">
+        <DailyTimeline {...appState.dailyTimeline} client:load />
+        {
+          appState.blockDetail ? (
+            <BlockDetail
+              {...appState.blockDetail}
+              pauseActionPath={routePath}
+              taskActionPath={routePath}
+              client:load
+            />
+          ) : (
+            <section class="empty-panel">
+              <h2>No block selected yet</h2>
+              <p>
+                Create or start a planning block to see its tasks, events, and pause controls here.
+              </p>
+            </section>
+          )
+        }
       </div>
 
-      <QuickTaskCapture
-        blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
-        currentBlockId={appState.todayTaskPanel.currentBlockId}
-        currentBlockTitle={appState.todayTaskPanel.currentBlockTitle}
-      />
+      <aside class="today-workspace__utility" aria-label="Today controls and lists">
+        <section class="actions" aria-labelledby="today-actions-title">
+          <div class="actions__header">
+            <p class="eyebrow">Today controls</p>
+            <h2 id="today-actions-title">Start, shape, and capture work</h2>
+          </div>
 
-      <TodayActionsGrid
-        planningBlocks={appState.planningBlocks}
-        blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
-        todayDate={appState.todayDate}
-        quickBlockDefaults={appState.quickBlockDefaults}
-        quickBlockPreview={quickBlockPreview}
-      />
-    </section>
-
-    <section class="islands" aria-label="Chronos today content">
-      <DailyTimeline {...appState.dailyTimeline} client:load />
-      <div class="today-grid">
-        <TodayGoalsPanel
-          title="Goals for today"
-          description="Pick up to three outcomes for today."
-          goals={appState.todayGoals}
-          maxGoals={3}
-          actionPath={routePath}
-        />
-        <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
-      </div>
-      {
-        appState.blockDetail ? (
-          <BlockDetail
-            {...appState.blockDetail}
-            pauseActionPath={routePath}
-            taskActionPath={routePath}
-            client:load
+          <QuickTaskCapture
+            blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
+            currentBlockId={appState.todayTaskPanel.currentBlockId}
+            currentBlockTitle={appState.todayTaskPanel.currentBlockTitle}
           />
-        ) : (
-          <section class="empty-panel">
-            <h2>No block selected yet</h2>
-            <p>
-              Create or start a planning block to see its tasks, events, and pause controls here.
-            </p>
-          </section>
-        )
-      }
+
+          <TodayActionsGrid
+            planningBlocks={appState.planningBlocks}
+            blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
+            todayDate={appState.todayDate}
+            quickBlockDefaults={appState.quickBlockDefaults}
+            quickBlockPreview={quickBlockPreview}
+          />
+        </section>
+
+        <div class="today-grid" aria-label="Today goals and tasks">
+          <TodayGoalsPanel
+            title="Goals for today"
+            description="Pick up to three outcomes for today."
+            goals={appState.todayGoals}
+            maxGoals={3}
+            actionPath={routePath}
+          />
+          <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
+        </div>
+      </aside>
     </section>
   </div>
 </ChronosAppShell>
@@ -121,41 +126,137 @@ const quickBlockPreview = buildQuickSchedulePreview({
 
 <style>
   .app-route--today {
-    --app-route-max: 86rem;
+    --today-chrome-max: 96rem;
+    --today-workspace-max: 96rem;
+    --app-route-max: var(--today-workspace-max);
+  }
+
+  :global(.shell:has(.app-route--today)) {
+    --today-chrome-max: 96rem;
+  }
+
+  :global(.shell:has(.app-route--today) .command-bar) {
+    width: min(100%, var(--today-chrome-max));
   }
 
   .today-summary-block {
-    width: min(100%, var(--app-route-max));
-    max-width: var(--app-route-max);
-    margin: 1rem auto 0;
+    width: min(100%, var(--today-chrome-max));
+    max-width: var(--today-chrome-max);
+    margin: 0.85rem auto 0;
     min-width: 0;
   }
 
-  .today-summary-block :global(.today-summary) {
+  .today-summary-block :global(.today-operating-strip) {
     width: 100%;
     max-width: 100%;
   }
 
+  .today-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(0.85rem, 1.4vw, 1.15rem);
+    margin-top: 0.85rem;
+    min-width: 0;
+  }
+
+  .today-workspace,
+  .today-workspace__timeline,
+  .today-workspace__utility,
+  .today-grid {
+    min-width: 0;
+  }
+
+  .today-workspace__timeline,
+  .today-workspace__utility {
+    display: grid;
+    gap: clamp(0.85rem, 1.4vw, 1.15rem);
+  }
+
+  .today-workspace__utility .actions {
+    width: 100%;
+    margin: 0;
+    padding: clamp(0.9rem, 1.5vw, 1.15rem);
+  }
+
+  .today-workspace__utility .actions__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.35rem 0.85rem;
+    max-width: none;
+  }
+
+  .today-workspace__utility .actions__header h2 {
+    font-size: clamp(1.15rem, 1.5vw, 1.45rem);
+  }
+
+  .today-workspace__utility :global(.quick-task-capture) {
+    margin-top: 0.8rem;
+  }
+
+  .today-workspace__utility :global(.actions__grid) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+  }
+
+  .today-workspace__utility :global(.action-card) {
+    padding: clamp(0.85rem, 1.2vw, 1rem);
+  }
+
   .today-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-    gap: clamp(1rem, 2vw, 1.25rem);
-    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: clamp(0.85rem, 1.4vw, 1rem);
+  }
+
+  @media (min-width: 88rem) {
+    .today-workspace {
+      grid-template-columns: minmax(0, 1.45fr) minmax(24rem, 0.8fr);
+    }
+
+    .today-workspace__utility {
+      position: sticky;
+      top: clamp(0.75rem, 1.5vw, 1.25rem);
+      align-self: start;
+    }
   }
 
   @media (min-width: 100rem) {
     .app-route--today {
-      --app-route-max: 104rem;
+      --today-workspace-max: 120rem;
     }
 
-    .today-grid {
-      grid-template-columns: minmax(22rem, 0.82fr) minmax(0, 1.18fr);
+    .today-workspace {
+      grid-template-columns: minmax(0, 1.55fr) minmax(30rem, 0.85fr);
     }
   }
 
   @media (min-width: 120rem) {
     .app-route--today {
-      --app-route-max: 116rem;
+      --today-workspace-max: 152rem;
+    }
+
+    .today-workspace {
+      grid-template-columns: minmax(0, 1.65fr) minmax(36rem, 0.9fr);
+    }
+  }
+
+  @media (min-width: 150rem) {
+    .app-route--today {
+      --today-workspace-max: 176rem;
+    }
+
+    .today-workspace {
+      grid-template-columns: minmax(0, 1.75fr) minmax(40rem, 0.85fr);
+    }
+  }
+
+  @media (max-width: 54rem) {
+    .today-workspace__utility .actions__header {
+      display: grid;
     }
   }
 </style>

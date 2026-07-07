@@ -917,6 +917,11 @@ const routes: AppRoute[] = [
     }
 
     .command-bar {
+      grid-template-areas:
+        'identity'
+        'utilities'
+        'nav';
+      grid-template-columns: minmax(0, 1fr);
       padding: 0.75rem;
     }
 
@@ -926,7 +931,10 @@ const routes: AppRoute[] = [
     }
 
     .command-bar__utilities {
-      max-width: 11.5rem;
+      justify-content: flex-start;
+      justify-self: start;
+      max-width: 100%;
+      white-space: normal;
     }
 
     .command-bar__utilities button,
