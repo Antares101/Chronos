@@ -644,8 +644,8 @@ const routes: AppRoute[] = [
     background: var(--app-disabled);
     color: var(--app-disabled-text);
     cursor: not-allowed;
-    opacity: 0.76;
-    box-shadow: none;
+    opacity: 1;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-disabled-text) 24%, transparent);
   }
 
   .actions {
@@ -777,9 +777,9 @@ const routes: AppRoute[] = [
   input:disabled,
   select:disabled,
   textarea:disabled {
-    background: var(--app-surface-muted);
-    border-color: var(--app-border);
-    color: var(--app-text-muted);
+    background: color-mix(in srgb, var(--app-disabled) 20%, var(--app-surface-muted));
+    border-color: color-mix(in srgb, var(--app-disabled-text) 28%, var(--app-border));
+    color: var(--app-disabled-text);
     cursor: not-allowed;
     opacity: 1;
   }

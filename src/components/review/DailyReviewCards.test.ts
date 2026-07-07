@@ -40,8 +40,8 @@ describe('DailyReviewCards', () => {
     expect(html).toContain('Morning focus');
     expect(html).toContain('Admin window');
     expect(html.match(/<form(?=[^>]*method="post")[^>]*>/gu)).toHaveLength(2);
-    expect(html).toContain('Finished tasks');
-    expect(html).toContain('Still open for tomorrow planning');
+    expect(html).toContain('Completion checklist');
+    expect(html).toContain('Planning handoff snapshot');
     expect(html).toContain('Notes (required)');
     expect(html).toContain('Adjustment for tomorrow planning');
     expect(html).toContain('Optional. Capture what tomorrow planning should account for.');
@@ -79,10 +79,12 @@ describe('DailyReviewCards', () => {
   it('shows static display-only open items without implying a live checkbox summary', () => {
     const html = renderDailyReviewCards();
 
-    expect(html).toContain('Still open for tomorrow planning');
+    expect(html).toContain('Planning handoff snapshot');
     expect(html).toContain(
-      'These tasks were open when this review loaded. Check them above if they finished; Planning decides what happens next.',
+      'Read-only snapshot of tasks still open for tomorrow. Only the checklist above changes completion before you save.',
     );
+    expect(html).toContain('aria-label="Read-only planning handoff tasks"');
+    expect(html).toContain('Open');
     expect(html).not.toContain('currently unchecked before you save');
     expect(html).toMatch(
       /<section(?=[^>]*aria-labelledby="morning-focus-open-items")[\s\S]*Send follow-up note[\s\S]*<\/section>/u,

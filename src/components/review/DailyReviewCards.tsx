@@ -45,17 +45,17 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
       <header className="daily-review-card__header">
         <p className="daily-review-card__eyebrow">Block review</p>
         <h3>{block.title}</h3>
-        <p>Mark what finished, review what was open, and save the next adjustment.</p>
+        <p>Use the checklist to update task completion, then leave any planning notes.</p>
       </header>
 
       <form method="post" className="conclusion-form daily-review-card__form">
         <input type="hidden" name="action" value="conclude-block" />
         <input type="hidden" name="blockId" value={block.id} />
 
-        <fieldset className="daily-review-card__area">
-          <legend>Finished tasks</legend>
+        <fieldset className="daily-review-card__area daily-review-card__area--editable">
+          <legend>Completion checklist</legend>
           <p className="daily-review-card__helper">
-            Check any task that finished during review. Anything left unchecked stays open.
+            You can edit this checklist. Check only the tasks that finished before saving.
           </p>
           {block.tasks.length === 0 ? (
             <p className="empty-copy">No tasks are attached to this block.</p>
@@ -78,18 +78,28 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
           )}
         </fieldset>
 
-        <section className="daily-review-card__area" aria-labelledby={openItemsTitleId}>
-          <h4 id={openItemsTitleId}>Still open for tomorrow planning</h4>
+        <section
+          className="daily-review-card__area daily-review-card__handoff"
+          aria-labelledby={openItemsTitleId}
+        >
+          <h4 id={openItemsTitleId}>Planning handoff snapshot</h4>
           <p className="daily-review-card__helper">
-            These tasks were open when this review loaded. Check them above if they finished;
-            Planning decides what happens next.
+            Read-only snapshot of tasks still open for tomorrow. Only the checklist above changes
+            completion before you save.
           </p>
           {openTasks.length === 0 ? (
             <p className="empty-copy">No open tasks for this block.</p>
           ) : (
-            <ul className="daily-review-card__open-list" role="list">
+            <ul
+              className="daily-review-card__open-list"
+              role="list"
+              aria-label="Read-only planning handoff tasks"
+            >
               {openTasks.map((task) => (
-                <li key={task.id}>{task.title}</li>
+                <li key={task.id}>
+                  <span className="daily-review-card__open-status">Open</span>
+                  <span>{task.title}</span>
+                </li>
               ))}
             </ul>
           )}
@@ -170,6 +180,16 @@ const dailyReviewCardsStyles = `
     background: var(--chronos-surface-muted, #f1f5f9);
     padding: 0.85rem;
     overflow-wrap: anywhere;
+  }
+
+  .daily-review-card__area--editable {
+    border-color: color-mix(in srgb, var(--chronos-primary, #4f46e5) 28%, var(--chronos-border, rgba(148, 163, 184, 0.22)));
+    background: color-mix(in srgb, var(--chronos-surface-muted, #f1f5f9) 76%, var(--chronos-primary-soft, #e0e7ff));
+  }
+
+  .daily-review-card__handoff {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--chronos-surface-muted, #f1f5f9) 72%, var(--chronos-surface, #ffffff));
   }
 
   .daily-review-card__area legend,
@@ -265,13 +285,28 @@ const dailyReviewCardsStyles = `
   }
 
   .daily-review-card__open-list li {
-    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.55rem;
+    border: 1px dashed var(--chronos-border, rgba(148, 163, 184, 0.22));
     border-radius: 12px;
-    background: var(--chronos-surface, #ffffff);
+    background: color-mix(in srgb, var(--chronos-surface, #ffffff) 66%, transparent);
     color: var(--chronos-text-muted, #475569);
     padding: 0.55rem 0.7rem;
     font-size: 0.87rem;
     font-weight: 750;
+  }
+
+  .daily-review-card__open-status {
+    border-radius: 999px;
+    background: var(--chronos-surface-tinted, #eef2ff);
+    color: var(--chronos-primary-strong, #4338ca);
+    padding: 0.15rem 0.45rem;
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1.35;
+    text-transform: uppercase;
   }
 
   .daily-review-card__control {
@@ -284,6 +319,11 @@ const dailyReviewCardsStyles = `
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  .daily-review-card__form > button {
+    justify-self: end;
+    min-width: min(100%, 16rem);
   }
 
   @media (max-width: 40rem) {
