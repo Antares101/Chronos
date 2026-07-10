@@ -63,12 +63,25 @@ describe('WeeklyCalendar', () => {
     expect(html).toContain('background-color:var(--chronos-primary-soft, #e0e7ff)');
   });
 
-  it('renders empty day lanes safely', () => {
+  it('marks empty lanes for responsive compaction without changing populated lane geometry', () => {
     const emptyWeek = weekDays.map((day) => ({ ...day, blocks: [] }));
-    const html = renderWeeklyCalendar({ days: emptyWeek });
+    const emptyHtml = renderWeeklyCalendar({ days: emptyWeek });
+    const populatedHtml = renderWeeklyCalendar();
 
-    expect(countMatches(html, /class="weekly-calendar__day"/g)).toBe(7);
-    expect(countMatches(html, /No blocks yet/g)).toBe(7);
+    expect(countMatches(emptyHtml, /class="weekly-calendar__day"/g)).toBe(7);
+    expect(countMatches(emptyHtml, /data-empty="true"/g)).toBe(7);
+    expect(
+      countMatches(emptyHtml, /class="weekly-calendar__lane weekly-calendar__lane--empty"/g),
+    ).toBe(7);
+    expect(countMatches(emptyHtml, /No blocks yet/g)).toBe(7);
+    expect(populatedHtml).toContain('class="weekly-calendar__lane" data-empty="false"');
+    expect(populatedHtml).toContain('min-height: 24.25rem');
+    expect(populatedHtml).toMatch(
+      /@media \(max-width: 980px\)[\s\S]*?\.weekly-calendar__lane--empty\s*{\s*min-height: 10rem;/,
+    );
+    expect(populatedHtml).toMatch(
+      /@media \(max-width: 640px\)[\s\S]*?\.weekly-calendar__lane--empty\s*{\s*min-height: 8rem;/,
+    );
   });
 
   it('packs overlapping day blocks into deterministic side-by-side lanes', () => {

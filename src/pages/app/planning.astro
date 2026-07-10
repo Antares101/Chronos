@@ -45,23 +45,32 @@ const defaultEditEndTime = firstPlanningBlock
 
 <ChronosAppShell
   title="Chronos Planning"
-  eyebrow="Planning"
-  heading="Shape the week"
-  summary="Create weekly blocks, reschedule work, and move unassigned tasks into the right place."
+  eyebrow="CHRONOS"
+  heading="Planning"
+  summary="Plan the week, place open work, and adjust schedules."
   email={email}
   currentPath={routePath}
   actionError={actionError}
   statusMessage={statusMessage}
 >
-  <div class="app-route app-route--planning">
-    <section class="actions" aria-labelledby="planning-actions-title">
+  <div class="app-route app-route--planning planning-workbench">
+    <main class="planning-workbench__main">
+      <section class="planning-workbench__calendar" aria-label="Weekly planning calendar">
+        <WeeklyCalendar {...appState.weeklyCalendar} client:load />
+      </section>
+      <section class="planning-workbench__tasks" aria-label="Unassigned planning tasks">
+        <TaskList {...appState.taskList} client:load />
+      </section>
+    </main>
+
+    <aside class="planning-workbench__rail actions" aria-labelledby="planning-actions-title">
       <div class="actions__header">
         <p class="eyebrow">Planning actions</p>
         <h2 id="planning-actions-title">Set up blocks and assign tasks</h2>
       </div>
 
       <div class="actions__grid">
-        <article class="action-card">
+        <article class="action-card planning-workbench__create">
           <h3>Create planned block</h3>
           <form method="post">
             <input type="hidden" name="action" value="create-planned-block" />
@@ -97,107 +106,108 @@ const defaultEditEndTime = firstPlanningBlock
           </form>
         </article>
 
-        <article class="action-card">
-          <h3>Edit planned schedule</h3>
-          <form method="post">
-            <input type="hidden" name="action" value="update-planned-schedule" />
-            <label>
-              Planning block
-              <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
-                {
-                  appState.planningBlocks.map((block) => (
-                    <option value={block.id}>
-                      {block.title} · {getDateInputValue(block.plannedStart)}
-                    </option>
-                  ))
-                }
-              </select>
-            </label>
-            <div class="form-row">
+        <details class="planning-action">
+          <summary>Edit planned schedule</summary>
+          <article class="action-card">
+            <form method="post">
+              <input type="hidden" name="action" value="update-planned-schedule" />
               <label>
-                New day
-                <input type="date" name="date" value={defaultEditDate} required />
+                Planning block
+                <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
+                  {
+                    appState.planningBlocks.map((block) => (
+                      <option value={block.id}>
+                        {block.title} · {getDateInputValue(block.plannedStart)}
+                      </option>
+                    ))
+                  }
+                </select>
               </label>
-              <label>
-                Start
-                <input type="time" name="startTime" value={defaultEditStartTime} required />
-              </label>
-              <label>
-                End
-                <input type="time" name="endTime" value={defaultEditEndTime} required />
-              </label>
-            </div>
-            <button type="submit" disabled={appState.planningBlocks.length === 0}>
-              Update planned schedule
-            </button>
-          </form>
-        </article>
+              <div class="form-row">
+                <label>
+                  New day
+                  <input type="date" name="date" value={defaultEditDate} required />
+                </label>
+                <label>
+                  Start
+                  <input type="time" name="startTime" value={defaultEditStartTime} required />
+                </label>
+                <label>
+                  End
+                  <input type="time" name="endTime" value={defaultEditEndTime} required />
+                </label>
+              </div>
+              <button type="submit" disabled={appState.planningBlocks.length === 0}>
+                Update planned schedule
+              </button>
+            </form>
+          </article>
+        </details>
 
-        <article class="action-card">
-          <h3>Move task into block</h3>
-          <form method="post">
-            <input type="hidden" name="action" value="assign-task" />
-            <label>
-              Unassigned task
-              <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
-                {
-                  appState.assignableTasks.map((task) => (
-                    <option value={task.id}>{task.title}</option>
-                  ))
-                }
-              </select>
-            </label>
-            <label>
-              Target block
-              <select name="blockId" required disabled={appState.blocks.length === 0}>
-                {
-                  appState.blocks.map((block) => (
-                    <option value={block.id}>
-                      {block.title} · {block.phase}
-                    </option>
-                  ))
-                }
-              </select>
-            </label>
-            <button
-              type="submit"
-              disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
-            >
-              Move task
-            </button>
-          </form>
-        </article>
+        <details class="planning-action">
+          <summary>Move task into block</summary>
+          <article class="action-card">
+            <form method="post">
+              <input type="hidden" name="action" value="assign-task" />
+              <label>
+                Unassigned task
+                <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
+                  {
+                    appState.assignableTasks.map((task) => (
+                      <option value={task.id}>{task.title}</option>
+                    ))
+                  }
+                </select>
+              </label>
+              <label>
+                Target block
+                <select name="blockId" required disabled={appState.blocks.length === 0}>
+                  {
+                    appState.blocks.map((block) => (
+                      <option value={block.id}>
+                        {block.title} · {block.phase}
+                      </option>
+                    ))
+                  }
+                </select>
+              </label>
+              <button
+                type="submit"
+                disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
+              >
+                Move task
+              </button>
+            </form>
+          </article>
+        </details>
 
-        <article class="action-card">
-          <h3>Create task inside block</h3>
-          <form method="post">
-            <input type="hidden" name="action" value="create-task" />
-            <label>
-              Target block
-              <select name="blockId" required disabled={appState.blocks.length === 0}>
-                {
-                  appState.blocks.map((block) => (
-                    <option value={block.id}>
-                      {block.title} · {block.phase}
-                    </option>
-                  ))
-                }
-              </select>
-            </label>
-            <label>
-              Task title
-              <input name="title" required maxlength="120" placeholder="Prepare notes" />
-            </label>
-            <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
-          </form>
-        </article>
+        <details class="planning-action">
+          <summary>Create task inside block</summary>
+          <article class="action-card">
+            <form method="post">
+              <input type="hidden" name="action" value="create-task" />
+              <label>
+                Target block
+                <select name="blockId" required disabled={appState.blocks.length === 0}>
+                  {
+                    appState.blocks.map((block) => (
+                      <option value={block.id}>
+                        {block.title} · {block.phase}
+                      </option>
+                    ))
+                  }
+                </select>
+              </label>
+              <label>
+                Task title
+                <input name="title" required maxlength="120" placeholder="Prepare notes" />
+              </label>
+              <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
+            </form>
+          </article>
+        </details>
       </div>
-    </section>
-
-    <section class="islands planning-islands" aria-label="Chronos planning content">
-      <WeeklyCalendar {...appState.weeklyCalendar} client:load />
-      <TaskList {...appState.taskList} client:load />
-    </section>
+    </aside>
   </div>
 </ChronosAppShell>
 
@@ -206,18 +216,73 @@ const defaultEditEndTime = firstPlanningBlock
     --app-route-max: 86rem;
   }
 
-  @media (min-width: 100rem) {
+  .planning-workbench,
+  .planning-workbench__main,
+  .planning-workbench__rail {
+    min-width: 0;
+  }
+
+  .planning-workbench,
+  .planning-workbench__main,
+  .planning-workbench__rail,
+  .planning-workbench__rail .actions__grid {
+    display: grid;
+    gap: clamp(0.85rem, 1.4vw, 1.25rem);
+  }
+
+  .planning-workbench__calendar,
+  .planning-workbench__tasks {
+    min-width: 0;
+  }
+
+  .planning-workbench__rail .actions__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planning-action {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--chronos-border);
+    border-radius: var(--chronos-radius, 1rem);
+    background: var(--chronos-surface);
+    box-shadow: var(--chronos-shadow-card);
+  }
+
+  .planning-action summary {
+    padding: 1rem 1.1rem;
+    color: var(--chronos-text);
+    font-weight: 800;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+
+  .planning-action summary:hover {
+    background: var(--chronos-surface-muted);
+  }
+
+  .planning-action summary:focus-visible {
+    outline: 3px solid var(--chronos-ring);
+    outline-offset: -3px;
+  }
+
+  .planning-action[open] summary {
+    border-bottom: 1px solid var(--chronos-border);
+  }
+
+  .planning-action .action-card {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  @media (min-width: 88rem) {
     .app-route--planning {
       --app-route-max: 110rem;
     }
 
-    .app-route--planning .actions__grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .planning-islands {
+    .planning-workbench {
       align-items: start;
-      grid-template-columns: minmax(0, 2.1fr) minmax(20rem, 0.75fr);
+      grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
     }
   }
 

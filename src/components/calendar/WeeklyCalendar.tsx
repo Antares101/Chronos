@@ -118,14 +118,19 @@ function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
   const dayVisibleEnd = createDayBoundaryIso(day.date, visibleEnd);
   const packedBlocks = packWeeklyCalendarDayBlocks(day.blocks, dayVisibleStart, dayVisibleEnd);
 
+  const isEmpty = day.blocks.length === 0;
+
   return (
     <article className="weekly-calendar__day" role="listitem" aria-label={`${day.label} schedule`}>
       <header>
         <span>{day.label}</span>
         <time dateTime={day.date}>{day.date.slice(5)}</time>
       </header>
-      <div className="weekly-calendar__lane">
-        {day.blocks.length === 0 ? <p>No blocks yet</p> : null}
+      <div
+        className={`weekly-calendar__lane${isEmpty ? ' weekly-calendar__lane--empty' : ''}`}
+        data-empty={isEmpty}
+      >
+        {isEmpty ? <p>No blocks yet</p> : null}
         {packedBlocks.map((block) => (
           <CalendarBlock
             key={block.id}
@@ -571,9 +576,17 @@ const weeklyCalendarStyles = `
     .weekly-calendar__days {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .weekly-calendar__lane--empty {
+      min-height: 10rem;
+    }
   }
 
   @media (max-width: 640px) {
+    .weekly-calendar__lane--empty {
+      min-height: 8rem;
+    }
+
     .weekly-calendar__header {
       display: grid;
     }
