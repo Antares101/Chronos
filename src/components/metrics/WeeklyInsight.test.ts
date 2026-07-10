@@ -95,4 +95,39 @@ describe('WeeklyInsight', () => {
     expect(secondBlock).toBeGreaterThan(firstBlock);
     expect(html).toContain('Planned vs actual by block');
   });
+
+  it('renders category-derived planned, actual, and delta totals after all comparison sections', () => {
+    const html = renderWeeklyInsight();
+    const categoryIndex = html.indexOf('aria-label="Planned vs actual by category"');
+    const phaseIndex = html.indexOf('aria-label="Planned vs actual by phase"');
+    const blockIndex = html.indexOf('aria-label="Planned vs actual by block"');
+    const totalsIndex = html.indexOf('aria-label="Weekly planned vs actual totals"');
+
+    expect(categoryIndex).toBeGreaterThanOrEqual(0);
+    expect(phaseIndex).toBeGreaterThan(categoryIndex);
+    expect(blockIndex).toBeGreaterThan(phaseIndex);
+    expect(totalsIndex).toBeGreaterThan(blockIndex);
+    expect(html).toContain('Total planned');
+    expect(html).toContain('360m');
+    expect(html).toContain('Total actual');
+    expect(html).toContain('345m');
+    expect(html).toContain('Total delta');
+    expect(html).toContain('-15m');
+  });
+
+  it('stacks only the comparison panels at tablet width and collapses metric rows on mobile', () => {
+    const html = renderWeeklyInsight();
+    const tabletQueryIndex = html.indexOf('@media (max-width: 52rem)');
+    const mobileQueryIndex = html.indexOf('@media (max-width: 760px)');
+    const tabletQuery = html.slice(tabletQueryIndex, mobileQueryIndex);
+    const mobileQuery = html.slice(mobileQueryIndex);
+
+    expect(tabletQueryIndex).toBeGreaterThanOrEqual(0);
+    expect(mobileQueryIndex).toBeGreaterThan(tabletQueryIndex);
+    expect(tabletQuery).toContain('.weekly-insight__grids');
+    expect(tabletQuery).not.toContain('.weekly-insight__metric-item');
+    expect(tabletQuery).not.toContain('.weekly-insight__totals');
+    expect(mobileQuery).toContain('.weekly-insight__metric-item');
+    expect(mobileQuery).toContain('.weekly-insight__totals');
+  });
 });

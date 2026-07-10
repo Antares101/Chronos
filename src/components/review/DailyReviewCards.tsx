@@ -326,6 +326,25 @@ const dailyReviewCardsStyles = `
     min-width: min(100%, 16rem);
   }
 
+  @media (min-width: 88rem) {
+    .daily-review-card {
+      gap: 0.65rem;
+    }
+
+    .daily-review-card__form {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .daily-review-card__area {
+      padding: 0.7rem;
+    }
+
+    .daily-review-card__form > button {
+      grid-column: 1 / -1;
+    }
+  }
+
   @media (max-width: 40rem) {
     .daily-review-grid {
       --app-route-grid-min: 100%;

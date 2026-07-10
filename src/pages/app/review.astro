@@ -28,7 +28,7 @@ const appState = await loadChronosReviewState(repositories, userId);
 
 <ChronosAppShell
   title="Chronos Review"
-  eyebrow="Review"
+  eyebrow="CHRONOS"
   heading="Close a block"
   summary="Review one active block at a time, mark what finished, and note the adjustment for tomorrow."
   email={email}
@@ -37,43 +37,65 @@ const appState = await loadChronosReviewState(repositories, userId);
   statusMessage={statusMessage}
 >
   <div class="app-route app-route--review">
-    <section class="actions" aria-labelledby="review-actions-title">
-      <div class="actions__header">
-        <p class="eyebrow">Daily Review</p>
-        <h2 id="review-actions-title">Close one block at a time</h2>
+    <div class="review-workbench">
+      <div class="review-workbench__main">
+        <section class="actions" aria-labelledby="review-actions-title">
+          <div class="actions__header">
+            <p class="eyebrow">Daily Review</p>
+            <h2 id="review-actions-title">Close one block at a time</h2>
+          </div>
+
+          <DailyReviewCards
+            blocks={appState.executionBlocks.map((block) => ({
+              id: block.id,
+              title: block.title,
+              tasks: (appState.tasksByBlockId[block.id] ?? []).map((task) => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+              })),
+            }))}
+          />
+        </section>
       </div>
 
-      <DailyReviewCards
-        blocks={appState.executionBlocks.map((block) => ({
-          id: block.id,
-          title: block.title,
-          tasks: (appState.tasksByBlockId[block.id] ?? []).map((task) => ({
-            id: task.id,
-            title: task.title,
-            status: task.status,
-          })),
-        }))}
-      />
-    </section>
-
-    <section class="islands review-islands" aria-label="Chronos review content">
-      {
-        appState.conclusionPanel ? (
-          <ConclusionPanel {...appState.conclusionPanel} client:load />
-        ) : (
-          <section class="empty-panel">
-            <h2>No conclusion review yet</h2>
-            <p>Conclude an execution block to see its notes, timing, and next adjustment here.</p>
-          </section>
-        )
-      }
-    </section>
+      <aside class="review-workbench__context" aria-label="Last conclusion context">
+        {
+          appState.conclusionPanel ? (
+            <ConclusionPanel {...appState.conclusionPanel} client:load />
+          ) : (
+            <section class="empty-panel">
+              <h2>No conclusion review yet</h2>
+              <p>Conclude an execution block to see its notes, timing, and next adjustment here.</p>
+            </section>
+          )
+        }
+      </aside>
+    </div>
   </div>
 </ChronosAppShell>
 
 <style>
   .app-route--review {
     --app-route-max: 86rem;
+  }
+
+  .review-workbench,
+  .review-workbench__main,
+  .review-workbench__context {
+    min-width: 0;
+  }
+
+  .review-workbench {
+    display: grid;
+    gap: clamp(0.85rem, 1.5vw, 1.25rem);
+  }
+
+  @media (min-width: 88rem) {
+    .review-workbench {
+      grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
+      align-items: start;
+    }
   }
 
   @media (min-width: 100rem) {

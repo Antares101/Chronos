@@ -31,6 +31,14 @@ export default function WeeklyInsight({
   const blocks = Object.entries(summary.byBlock);
 
   const allBlocksSorted = blocks.sort((first, second) => first[0].localeCompare(second[0]));
+  const totals = categories.reduce(
+    (result, [, value]) => ({
+      plannedMinutes: result.plannedMinutes + value.plannedMinutes,
+      actualMinutes: result.actualMinutes + value.actualMinutes,
+      deltaMinutes: result.deltaMinutes + value.deltaMinutes,
+    }),
+    { plannedMinutes: 0, actualMinutes: 0, deltaMinutes: 0 },
+  );
 
   return (
     <section className="weekly-insight" aria-labelledby="weekly-insight-title">
@@ -126,6 +134,30 @@ export default function WeeklyInsight({
           </ul>
         )}
       </article>
+
+      <footer className="weekly-insight__totals" aria-label="Weekly planned vs actual totals">
+        <div>
+          <span>Total planned</span>
+          <strong>{totals.plannedMinutes}m</strong>
+        </div>
+        <div>
+          <span>Total actual</span>
+          <strong>{totals.actualMinutes}m</strong>
+        </div>
+        <div>
+          <span>Total delta</span>
+          <strong
+            className={
+              totals.deltaMinutes >= 0
+                ? 'weekly-insight__metric-delta--up'
+                : 'weekly-insight__metric-delta--down'
+            }
+          >
+            {totals.deltaMinutes >= 0 ? '+' : ''}
+            {totals.deltaMinutes}m
+          </strong>
+        </div>
+      </footer>
 
       <style>{weeklyInsightStyles}</style>
     </section>
@@ -255,6 +287,29 @@ const weeklyInsightStyles = `
     font-weight: 800;
   }
 
+  .weekly-insight__totals {
+    margin-top: 0.8rem;
+    border-radius: 14px;
+    background: var(--chronos-inverse-surface, #111827);
+    color: var(--chronos-inverse-text, #f8fafc);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .weekly-insight__totals div {
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.84rem;
+  }
+
+  .weekly-insight__totals span {
+    color: var(--chronos-inverse-text-muted, #cbd5e1);
+  }
+
   .weekly-insight__empty {
     margin: 0;
     color: var(--chronos-text-soft, #64748b);
@@ -262,8 +317,14 @@ const weeklyInsightStyles = `
     font-weight: 700;
   }
 
-  @media (max-width: 760px) {
+  @media (max-width: 52rem) {
     .weekly-insight__grids {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .weekly-insight__totals {
       grid-template-columns: minmax(0, 1fr);
     }
 

@@ -43,6 +43,23 @@ describe('Review daily review route contract', () => {
     expect(source).not.toContain('heading="Close the day"');
   });
 
+  it('keeps completion first and adjacent to last-conclusion context in a responsive workbench', () => {
+    const source = readReviewSource();
+    const workbenchIndex = source.indexOf('<div class="review-workbench">');
+    const mainIndex = source.indexOf('<div class="review-workbench__main">');
+    const cardsIndex = source.indexOf('<DailyReviewCards');
+    const asideIndex = source.indexOf('<aside class="review-workbench__context"');
+    const conclusionIndex = source.indexOf('<ConclusionPanel');
+
+    expect(workbenchIndex).toBeGreaterThanOrEqual(0);
+    expect(mainIndex).toBeGreaterThan(workbenchIndex);
+    expect(cardsIndex).toBeGreaterThan(mainIndex);
+    expect(asideIndex).toBeGreaterThan(cardsIndex);
+    expect(conclusionIndex).toBeGreaterThan(asideIndex);
+    expect(source).toContain('@media (min-width: 88rem)');
+    expect(source).toContain('grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem)');
+  });
+
   it('preserves the conclusion output path and removes the route-local conclude-block form', () => {
     const source = readReviewSource();
 
