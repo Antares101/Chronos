@@ -5,7 +5,6 @@ import { chronosAppRoutes, type ChronosAppSectionPath } from '../../server/app/r
 type AppRoute = {
   href: ChronosAppSectionPath;
   label: string;
-  description: string;
 };
 
 interface Props {
@@ -31,26 +30,10 @@ const {
 } = Astro.props;
 
 const routes: AppRoute[] = [
-  {
-    href: chronosAppRoutes.today,
-    label: 'Today',
-    description: 'Timeline and active block',
-  },
-  {
-    href: chronosAppRoutes.planning,
-    label: 'Planning',
-    description: 'Weekly blocks and tasks',
-  },
-  {
-    href: chronosAppRoutes.review,
-    label: 'Review',
-    description: 'Conclusions and adjustments',
-  },
-  {
-    href: chronosAppRoutes.insights,
-    label: 'Insights',
-    description: 'Planned vs actual time',
-  },
+  { href: chronosAppRoutes.today, label: 'Today' },
+  { href: chronosAppRoutes.planning, label: 'Planning' },
+  { href: chronosAppRoutes.review, label: 'Review' },
+  { href: chronosAppRoutes.insights, label: 'Insights' },
 ];
 ---
 
@@ -112,7 +95,6 @@ const routes: AppRoute[] = [
               aria-current={currentPath === route.href ? 'page' : undefined}
             >
               <span>{route.label}</span>
-              <small>{route.description}</small>
             </a>
           ))
         }
@@ -392,20 +374,6 @@ const routes: AppRoute[] = [
     white-space: nowrap;
   }
 
-  .sound-toggle {
-    width: 2.75rem;
-    padding-inline: 0;
-  }
-
-  .sound-toggle [data-sound-toggle-label] {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
   .command-bar__utilities form {
     flex: 0 1 auto;
     margin: 0;
@@ -551,13 +519,6 @@ const routes: AppRoute[] = [
   .section-nav__link span {
     color: var(--app-text);
     font-weight: 900;
-  }
-
-  .section-nav__link small {
-    color: var(--app-text-soft);
-    font-size: 0.78rem;
-    font-weight: 700;
-    line-height: 1.35;
   }
 
   .section-nav__link--active {
@@ -865,6 +826,46 @@ const routes: AppRoute[] = [
     }
   }
 
+  @media (min-width: 88rem) {
+    .command-bar {
+      grid-template-areas: 'identity nav utilities';
+      grid-template-columns: minmax(16rem, 0.85fr) minmax(24rem, 1.35fr) auto;
+      align-items: center;
+      gap: clamp(0.75rem, 1.2vw, 1.1rem);
+      min-height: 4.5rem;
+      padding: 0.55rem 0.75rem;
+    }
+
+    .command-bar__utilities {
+      flex-wrap: nowrap;
+      max-width: none;
+    }
+
+    .eyebrow {
+      margin-bottom: 0.2rem;
+      font-size: 0.65rem;
+    }
+
+    h1 {
+      font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+    }
+
+    .summary {
+      margin-top: 0.2rem;
+      font-size: 0.72rem;
+      line-height: 1.2;
+    }
+
+    .section-nav__link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.5rem;
+      padding: 0.55rem 0.75rem;
+      text-align: center;
+    }
+  }
+
   @media (min-width: 100rem) {
     .shell {
       --app-shell-readable-max: 96rem;
@@ -941,11 +942,6 @@ const routes: AppRoute[] = [
     .command-bar__utilities .ui-button {
       width: auto;
       padding-inline: 0.8rem;
-    }
-
-    .command-bar__utilities .sound-toggle {
-      width: 2.65rem;
-      padding-inline: 0;
     }
 
     .summary strong {

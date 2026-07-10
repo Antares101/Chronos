@@ -145,7 +145,7 @@ const styles = `
 
   .quick-task-capture__form {
     display: grid;
-    grid-template-columns: minmax(min(100%, 16rem), 1.15fr) minmax(min(100%, 13rem), 0.85fr) auto;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
     align-items: end;
     gap: 0.75rem;
     min-width: 0;

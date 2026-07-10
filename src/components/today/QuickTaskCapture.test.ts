@@ -45,6 +45,20 @@ describe('QuickTaskCapture', () => {
     expect(html).not.toMatch(/<button[^>]*disabled[^>]*>Add task<\/button>/);
   });
 
+  it('keeps long block labels intact inside the bounded target control', () => {
+    const longTitle =
+      'A very long active block title that must remain readable without widening the action rail';
+    const html = renderQuickTaskCapture({
+      blocks: [{ id: 'long-block', title: longTitle, phase: 'execution' }],
+      currentBlockId: 'long-block',
+      currentBlockTitle: longTitle,
+    });
+
+    expect(html).toContain(`Targeting ${longTitle}. You can change it before adding the task.`);
+    expect(html).toContain(`${longTitle} · execution`);
+    expect(html).toMatch(/<select[\s\S]*name="blockId"[\s\S]*required/);
+  });
+
   it('disables quick capture and shows guidance when there are no eligible blocks', () => {
     const html = renderQuickTaskCapture({
       blocks: [],
@@ -110,7 +124,10 @@ describe('QuickTaskCapture', () => {
       /\.quick-task-capture\s*\{[\s\S]*min-width: 0;[\s\S]*max-width: 100%;[\s\S]*box-sizing: border-box;/,
     );
     expect(html).toMatch(
-      /\.quick-task-capture__form\s*\{[\s\S]*display: grid;[\s\S]*grid-template-columns:[\s\S]*min-width: 0;/,
+      /\.quick-task-capture__form\s*\{[\s\S]*display: grid;[\s\S]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 12rem\), 1fr\)\);[\s\S]*min-width: 0;/,
+    );
+    expect(html).not.toContain(
+      'minmax(min(100%, 16rem), 1.15fr) minmax(min(100%, 13rem), 0.85fr) auto',
     );
     expect(html).toMatch(
       /\.quick-task-capture input,[\s\S]*\.quick-task-capture select,[\s\S]*\.quick-task-capture button\s*\{[\s\S]*max-width: 100%;[\s\S]*box-sizing: border-box;/,

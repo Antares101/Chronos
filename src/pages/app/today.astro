@@ -40,7 +40,7 @@ const quickBlockPreview = buildQuickSchedulePreview({
 
 <ChronosAppShell
   title="Chronos Today"
-  eyebrow="Today"
+  eyebrow="CHRONOS"
   heading="Run the day"
   summary="Run today from now, timeline, tasks, and blocks."
   email={email}
@@ -97,7 +97,8 @@ const quickBlockPreview = buildQuickSchedulePreview({
           />
         </section>
 
-        <div class="today-grid" aria-label="Today goals and tasks">
+        <div class="today-grid" aria-label="Today tasks and goals">
+          <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
           <TodayGoalsPanel
             title="Goals for today"
             description="Pick up to three outcomes for today."
@@ -105,7 +106,6 @@ const quickBlockPreview = buildQuickSchedulePreview({
             maxGoals={3}
             actionPath={routePath}
           />
-          <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
         </div>
       </aside>
     </section>
@@ -196,6 +196,10 @@ const quickBlockPreview = buildQuickSchedulePreview({
     margin-top: 0.8rem;
   }
 
+  .today-workspace__utility :global(.quick-task-capture__form) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .today-workspace__utility :global(.actions__grid) {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
     gap: 0.8rem;
@@ -215,6 +219,32 @@ const quickBlockPreview = buildQuickSchedulePreview({
   @media (min-width: 88rem) {
     .today-workspace {
       grid-template-columns: minmax(0, 1.45fr) minmax(24rem, 0.8fr);
+    }
+
+    .today-workspace__timeline {
+      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.75fr);
+    }
+
+    .today-workspace__timeline :global(.block-detail__task) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .today-workspace__timeline :global(.block-detail__task > span:first-child) {
+      grid-column: 1 / -1;
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
+
+    .today-workspace__timeline :global(.block-detail__task form) {
+      justify-self: end;
+    }
+
+    .today-workspace__timeline > *,
+    .today-workspace__utility > * {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .today-workspace__utility {
