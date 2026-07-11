@@ -4,6 +4,7 @@ import type {
   BlockCategory,
   ChronosEvent,
   ChronosTask,
+  DailyWorkspace,
   Pause,
   PauseKind,
   TaskStatus,
@@ -29,6 +30,15 @@ import {
 } from '../../domain/services/lifecycle';
 import { calculatePlannedVsActual } from '../../domain/services/metrics';
 import { buildPauseActualEntry, logPause } from '../../domain/services/pauses';
+import {
+  buildDaySheetRows,
+  getCurrentTimeForDay,
+  resolveTodayDateContext,
+  selectTaskDefault,
+  type DaySheetRow,
+  type TaskDestination,
+  type TodayDateContext,
+} from '../../domain/services/today-workspace';
 import {
   createPlannedBlock,
   updatePlannedBlockSchedule,
@@ -77,6 +87,24 @@ export type TodayQuickBlockDefaults = {
   endTime: string;
 };
 
+export type TodayWorkspaceView = {
+  date: TodayDateContext;
+  header: {
+    focus: string;
+    constraints: string;
+    goals: TodayGoal[];
+    state: 'empty' | 'ready' | 'error';
+  };
+  sheet: { rows: DaySheetRow[]; currentTime: string | null; activeBlockId: string | null };
+  capture: { defaultDestination: TaskDestination | null; destinations: TaskDestination[] };
+  openTasks: TodayTaskPanelProps;
+  closeout: {
+    outcome: string;
+    tomorrowAdjustment: string;
+    state: 'empty' | 'ready' | 'error';
+  };
+};
+
 export type ChronosTodayState = Pick<
   ChronosAppState,
   | 'blocks'
@@ -92,6 +120,7 @@ export type ChronosTodayState = Pick<
   todayGoals: TodayGoal[];
   todayTaskPanel: TodayTaskPanelProps;
   quickBlockDefaults: TodayQuickBlockDefaults;
+  workspace: TodayWorkspaceView;
 };
 
 export type ChronosPlanningState = Pick<
@@ -130,10 +159,13 @@ export type ChronosAppActionStatus =
   | 'event-created'
   | 'concluded'
   | 'goals-saved'
+  | 'daily-header-saved'
+  | 'daily-closeout-saved'
   | 'task-updated';
 
 export type ChronosAppActionResult = {
   status: ChronosAppActionStatus;
+  destination?: string;
 };
 
 type Clock = () => string;
@@ -149,6 +181,8 @@ const statusMessages: Record<ChronosAppActionStatus, string> = {
   'event-created': 'Event added.',
   concluded: 'Review saved.',
   'goals-saved': 'Goals saved.',
+  'daily-header-saved': 'Daily header saved.',
+  'daily-closeout-saved': 'Closeout saved.',
   'task-updated': 'Task updated.',
 };
 
@@ -216,7 +250,6 @@ export async function loadChronosTodayState(
     (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < todayDate,
   );
   const todaySelection = selectTodayBlocks(dailyBlocks, carryOverBlocks, nowIso);
-  const { selectedBlock } = todaySelection;
   const todayBlocks = uniqueBlocks([
     ...dailyBlocks,
     ...(todaySelection.currentBlock &&
@@ -224,13 +257,24 @@ export async function loadChronosTodayState(
       ? [todaySelection.currentBlock]
       : []),
   ]);
+  const { selectedBlock } = todaySelection;
   const childBlocks = uniqueBlocks([...dailyBlocks, ...(selectedBlock ? [selectedBlock] : [])]);
-  const [eventsByBlockId, pausesByBlockId] = await loadBlockChildren(
-    repositories,
-    userId,
-    childBlocks,
-  );
-  const todayGoals = await repositories.todayGoals.listForDay({ userId, goalDate: todayDate });
+  const date = resolveTodayDateContext(nowIso);
+  const [children, todayGoals, dailyResult] = await Promise.all([
+    loadBlockChildren(repositories, userId, childBlocks),
+    repositories.todayGoals.listForDay({ userId, goalDate: date.date }),
+    loadDailyWorkspace(repositories.dailyWorkspaces, userId, date.date),
+  ]);
+  const [eventsByBlockId, pausesByBlockId] = children;
+  const pauses = Array.from(pausesByBlockId.values()).flat();
+  const defaultDestination = selectTaskDefault(todayBlocks);
+  const destinations: TaskDestination[] = [
+    ...blocks.map((block) => ({ kind: 'block' as const, blockId: block.id, label: block.title })),
+    { kind: 'unassigned', label: 'Unassigned' },
+  ];
+  const daily = dailyResult.workspace;
+  const dailyState = dailyResult.failed ? 'error' : daily ? 'ready' : 'empty';
+  const todayTaskPanel = buildTodayTaskPanel(tasks, todayBlocks, todaySelection.currentBlock);
 
   return {
     blocks: todayBlocks,
@@ -250,8 +294,29 @@ export async function loadChronosTodayState(
       : null,
     todayOperatingSummary: buildTodayOperatingSummary(todayDate, nowIso, todaySelection),
     todayGoals,
-    todayTaskPanel: buildTodayTaskPanel(tasks, todayBlocks, todaySelection.currentBlock),
+    todayTaskPanel,
     quickBlockDefaults: getQuickBlockDefaults(nowIso),
+    workspace: {
+      date,
+      header: {
+        focus: daily?.focus ?? '',
+        constraints: daily?.constraints ?? '',
+        goals: todayGoals,
+        state: dailyState,
+      },
+      sheet: {
+        rows: buildDaySheetRows(blocks, date, pauses),
+        currentTime: getCurrentTimeForDay(nowIso, date),
+        activeBlockId: defaultDestination?.kind === 'block' ? defaultDestination.blockId : null,
+      },
+      capture: { defaultDestination, destinations },
+      openTasks: todayTaskPanel,
+      closeout: {
+        outcome: daily?.outcome ?? '',
+        tomorrowAdjustment: daily?.tomorrowAdjustment ?? '',
+        state: dailyState,
+      },
+    },
   };
 }
 
@@ -341,6 +406,18 @@ async function loadChronosBaseState(
     tasks,
     nowIso,
   };
+}
+
+async function loadDailyWorkspace(
+  repository: DailyWorkspaceRepository,
+  userId: string,
+  workspaceDate: string,
+): Promise<{ workspace: DailyWorkspace | null; failed: boolean }> {
+  try {
+    return { workspace: await repository.findForDay({ userId, workspaceDate }), failed: false };
+  } catch {
+    return { workspace: null, failed: true };
+  }
 }
 
 async function loadUserBlocks(
@@ -481,6 +558,79 @@ export async function handleChronosAppAction(
       });
 
       return { status: 'event-created' };
+    }
+    case 'today-save-daily-header': {
+      const workspaceDate = resolveTodayDateContext(now()).date;
+      const focus = readLimitedOptionalString(formData, 'focus', 160);
+      const constraints = readLimitedOptionalString(formData, 'constraints', 500);
+      await repositories.dailyWorkspaces.saveHeader(
+        { userId, workspaceDate },
+        { focus, constraints },
+      );
+
+      return { status: 'daily-header-saved' };
+    }
+    case 'today-create-task': {
+      const title = requireFormString(formData, 'title');
+      const requestedDestination = readOptionalFormString(formData, 'destination');
+      let destination = requestedDestination;
+
+      if (!destination) {
+        const ownedBlocks = (await repositories.blocks.listForUser(userId)).filter(
+          (block) => block.userId === userId,
+        );
+        const nowIso = now();
+        const todayDate = selectTodayDate(nowIso);
+        const dailyBlocks = ownedBlocks.filter(
+          (block) => getDateKey(block.plannedStart) === todayDate,
+        );
+        const carryOverBlocks = ownedBlocks.filter(
+          (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < todayDate,
+        );
+        const { currentBlock } = selectTodayBlocks(dailyBlocks, carryOverBlocks, nowIso);
+        const active = selectTaskDefault(
+          uniqueBlocks([...dailyBlocks, ...(currentBlock ? [currentBlock] : [])]),
+        );
+        destination = active?.kind === 'block' ? `block:${active.blockId}` : null;
+      }
+      if (!destination) throw new Error('destination is required.');
+
+      if (destination === 'unassigned') {
+        await repositories.tasks.create({
+          userId,
+          blockId: null,
+          title,
+          status: 'todo',
+          source: 'general',
+        });
+      } else if (destination.startsWith('block:')) {
+        const block = await findRequiredBlock(repositories.blocks, {
+          userId,
+          blockId: destination.slice('block:'.length),
+        });
+        await repositories.tasks.create({
+          userId,
+          blockId: block.id,
+          title,
+          status: 'todo',
+          source: 'block',
+        });
+      } else {
+        throw new Error('destination is invalid.');
+      }
+
+      return { status: 'task-created', destination };
+    }
+    case 'today-save-closeout': {
+      const workspaceDate = resolveTodayDateContext(now()).date;
+      const outcome = readLimitedRequiredString(formData, 'outcome', 500);
+      const tomorrowAdjustment = readLimitedRequiredString(formData, 'tomorrowAdjustment', 280);
+      await repositories.dailyWorkspaces.saveCloseout(
+        { userId, workspaceDate },
+        { outcome, tomorrowAdjustment },
+      );
+
+      return { status: 'daily-closeout-saved' };
     }
     case 'today-save-goals': {
       const goalDate = selectTodayDate(now());
@@ -1297,6 +1447,23 @@ function readOptionalFormString(formData: FormData, fieldName: string): string |
   }
 
   return value.trim();
+}
+
+function readLimitedOptionalString(
+  formData: FormData,
+  fieldName: string,
+  limit: number,
+): string | null {
+  const value = readOptionalFormString(formData, fieldName);
+  if (value && value.length > limit)
+    throw new Error(`${fieldName} must be at most ${limit} characters.`);
+  return value;
+}
+
+function readLimitedRequiredString(formData: FormData, fieldName: string, limit: number): string {
+  const value = requireFormString(formData, fieldName);
+  if (value.length > limit) throw new Error(`${fieldName} must be at most ${limit} characters.`);
+  return value;
 }
 
 function readStringList(formData: FormData, fieldName: string): string[] {

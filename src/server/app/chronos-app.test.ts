@@ -1141,6 +1141,31 @@ describe('Chronos app backend actions', () => {
     );
   });
 
+  it('captures tasks with date-scoped defaults, deliberate overrides, and owned destinations', async () => {
+    const carryOver = blockFixture({ id: 'carry-over', phase: 'execution' });
+    carryOver.plannedStart = '2026-06-28T22:00:00.000Z';
+    carryOver.plannedEnd = '2026-06-28T23:00:00.000Z';
+    const future = blockFixture({ id: 'future-active', phase: 'execution' });
+    future.plannedStart = '2026-06-30T09:00:00.000Z';
+    future.plannedEnd = '2026-06-30T10:00:00.000Z';
+    const { repositories } = createMemoryRepositories({
+      blocks: [carryOver, future, blockFixture({ id: 'foreign', userId: 'user-2' })],
+    });
+    const now = () => '2026-06-29T09:30:00.000Z';
+    const act = (values: Record<string, string>) =>
+      handleChronosAppAction(repositories, 'user-1', formData(values), now);
+    await expect(act({ action: 'today-create-task', title: 'Default' })).resolves.toEqual({
+      status: 'task-created',
+      destination: 'block:carry-over',
+    });
+    await expect(
+      act({ action: 'today-create-task', title: 'Open', destination: 'unassigned' }),
+    ).resolves.toEqual({ status: 'task-created', destination: 'unassigned' });
+    await expect(
+      act({ action: 'today-create-task', title: 'Nope', destination: 'block:foreign' }),
+    ).rejects.toThrow('Block was not found for this account.');
+  });
+
   it('updates global task status from Today for the authenticated user only', async () => {
     const { repositories, store } = createMemoryRepositories({
       tasks: [

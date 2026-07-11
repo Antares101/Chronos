@@ -331,6 +331,87 @@ describe('Chronos app route contract', () => {
     ).toBeNull();
   });
 
+  it('returns a generic error without a draft when form data is unreadable', async () => {
+    const unreadable = {
+      method: 'POST',
+      clone: () => ({ formData: async () => Promise.reject(new Error('unreadable')) }),
+      formData: async () => Promise.reject(new Error('unreadable')),
+    } as unknown as Request;
+
+    await expect(
+      resolveChronosRouteAction({
+        request: unreadable,
+        currentUrl: new URL('https://chronos.test/app/today'),
+        routePath: chronosAppRoutes.today,
+        repositories: fakeRepositories(),
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual({
+      kind: 'error',
+      message: 'That change could not be saved. Check the form and try again.',
+    });
+  });
+
+  it('allowlists failed Today drafts and derives task confirmation from fresh owned state', async () => {
+    const repositories = fakeRepositories();
+    repositories.blocks = {
+      findById: async () => ({ title: 'Fresh label' }) as never,
+    } as unknown as ChronosAppRepositories['blocks'];
+
+    const failure = await resolveChronosActionRouteContext({
+      user: { id: 'user-1', email: 'user@chronos.test' },
+      request: createPostRequest('https://chronos.test/app/today', {
+        action: 'today-create-task',
+        title: '  Retry me  ',
+        destination: 'block:owned',
+        destinationLabel: 'Forged label',
+        userId: 'user-2',
+      }),
+      currentUrl: new URL('https://chronos.test/app/today'),
+      routePath: chronosAppRoutes.today,
+      repositoryFactory: () => repositories,
+      actionHandler: async () => {
+        throw new Error('title database secret');
+      },
+    });
+    expect(failure).toMatchObject({
+      actionError: 'That change could not be saved. Check the form and try again.',
+      actionDraft: {
+        action: 'today-create-task',
+        title: 'Retry me',
+        destination: 'block:owned',
+      },
+    });
+    const successUrl =
+      'https://chronos.test/app/today?status=task-created&destination=block%3Aowned';
+    const success = await resolveChronosActionRouteContext({
+      user: { id: 'user-1', email: 'user@chronos.test' },
+      request: new Request(successUrl),
+      currentUrl: new URL(successUrl),
+      routePath: chronosAppRoutes.today,
+      repositoryFactory: () => repositories,
+    });
+    expect(success).toMatchObject({ statusMessage: 'Task added to Fresh label.' });
+
+    repositories.blocks.findById = async () => {
+      throw new Error('lookup unavailable');
+    };
+    let writes = 0;
+    const unavailable = await resolveChronosActionRouteContext({
+      user: { id: 'user-1', email: 'user@chronos.test' },
+      request: new Request(successUrl),
+      currentUrl: new URL(successUrl),
+      routePath: chronosAppRoutes.today,
+      repositoryFactory: () => repositories,
+      actionHandler: async () => {
+        writes += 1;
+        return { status: 'task-created' };
+      },
+    });
+    expect(unavailable).toMatchObject({ statusMessage: 'Task added.' });
+    expect(writes).toBe(0);
+  });
+
   it('exposes the configured POST-capable section routes', () => {
     expect(chronosAppActionPaths).toEqual([
       chronosAppRoutes.today,

@@ -47,8 +47,14 @@ export type ChronosRouteRedirectDecision = {
 export type ChronosRouteAuthDecision =
   { kind: 'authenticated'; user: ChronosRouteUser; email: string } | ChronosRouteRedirectDecision;
 
+export type TodayActionDraft =
+  | { action: 'today-save-daily-header'; focus: string; constraints: string }
+  | { action: 'today-create-task'; title: string; destination: string }
+  | { action: 'today-save-closeout'; outcome: string; tomorrowAdjustment: string };
+
 export type ChronosRouteActionDecision =
-  { kind: 'redirect'; location: string; status: 303 } | { kind: 'error'; message: string };
+  | { kind: 'redirect'; location: string; status: 303 }
+  | { kind: 'error'; message: string; actionDraft?: TodayActionDraft };
 
 export type ChronosRouteActionHandler = (
   repositories: ChronosAppRepositories,
@@ -65,6 +71,7 @@ export type ChronosActionRouteContext = {
   email: string;
   actionError: string | null;
   statusMessage: string | null;
+  actionDraft?: TodayActionDraft;
 };
 
 export type ChronosReadRouteContext = {
@@ -167,6 +174,7 @@ export async function resolveChronosActionRouteContext({
 
   const repositories = repositoryFactory(authDecision.user);
   let actionError: string | null = null;
+  let actionDraft: TodayActionDraft | undefined;
   const actionDecision = await resolveChronosRouteAction({
     request,
     currentUrl,
@@ -182,7 +190,15 @@ export async function resolveChronosActionRouteContext({
 
   if (actionDecision?.kind === 'error') {
     actionError = actionDecision.message;
+    actionDraft = actionDecision.actionDraft;
   }
+
+  const statusMessage = await resolveRouteStatusMessage(
+    currentUrl,
+    actionError,
+    repositories,
+    authDecision.user.id,
+  );
 
   return {
     kind: 'ready',
@@ -190,7 +206,8 @@ export async function resolveChronosActionRouteContext({
     userId: authDecision.user.id,
     email: authDecision.email,
     actionError,
-    statusMessage: resolveChronosRouteStatusMessage(currentUrl, actionError),
+    statusMessage,
+    ...(actionDraft ? { actionDraft } : {}),
   };
 }
 
@@ -213,15 +230,31 @@ export async function resolveChronosRouteAction({
     return null;
   }
 
+  const draftRequest = request.clone();
+
   try {
     const formData = await request.formData();
     const result = await actionHandler(repositories, userId, formData);
 
-    return resolveChronosRouteActionRedirect(currentUrl, routePath, result.status);
-  } catch {
+    return resolveChronosRouteActionRedirect(
+      currentUrl,
+      routePath,
+      result.status,
+      result.destination,
+    );
+  } catch (error) {
+    const safeTodayError =
+      routePath === chronosAppRoutes.today &&
+      error instanceof Error &&
+      /^(?:focus must be at most 160 characters|constraints must be at most 500 characters|outcome (?:is required|must be at most 500 characters)|tomorrowAdjustment (?:is required|must be at most 280 characters)|destination (?:is required|is invalid)|title is required)\.$/.test(
+        error.message,
+      );
     return {
       kind: 'error',
-      message: routeActionErrorMessage,
+      message: safeTodayError ? error.message : routeActionErrorMessage,
+      ...(routePath === chronosAppRoutes.today
+        ? { actionDraft: await readTodayActionDraftSafely(draftRequest) }
+        : {}),
     };
   }
 }
@@ -230,11 +263,64 @@ export function resolveChronosRouteActionRedirect(
   currentUrl: URL,
   routePath: ChronosAppActionPath,
   status: ChronosAppActionStatus,
+  destination?: string,
 ): ChronosRouteActionDecision {
   const nextUrl = new URL(routePath, currentUrl);
   nextUrl.searchParams.set('status', status);
+  if (destination) nextUrl.searchParams.set('destination', destination);
 
   return { kind: 'redirect', location: getPathWithSearch(nextUrl), status: 303 };
+}
+
+async function resolveRouteStatusMessage(
+  currentUrl: URL,
+  actionError: string | null,
+  repositories: ChronosAppRepositories,
+  userId: string,
+): Promise<string | null> {
+  const message = resolveChronosRouteStatusMessage(currentUrl, actionError);
+  const destination = currentUrl.searchParams.get('destination');
+
+  if (message !== 'Task added.' || !destination) return message;
+  if (destination === 'unassigned') return 'Task added to Unassigned.';
+  if (!destination.startsWith('block:')) return message;
+
+  try {
+    const block = await repositories.blocks.findById({
+      userId,
+      blockId: destination.slice('block:'.length),
+    });
+    return block ? `Task added to ${block.title}.` : message;
+  } catch {
+    return message;
+  }
+}
+
+async function readTodayActionDraftSafely(request: Request): Promise<TodayActionDraft | undefined> {
+  try {
+    return readTodayActionDraft(await request.formData());
+  } catch {
+    return undefined;
+  }
+}
+
+function readTodayActionDraft(formData: FormData): TodayActionDraft | undefined {
+  const action = formData.get('action');
+  const value = (name: string) => {
+    const field = formData.get(name);
+    return typeof field === 'string' ? field.trim() : '';
+  };
+
+  if (action === 'today-save-daily-header') {
+    return { action, focus: value('focus'), constraints: value('constraints') };
+  }
+  if (action === 'today-create-task') {
+    return { action, title: value('title'), destination: value('destination') };
+  }
+  if (action === 'today-save-closeout') {
+    return { action, outcome: value('outcome'), tomorrowAdjustment: value('tomorrowAdjustment') };
+  }
+  return undefined;
 }
 
 export function resolveChronosRouteStatusMessage(
