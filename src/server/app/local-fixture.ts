@@ -4,6 +4,9 @@ import type {
   ChronosEvent,
   ChronosTask,
   ConclusionReview,
+  DailyCloseoutInput,
+  DailyHeaderInput,
+  DailyWorkspace,
   NewActualTimeEntry,
   NewBlock,
   NewConclusionReview,
@@ -15,7 +18,7 @@ import type {
   TaskStatus,
   TodayGoal,
 } from '../../domain/models';
-import type { BlockQuery, TodayGoalQuery } from '../../domain/repositories';
+import type { BlockQuery, DailyWorkspaceQuery, TodayGoalQuery } from '../../domain/repositories';
 import type { ChronosAppRepositories } from './chronos-app';
 
 const persistedAt = '2026-07-02T08:00:00.000Z';
@@ -28,6 +31,7 @@ type MemoryStore = {
   actualEntries: ActualTimeEntry[];
   reviews: ConclusionReview[];
   todayGoals: TodayGoal[];
+  dailyWorkspaces: DailyWorkspace[];
 };
 
 export function createMockLocalChronosAppRepositories(userId: string): ChronosAppRepositories {
@@ -254,6 +258,31 @@ export function createMockLocalChronosAppRepositories(userId: string): ChronosAp
         );
       },
     },
+    dailyWorkspaces: {
+      async findForDay(query: DailyWorkspaceQuery): Promise<DailyWorkspace | null> {
+        return findDailyWorkspace(store, query);
+      },
+      async saveHeader(
+        query: DailyWorkspaceQuery,
+        input: DailyHeaderInput,
+      ): Promise<DailyWorkspace> {
+        const workspace = upsertDailyWorkspace(store, nextId, query);
+        workspace.focus = input.focus;
+        workspace.constraints = input.constraints;
+        workspace.updatedAt = persistedAt;
+        return workspace;
+      },
+      async saveCloseout(
+        query: DailyWorkspaceQuery,
+        input: DailyCloseoutInput,
+      ): Promise<DailyWorkspace> {
+        const workspace = upsertDailyWorkspace(store, nextId, query);
+        workspace.outcome = input.outcome;
+        workspace.tomorrowAdjustment = input.tomorrowAdjustment;
+        workspace.updatedAt = persistedAt;
+        return workspace;
+      },
+    },
     todayGoals: {
       async listForDay(query: TodayGoalQuery): Promise<TodayGoal[]> {
         return store.todayGoals
@@ -376,6 +405,7 @@ function createInitialStore(userId: string): MemoryStore {
         endedAt: '2026-07-01T15:50:00.000Z',
       }),
     ],
+    dailyWorkspaces: [],
     todayGoals: [
       todayGoalFixture(userId, {
         id: 'local-today-goal-1',
@@ -502,6 +532,37 @@ function normalizeTodayGoalTitles(goals: readonly string[]): string[] {
     .map((goal) => goal.trim().slice(0, 120))
     .filter(Boolean)
     .slice(0, 3);
+}
+
+function findDailyWorkspace(store: MemoryStore, query: DailyWorkspaceQuery): DailyWorkspace | null {
+  return (
+    store.dailyWorkspaces.find(
+      (workspace) =>
+        workspace.userId === query.userId && workspace.workspaceDate === query.workspaceDate,
+    ) ?? null
+  );
+}
+
+function upsertDailyWorkspace(
+  store: MemoryStore,
+  nextId: (prefix: string) => string,
+  query: DailyWorkspaceQuery,
+): DailyWorkspace {
+  const existing = findDailyWorkspace(store, query);
+  if (existing) return existing;
+
+  const workspace: DailyWorkspace = {
+    ...query,
+    id: nextId('local-daily-workspace'),
+    focus: null,
+    constraints: null,
+    outcome: null,
+    tomorrowAdjustment: null,
+    createdAt: persistedAt,
+    updatedAt: persistedAt,
+  };
+  store.dailyWorkspaces.push(workspace);
+  return workspace;
 }
 
 function createIdSequence(): (prefix: string) => string {

@@ -4,6 +4,7 @@ import {
   actualTimeEntries,
   blocks,
   conclusionReviews,
+  dailyWorkspaces,
   events,
   pauses,
   tasks,
@@ -11,6 +12,7 @@ import {
   type ActualTimeEntryRow,
   type BlockRow,
   type ConclusionReviewRow,
+  type DailyWorkspaceRow,
   type EventRow,
   type PauseRow,
   type TaskRow,
@@ -21,6 +23,8 @@ import type {
   BlockQuery,
   BlockRepository,
   ConclusionReviewRepository,
+  DailyWorkspaceQuery,
+  DailyWorkspaceRepository,
   EventRepository,
   PauseRepository,
   TaskRepository,
@@ -29,6 +33,8 @@ import type {
 } from '../../domain/repositories';
 import type {
   BlockPhase,
+  DailyCloseoutInput,
+  DailyHeaderInput,
   NewActualTimeEntry,
   NewBlock,
   NewConclusionReview,
@@ -181,6 +187,66 @@ export class DrizzleTodayGoalRepository implements TodayGoalRepository {
         )
         .returning();
     });
+  }
+}
+
+export class DrizzleDailyWorkspaceRepository implements DailyWorkspaceRepository {
+  constructor(private readonly db: ChronosDatabase) {}
+
+  async findForDay(query: DailyWorkspaceQuery): Promise<DailyWorkspaceRow | null> {
+    const rows = await this.db
+      .select()
+      .from(dailyWorkspaces)
+      .where(
+        and(
+          eq(dailyWorkspaces.userId, query.userId),
+          eq(dailyWorkspaces.workspaceDate, query.workspaceDate),
+        ),
+      );
+
+    return rows[0] ?? null;
+  }
+
+  async saveHeader(
+    query: DailyWorkspaceQuery,
+    input: DailyHeaderInput,
+  ): Promise<DailyWorkspaceRow> {
+    return expectOne(
+      await this.db
+        .insert(dailyWorkspaces)
+        .values({ ...query, ...input })
+        .onConflictDoUpdate({
+          target: [dailyWorkspaces.userId, dailyWorkspaces.workspaceDate],
+          set: {
+            focus: input.focus,
+            constraints: input.constraints,
+            updatedAt: new Date().toISOString(),
+          },
+        })
+        .returning(),
+      'daily workspace',
+    );
+  }
+
+  async saveCloseout(
+    query: DailyWorkspaceQuery,
+    input: DailyCloseoutInput,
+  ): Promise<DailyWorkspaceRow> {
+    return expectOne(
+      await this.db
+        .insert(dailyWorkspaces)
+        .values({ ...query, ...input })
+        .onConflictDoUpdate({
+          target: [dailyWorkspaces.userId, dailyWorkspaces.workspaceDate],
+          set: {
+            outcome: input.outcome,
+            tomorrowAdjustment: input.tomorrowAdjustment,
+            updatedAt: new Date().toISOString(),
+          },
+        })
+        .returning(),
+      'daily workspace',
+    );
   }
 }
 

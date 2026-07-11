@@ -15,6 +15,7 @@ import type {
   BlockQuery,
   BlockRepository,
   ConclusionReviewRepository,
+  DailyWorkspaceRepository,
   EventRepository,
   PauseRepository,
   TaskRepository,
@@ -52,6 +53,7 @@ export type ChronosAppRepositories = {
   actualTimeEntries: ActualTimeEntryRepository;
   conclusionReviews: ConclusionReviewRepository;
   todayGoals: TodayGoalRepository;
+  dailyWorkspaces: DailyWorkspaceRepository;
 };
 
 export type ChronosAppState = {

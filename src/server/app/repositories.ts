@@ -3,6 +3,7 @@ import {
   DrizzleActualTimeEntryRepository,
   DrizzleBlockRepository,
   DrizzleConclusionReviewRepository,
+  DrizzleDailyWorkspaceRepository,
   DrizzleEventRepository,
   DrizzlePauseRepository,
   DrizzleTaskRepository,
@@ -21,5 +22,6 @@ export function createChronosAppRepositories(
     actualTimeEntries: new DrizzleActualTimeEntryRepository(db),
     conclusionReviews: new DrizzleConclusionReviewRepository(db),
     todayGoals: new DrizzleTodayGoalRepository(db),
+    dailyWorkspaces: new DrizzleDailyWorkspaceRepository(db),
   };
 }

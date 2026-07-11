@@ -98,6 +98,21 @@ export type TodayGoal = {
   updatedAt: string;
 };
 
+export type DailyWorkspace = {
+  id: string;
+  userId: string;
+  workspaceDate: string;
+  focus: string | null;
+  constraints: string | null;
+  outcome: string | null;
+  tomorrowAdjustment: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DailyHeaderInput = Pick<DailyWorkspace, 'focus' | 'constraints'>;
+export type DailyCloseoutInput = Pick<DailyWorkspace, 'outcome' | 'tomorrowAdjustment'>;
+
 export type NewBlock = Omit<Block, 'id' | 'createdAt' | 'updatedAt'>;
 export type PlannedScheduleUpdate = Pick<Block, 'plannedStart' | 'plannedEnd'>;
 export type NewTask = Omit<ChronosTask, 'id' | 'createdAt' | 'updatedAt'>;

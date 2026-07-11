@@ -5,6 +5,9 @@ import type {
   ChronosEvent,
   ChronosTask,
   ConclusionReview,
+  DailyCloseoutInput,
+  DailyHeaderInput,
+  DailyWorkspace,
   NewActualTimeEntry,
   NewBlock,
   NewConclusionReview,
@@ -28,6 +31,10 @@ export type BlockQuery = UserScopedQuery & {
 
 export type TodayGoalQuery = UserScopedQuery & {
   goalDate: string;
+};
+
+export type DailyWorkspaceQuery = UserScopedQuery & {
+  workspaceDate: string;
 };
 
 export interface BlockRepository {
@@ -75,4 +82,10 @@ export interface TodayGoalRepository {
   listForDay(query: TodayGoalQuery): Promise<TodayGoal[]>;
   replaceForDay(query: TodayGoalQuery, goals: readonly string[]): Promise<TodayGoal[]>;
   create?(input: NewTodayGoal): Promise<TodayGoal>;
+}
+
+export interface DailyWorkspaceRepository {
+  findForDay(query: DailyWorkspaceQuery): Promise<DailyWorkspace | null>;
+  saveHeader(query: DailyWorkspaceQuery, input: DailyHeaderInput): Promise<DailyWorkspace>;
+  saveCloseout(query: DailyWorkspaceQuery, input: DailyCloseoutInput): Promise<DailyWorkspace>;
 }
