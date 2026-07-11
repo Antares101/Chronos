@@ -42,6 +42,11 @@ describe('Chronos persistence contract', () => {
     expect(schema).toContain("pgTable(\n  'blocks'");
     expect(schema).toContain("pgTable(\n  'actual_time_entries'");
     expect(schema).toContain("pgTable(\n  'conclusion_reviews'");
+    expect(schema).toContain("pgTable(\n  'daily_workspaces'");
+    expect(schema).toContain("workspaceDate: text('workspace_date').notNull()");
+    expect(schema).toContain("tomorrowAdjustment: text('tomorrow_adjustment')");
+    expect(schema).toContain('export type DailyWorkspaceRow = typeof dailyWorkspaces.$inferSelect;');
+    expect(schema).toContain('export type NewDailyWorkspaceRow = typeof dailyWorkspaces.$inferInsert;');
   });
 
   it('persists planned schedule separately from actual time and conclusion reviews', async () => {

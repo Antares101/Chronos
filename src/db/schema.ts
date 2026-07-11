@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -63,6 +64,21 @@ export const todayGoals = pgTable(
     ...timestamps,
   },
   (table) => [index('today_goals_user_date_idx').on(table.userId, table.goalDate)],
+);
+
+export const dailyWorkspaces = pgTable(
+  'daily_workspaces',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').notNull(),
+    workspaceDate: text('workspace_date').notNull(),
+    focus: text('focus'),
+    constraints: text('constraints'),
+    outcome: text('outcome'),
+    tomorrowAdjustment: text('tomorrow_adjustment'),
+    ...timestamps,
+  },
+  (table) => [uniqueIndex('daily_workspaces_user_date_key').on(table.userId, table.workspaceDate)],
 );
 
 export const events = pgTable(
@@ -196,3 +212,5 @@ export type ConclusionReviewRow = typeof conclusionReviews.$inferSelect;
 export type NewConclusionReviewRow = typeof conclusionReviews.$inferInsert;
 export type TodayGoalRow = typeof todayGoals.$inferSelect;
 export type NewTodayGoalRow = typeof todayGoals.$inferInsert;
+export type DailyWorkspaceRow = typeof dailyWorkspaces.$inferSelect;
+export type NewDailyWorkspaceRow = typeof dailyWorkspaces.$inferInsert;
