@@ -148,4 +148,4 @@ Chain strategy: stacked-to-main
 - [x] Complete the full screenshot matrix: 1440×900 light/dark, 1024×768 light/dark, 390×844 light/dark, plus reduced-motion/transparency and 200% zoom inspections; confirm no overflow, clipping, contrast, focus, or hierarchy regressions. <!-- sdd-owner: implementation -->
 - [x] Verify authenticated `/app/today` redirect/action behavior, mobile priority, assignment status preservation, optional-review non-blocking behavior, and no schema/persistence additions. <!-- sdd-owner: implementation -->
 - [x] Confirm each link is independently revertible and each atomic conventional commit boundary is documented; do not create commits or PRs without explicit delivery authorization. <!-- sdd-owner: parent -->
-- [ ] Start or reuse the bounded review for the completed chain and record its outcome before delivery. <!-- sdd-owner: parent -->
+- [x] Start or reuse the bounded review for the completed chain and record its outcome before delivery. <!-- sdd-owner: parent -->
