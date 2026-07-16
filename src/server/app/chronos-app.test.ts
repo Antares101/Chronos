@@ -31,6 +31,7 @@ import {
   loadChronosPlanningState,
   loadChronosReviewState,
   loadChronosTodayState,
+  selectRecentBlockNames,
 } from './chronos-app';
 
 const persistedAt = '2026-06-28T08:00:00.000Z';
@@ -136,7 +137,6 @@ function createMemoryRepositories(initialStore: Partial<MemoryStore> = {}) {
         }
 
         task.blockId = query.blockId;
-        task.source = 'block';
         task.updatedAt = persistedAt;
 
         return task;
@@ -344,6 +344,7 @@ describe('Chronos app backend actions', () => {
     ['pause-ended', 'Pause ended.'],
     ['event-created', 'Event added.'],
     ['concluded', 'Review saved.'],
+    ['block-concluded', 'Block concluded.'],
   ] satisfies [ChronosAppActionStatus, string][])(
     'returns practical status copy for %s',
     (status, message) => {
@@ -448,7 +449,14 @@ describe('Chronos app backend actions', () => {
       'user-1',
       formData({ action: 'assign-task', taskId: 'task-1', blockId }),
     );
-    expect(store.tasks[0]).toMatchObject({ blockId, source: 'block' });
+    expect(store.tasks[0]).toMatchObject({
+      blockId,
+      source: 'general',
+      status: 'todo',
+      title: 'Draft review',
+      userId: 'user-1',
+      createdAt: persistedAt,
+    });
 
     await handleChronosAppAction(
       repositories,
@@ -604,6 +612,188 @@ describe('Chronos app backend actions', () => {
       plannedMinutes: 60,
       actualMinutes: 30,
     });
+  });
+
+  it('concludes an owned execution block without review by closing its active focus entry', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'execution-block', phase: 'execution' })],
+      actualEntries: [
+        actualEntryFixture({
+          id: 'active-focus',
+          blockId: 'execution-block',
+          startedAt: '2026-06-29T09:00:00.000Z',
+          endedAt: '2026-06-29T09:00:00.000Z',
+        }),
+      ],
+    });
+    const reviewCreate = repositories.conclusionReviews.create;
+    repositories.conclusionReviews.create = async () => {
+      throw new Error('A no-review conclusion must not create a review.');
+    };
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'conclude-block-without-review', blockId: 'execution-block' }),
+        () => '2026-06-29T09:30:00.000Z',
+      ),
+    ).resolves.toEqual({ status: 'block-concluded' });
+
+    expect(getChronosAppStatusMessage('block-concluded')).toBe('Block concluded.');
+    expect(store.blocks[0]).toMatchObject({ id: 'execution-block', phase: 'conclusion' });
+    expect(store.actualEntries[0]).toMatchObject({
+      id: 'active-focus',
+      endedAt: '2026-06-29T09:30:00.000Z',
+    });
+    expect(store.reviews).toEqual([]);
+    repositories.conclusionReviews.create = reviewCreate;
+  });
+
+  it.each([
+    [
+      'an unowned block',
+      blockFixture({ id: 'other-block', userId: 'user-2', phase: 'execution' }),
+      [],
+      'Block was not found for this account.',
+    ],
+    [
+      'a non-execution block',
+      blockFixture({ id: 'planning-block', phase: 'planning' }),
+      [],
+      'Only execution blocks can be concluded.',
+    ],
+    [
+      'an execution block with an open pause',
+      blockFixture({ id: 'paused-block', phase: 'execution' }),
+      [pauseFixture({ blockId: 'paused-block', endedAt: null })],
+      'End open pauses before concluding the block.',
+    ],
+  ] as const)(
+    'rejects no-review conclusion for %s without creating a review',
+    async (_scenario, block, pauses, message) => {
+      const { repositories, store } = createMemoryRepositories({
+        blocks: [block],
+        pauses: [...pauses],
+      });
+
+      await expect(
+        handleChronosAppAction(
+          repositories,
+          'user-1',
+          formData({ action: 'conclude-block-without-review', blockId: block.id }),
+        ),
+      ).rejects.toThrow(message);
+
+      expect(store.blocks[0]?.phase).toBe(block.phase);
+      expect(store.reviews).toEqual([]);
+    },
+  );
+
+  it('keeps direct conclusion retryable and accounts focus through the successful retry', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'execution-block', phase: 'execution' })],
+      actualEntries: [
+        actualEntryFixture({
+          id: 'active-focus',
+          blockId: 'execution-block',
+          startedAt: '2026-06-29T09:00:00.000Z',
+          endedAt: '2026-06-29T09:00:00.000Z',
+        }),
+      ],
+    });
+    const updatePhase = repositories.blocks.updatePhase;
+    let attempts = 0;
+    repositories.blocks.updatePhase = async (query, phase) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('database unavailable');
+      return updatePhase(query, phase);
+    };
+    const directConclusion = formData({
+      action: 'conclude-block-without-review',
+      blockId: 'execution-block',
+    });
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        directConclusion,
+        () => '2026-06-29T09:30:00.000Z',
+      ),
+    ).rejects.toThrow('database unavailable');
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'conclude-block-without-review', blockId: 'execution-block' }),
+        () => '2026-06-29T10:00:00.000Z',
+      ),
+    ).resolves.toEqual({ status: 'block-concluded' });
+
+    expect(store.blocks[0]?.phase).toBe('conclusion');
+    expect(store.actualEntries[0]).toMatchObject({
+      id: 'active-focus',
+      endedAt: '2026-06-29T10:00:00.000Z',
+    });
+    expect(
+      Date.parse(store.actualEntries[0]!.endedAt) - Date.parse(store.actualEntries[0]!.startedAt),
+    ).toBe(60 * 60_000);
+    expect(store.reviews).toEqual([]);
+  });
+
+  it('closes an open focus entry without overwriting a later closed focus entry', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'execution-block', phase: 'execution' })],
+      actualEntries: [
+        actualEntryFixture({
+          id: 'open-focus',
+          blockId: 'execution-block',
+          startedAt: '2026-06-29T09:00:00.000Z',
+          endedAt: '2026-06-29T09:00:00.000Z',
+        }),
+        actualEntryFixture({
+          id: 'closed-focus',
+          blockId: 'execution-block',
+          startedAt: '2026-06-29T09:10:00.000Z',
+          endedAt: '2026-06-29T09:20:00.000Z',
+        }),
+      ],
+    });
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'conclude-block-without-review', blockId: 'execution-block' }),
+        () => '2026-06-29T09:30:00.000Z',
+      ),
+    ).resolves.toEqual({ status: 'block-concluded' });
+
+    expect(store.actualEntries).toMatchObject([
+      { id: 'open-focus', endedAt: '2026-06-29T09:30:00.000Z' },
+      { id: 'closed-focus', endedAt: '2026-06-29T09:20:00.000Z' },
+    ]);
+  });
+
+  it('keeps the reviewed conclusion action and review persistence unchanged', async () => {
+    const { repositories, store } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'execution-block', phase: 'execution' })],
+    });
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'conclude-block', blockId: 'execution-block', notes: 'Reviewed.' }),
+        () => '2026-06-29T09:30:00.000Z',
+      ),
+    ).resolves.toEqual({ status: 'concluded' });
+
+    expect(store.blocks[0]?.phase).toBe('conclusion');
+    expect(store.reviews).toMatchObject([
+      { blockId: 'execution-block', notes: 'Reviewed.', completedTaskIds: [] },
+    ]);
   });
 
   it('ends untimed pauses and records actual pause time', async () => {
@@ -1104,6 +1294,246 @@ describe('Chronos app backend actions', () => {
     expect(state.todayTaskPanel.tasks).toMatchObject([
       { id: 'current-task', placement: 'current-block', blockId: 'current-block' },
       { id: 'open-task', placement: 'unassigned', blockId: null },
+    ]);
+  });
+
+  it('selects trimmed recent names by planned and update recency with stable dedupe and a five-name limit', () => {
+    const names = selectRecentBlockNames(
+      [
+        blockFixture({
+          id: 'at-now',
+          title: '  Deep   Work  ',
+          plannedStart: '2026-06-29T12:00:00.000Z',
+          updatedAt: '2026-06-29T11:50:00.000Z',
+        }),
+        blockFixture({
+          id: 'z-equal',
+          title: 'Email',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          updatedAt: '2026-06-29T11:30:00.000Z',
+        }),
+        blockFixture({
+          id: 'a-equal',
+          title: 'Admin',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          updatedAt: '2026-06-29T11:30:00.000Z',
+        }),
+        blockFixture({
+          id: 'first-focus',
+          title: ' Focus   Time ',
+          plannedStart: '2026-06-29T10:00:00.000Z',
+          updatedAt: '2026-06-29T11:20:00.000Z',
+        }),
+        blockFixture({
+          id: 'second-focus',
+          title: 'focus time',
+          plannedStart: '2026-06-29T10:00:00.000Z',
+          updatedAt: '2026-06-29T11:10:00.000Z',
+        }),
+        blockFixture({
+          id: 'planning',
+          title: 'Planning',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+        }),
+        blockFixture({ id: 'home', title: 'Home', plannedStart: '2026-06-29T08:00:00.000Z' }),
+        blockFixture({ id: 'blank', title: '   ', plannedStart: '2026-06-29T07:00:00.000Z' }),
+        blockFixture({ id: 'future', title: 'Future', plannedStart: '2026-06-29T12:01:00.000Z' }),
+      ],
+      '2026-06-29T12:00:00.000Z',
+    );
+
+    expect(names).toEqual(['Deep Work', 'Admin', 'Email', 'Focus Time', 'Planning']);
+  });
+
+  it('keeps missing update timestamps deterministic, excludes missing starts, and exposes only stable name strings through Today state', async () => {
+    const missingStart = blockFixture({ id: 'missing-start', title: 'Missing start' });
+    delete (missingStart as Partial<Block>).plannedStart;
+    const missingUpdate = blockFixture({
+      id: 'a-missing-update',
+      title: 'No update',
+      plannedStart: '2026-06-29T11:00:00.000Z',
+    });
+    delete (missingUpdate as Partial<Block>).updatedAt;
+    const blocks = [
+      missingStart,
+      missingUpdate,
+      blockFixture({
+        id: 'z-updated',
+        title: '  Latest name  ',
+        plannedStart: '2026-06-29T11:00:00.000Z',
+        updatedAt: '2026-06-29T11:10:00.000Z',
+      }),
+      blockFixture({
+        id: 'b-tie',
+        title: 'Beta',
+        plannedStart: '2026-06-29T10:00:00.000Z',
+        updatedAt: '2026-06-29T10:00:00.000Z',
+      }),
+      blockFixture({
+        id: 'a-tie',
+        title: 'Alpha',
+        plannedStart: '2026-06-29T10:00:00.000Z',
+        updatedAt: '2026-06-29T10:00:00.000Z',
+      }),
+    ];
+    const { repositories } = createMemoryRepositories({
+      blocks: blocks.filter((block) => block.id !== missingStart.id).reverse(),
+    });
+
+    expect(selectRecentBlockNames(blocks, '2026-06-29T12:00:00.000Z')).toEqual([
+      'Latest name',
+      'No update',
+      'Alpha',
+      'Beta',
+    ]);
+    await expect(
+      loadChronosTodayState(repositories, 'user-1', () => '2026-06-29T12:00:00.000Z'),
+    ).resolves.toMatchObject({
+      recentBlockNames: ['Latest name', 'No update', 'Alpha', 'Beta'],
+    });
+  });
+
+  it('returns no names when every owned block is empty, missing a start, or in the future', () => {
+    const missingStart = blockFixture({ id: 'missing-start', title: 'Missing start' });
+    delete (missingStart as Partial<Block>).plannedStart;
+
+    expect(
+      selectRecentBlockNames(
+        [
+          missingStart,
+          blockFixture({ id: 'blank', title: '  ' }),
+          blockFixture({ id: 'future', plannedStart: '2026-06-30T09:00:00.000Z' }),
+        ],
+        '2026-06-29T12:00:00.000Z',
+      ),
+    ).toEqual([]);
+  });
+
+  it.each([
+    ['general', null],
+    ['block', 'previous-block'],
+  ] as const)(
+    'preserves %s task origin while assignment updates only placement metadata',
+    async (source, blockId) => {
+      const task = taskFixture({
+        blockId,
+        source,
+        status: 'done',
+        title: `${source} task`,
+        updatedAt: '2026-06-27T08:00:00.000Z',
+      });
+      const { repositories, store } = createMemoryRepositories({
+        blocks: [blockFixture({ id: 'target-block', phase: 'execution' })],
+        tasks: [task],
+      });
+
+      await handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'assign-task', taskId: task.id, blockId: 'target-block' }),
+      );
+
+      expect(store.tasks[0]).toEqual({
+        ...task,
+        blockId: 'target-block',
+        updatedAt: persistedAt,
+      });
+      expect(store.blocks[0]).toEqual(blockFixture({ id: 'target-block', phase: 'execution' }));
+    },
+  );
+
+  it('rejects stale and unowned assignment targets without mutating the task', async () => {
+    const task = taskFixture({ id: 'task-1', title: 'Keep unchanged' });
+    const { repositories, store } = createMemoryRepositories({
+      blocks: [blockFixture({ id: 'other-owner-block', userId: 'user-2' })],
+      tasks: [task],
+    });
+
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'assign-task', taskId: task.id, blockId: 'missing-block' }),
+      ),
+    ).rejects.toThrow('Block was not found.');
+    await expect(
+      handleChronosAppAction(
+        repositories,
+        'user-1',
+        formData({ action: 'assign-task', taskId: task.id, blockId: 'other-owner-block' }),
+      ),
+    ).rejects.toThrow('Block was not found.');
+    expect(store.tasks[0]).toEqual(task);
+  });
+
+  it('passes the active lifecycle ID through while exposing day-sheet targets in stable order', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'late-block',
+          title: 'Late block',
+          plannedStart: '2026-06-29T14:00:00.000Z',
+          plannedEnd: '2026-06-29T15:00:00.000Z',
+        }),
+        blockFixture({
+          id: 'active-block',
+          title: 'Active block',
+          plannedStart: '2026-06-29T11:00:00.000Z',
+          plannedEnd: '2026-06-29T12:00:00.000Z',
+          phase: 'execution',
+        }),
+        blockFixture({
+          id: 'early-block',
+          title: 'Early block',
+          plannedStart: '2026-06-29T09:00:00.000Z',
+          plannedEnd: '2026-06-29T10:00:00.000Z',
+        }),
+      ],
+      pauses: [pauseFixture({ blockId: 'active-block', endedAt: null })],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T11:30:00.000Z',
+    );
+
+    expect(state.workspace.sheet.activeBlockId).toBe('active-block');
+    expect(state.workspace.sheet.assignmentTargets).toEqual([
+      { blockId: 'early-block', label: 'Early block', lifecycle: 'planned' },
+      { blockId: 'active-block', label: 'Active block', lifecycle: 'paused' },
+      { blockId: 'late-block', label: 'Late block', lifecycle: 'planned' },
+    ]);
+  });
+
+  it('keeps no active ID while preserving targets for a no-active day', async () => {
+    const { repositories } = createMemoryRepositories({
+      blocks: [
+        blockFixture({
+          id: 'later-block',
+          title: 'Later block',
+          plannedStart: '2026-06-29T13:00:00.000Z',
+          plannedEnd: '2026-06-29T14:00:00.000Z',
+        }),
+        blockFixture({
+          id: 'next-block',
+          title: 'Next block',
+          plannedStart: '2026-06-29T12:00:00.000Z',
+          plannedEnd: '2026-06-29T13:00:00.000Z',
+        }),
+      ],
+    });
+
+    const state = await loadChronosTodayState(
+      repositories,
+      'user-1',
+      () => '2026-06-29T11:30:00.000Z',
+    );
+
+    expect(state.workspace.sheet.activeBlockId).toBeNull();
+    expect(state.workspace.sheet.assignmentTargets.map((target) => target.blockId)).toEqual([
+      'next-block',
+      'later-block',
     ]);
   });
 

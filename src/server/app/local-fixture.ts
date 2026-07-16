@@ -116,7 +116,6 @@ export function createMockLocalChronosAppRepositories(userId: string): ChronosAp
         }
 
         task.blockId = query.blockId;
-        task.source = 'block';
         task.updatedAt = persistedAt;
 
         return task;

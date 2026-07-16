@@ -50,11 +50,28 @@ export type ChronosRouteAuthDecision =
 export type TodayActionDraft =
   | { action: 'today-save-daily-header'; focus: string; constraints: string }
   | { action: 'today-create-task'; title: string; destination: string }
-  | { action: 'today-save-closeout'; outcome: string; tomorrowAdjustment: string };
+  | { action: 'today-save-closeout'; outcome: string; tomorrowAdjustment: string }
+  | { action: 'today-save-goals'; goals: string[] }
+  | { action: 'assign-task'; taskId: string; blockId: string }
+  | {
+      action: 'create-planned-block';
+      title: string;
+      category: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+    };
+export type TodayFeedbackOrigin =
+  'today-day-sheet' | 'today-inbox' | 'today-quick-block' | 'today-close-review';
 
 export type ChronosRouteActionDecision =
   | { kind: 'redirect'; location: string; status: 303 }
-  | { kind: 'error'; message: string; actionDraft?: TodayActionDraft };
+  | {
+      kind: 'error';
+      message: string;
+      feedbackOrigin?: TodayFeedbackOrigin;
+      actionDraft?: TodayActionDraft;
+    };
 
 export type ChronosRouteActionHandler = (
   repositories: ChronosAppRepositories,
@@ -71,6 +88,7 @@ export type ChronosActionRouteContext = {
   email: string;
   actionError: string | null;
   statusMessage: string | null;
+  feedbackOrigin?: TodayFeedbackOrigin;
   actionDraft?: TodayActionDraft;
 };
 
@@ -199,6 +217,10 @@ export async function resolveChronosActionRouteContext({
     repositories,
     authDecision.user.id,
   );
+  const feedbackOrigin =
+    actionDecision?.kind === 'error' && actionDecision.feedbackOrigin
+      ? actionDecision.feedbackOrigin
+      : readTodayFeedbackOrigin(currentUrl.searchParams.get('feedbackOrigin'));
 
   return {
     kind: 'ready',
@@ -207,6 +229,7 @@ export async function resolveChronosActionRouteContext({
     email: authDecision.email,
     actionError,
     statusMessage,
+    ...(feedbackOrigin ? { feedbackOrigin } : {}),
     ...(actionDraft ? { actionDraft } : {}),
   };
 }
@@ -231,16 +254,19 @@ export async function resolveChronosRouteAction({
   }
 
   const draftRequest = request.clone();
+  const feedbackRequest = request.clone();
 
   try {
     const formData = await request.formData();
     const result = await actionHandler(repositories, userId, formData);
+    const feedbackOrigin = readTodayFeedbackOrigin(formData.get('feedbackOrigin'));
 
     return resolveChronosRouteActionRedirect(
       currentUrl,
       routePath,
       result.status,
       result.destination,
+      feedbackOrigin,
     );
   } catch (error) {
     const safeTodayError =
@@ -249,9 +275,11 @@ export async function resolveChronosRouteAction({
       /^(?:focus must be at most 160 characters|constraints must be at most 500 characters|outcome (?:is required|must be at most 500 characters)|tomorrowAdjustment (?:is required|must be at most 280 characters)|destination (?:is required|is invalid)|title is required)\.$/.test(
         error.message,
       );
+    const feedbackOrigin = await readTodayFeedbackOriginSafely(feedbackRequest);
     return {
       kind: 'error',
       message: safeTodayError ? error.message : routeActionErrorMessage,
+      ...(feedbackOrigin ? { feedbackOrigin } : {}),
       ...(routePath === chronosAppRoutes.today
         ? { actionDraft: await readTodayActionDraftSafely(draftRequest) }
         : {}),
@@ -264,10 +292,12 @@ export function resolveChronosRouteActionRedirect(
   routePath: ChronosAppActionPath,
   status: ChronosAppActionStatus,
   destination?: string,
+  feedbackOrigin?: TodayFeedbackOrigin,
 ): ChronosRouteActionDecision {
   const nextUrl = new URL(routePath, currentUrl);
   nextUrl.searchParams.set('status', status);
   if (destination) nextUrl.searchParams.set('destination', destination);
+  if (feedbackOrigin) nextUrl.searchParams.set('feedbackOrigin', feedbackOrigin);
 
   return { kind: 'redirect', location: getPathWithSearch(nextUrl), status: 303 };
 }
@@ -296,6 +326,27 @@ async function resolveRouteStatusMessage(
   }
 }
 
+function readTodayFeedbackOrigin(
+  value: FormDataEntryValue | null,
+): TodayFeedbackOrigin | undefined {
+  return value === 'today-day-sheet' ||
+    value === 'today-inbox' ||
+    value === 'today-quick-block' ||
+    value === 'today-close-review'
+    ? value
+    : undefined;
+}
+
+async function readTodayFeedbackOriginSafely(
+  request: Request,
+): Promise<TodayFeedbackOrigin | undefined> {
+  try {
+    return readTodayFeedbackOrigin((await request.formData()).get('feedbackOrigin'));
+  } catch {
+    return undefined;
+  }
+}
+
 async function readTodayActionDraftSafely(request: Request): Promise<TodayActionDraft | undefined> {
   try {
     return readTodayActionDraft(await request.formData());
@@ -320,6 +371,28 @@ function readTodayActionDraft(formData: FormData): TodayActionDraft | undefined 
   if (action === 'today-save-closeout') {
     return { action, outcome: value('outcome'), tomorrowAdjustment: value('tomorrowAdjustment') };
   }
+  if (action === 'today-save-goals') {
+    return {
+      action,
+      goals: formData
+        .getAll('goals')
+        .map((field) => (typeof field === 'string' ? field.trim() : '')),
+    };
+  }
+  if (action === 'assign-task') {
+    return { action, taskId: value('taskId'), blockId: value('blockId') };
+  }
+  if (action === 'create-planned-block') {
+    return {
+      action,
+      title: value('title'),
+      category: value('category'),
+      date: value('date'),
+      startTime: value('startTime'),
+      endTime: value('endTime'),
+    };
+  }
+
   return undefined;
 }
 

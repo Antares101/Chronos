@@ -4,6 +4,9 @@ export type TodayGoalsPanelProps = {
   goals: readonly { id: string; title: string; position: number }[];
   maxGoals: 3;
   actionPath: string;
+  draft?: { action: 'today-save-goals'; goals: readonly string[] };
+  actionError?: string | null;
+  statusMessage?: string | null;
 };
 
 export default function TodayGoalsPanel({
@@ -12,18 +15,29 @@ export default function TodayGoalsPanel({
   goals,
   maxGoals,
   actionPath,
+  draft,
+  actionError,
+  statusMessage,
 }: TodayGoalsPanelProps) {
-  const fields = Array.from({ length: maxGoals }, (_, index) => goals[index]?.title ?? '');
+  const fields = Array.from(
+    { length: maxGoals },
+    (_, index) => draft?.goals[index] ?? goals[index]?.title ?? '',
+  );
 
   return (
     <section className="today-goals" aria-labelledby="today-goals-title">
       <header className="today-goals__header">
         <p className="today-goals__eyebrow">Today goals</p>
-        <h2 id="today-goals-title">{title}</h2>
+        <h4 id="today-goals-title">{title}</h4>
         <p>{description}</p>
       </header>
 
-      <form className="today-goals__form" method="post" action={actionPath}>
+      <form
+        className="today-goals__form"
+        method="post"
+        action={actionPath}
+        aria-describedby={actionError ? 'today-goals-feedback' : undefined}
+      >
         <input type="hidden" name="action" value="today-save-goals" />
         {fields.map((value, index) => (
           <label key={index}>
@@ -37,6 +51,16 @@ export default function TodayGoalsPanel({
           </label>
         ))}
         <button type="submit">Save goals</button>
+        {actionError ? (
+          <p id="today-goals-feedback" className="today-goals__feedback" role="alert">
+            {actionError}
+          </p>
+        ) : null}
+        {statusMessage ? (
+          <p className="today-goals__feedback today-goals__feedback--success" role="status">
+            {statusMessage}
+          </p>
+        ) : null}
       </form>
 
       <style>{styles}</style>
@@ -73,7 +97,7 @@ const styles = `
     text-transform: uppercase;
   }
 
-  .today-goals h2,
+  .today-goals h4,
   .today-goals p {
     margin: 0;
   }
@@ -123,5 +147,16 @@ const styles = `
     font-weight: 850;
     min-height: 2.75rem;
     padding: 0.7rem 1rem;
+  }
+
+  .today-goals__feedback {
+    margin: 0;
+    color: var(--chronos-destructive, #b91c1c);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .today-goals__feedback--success {
+    color: var(--chronos-success, #059669);
   }
 `;

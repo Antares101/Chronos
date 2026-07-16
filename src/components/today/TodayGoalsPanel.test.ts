@@ -34,6 +34,41 @@ describe('TodayGoalsPanel', () => {
     expect(html).toContain('Save goals');
   });
 
+  it('uses a level-four heading when composed below the page and Objectives headings', () => {
+    const html = renderGoalsPanel({ title: 'Edit Objectives' });
+
+    // Today page h2 → Objectives h3 → this nested editing panel h4.
+    expect(html).toContain('<h4 id="today-goals-title">Edit Objectives</h4>');
+  });
+
+  it('restores failed goal submissions with scoped accessible feedback', () => {
+    const html = renderGoalsPanel({
+      draft: {
+        action: 'today-save-goals',
+        goals: ['Finish recovery flow', 'Check accessible feedback', 'Ship the fix'],
+      },
+      actionError: 'That change could not be saved. Check the form and try again.',
+    } as Partial<TodayGoalsPanelProps>);
+
+    expect(html).toContain('value="Finish recovery flow"');
+    expect(html).toContain('value="Check accessible feedback"');
+    expect(html).toContain('value="Ship the fix"');
+    expect(html).not.toContain('value="Finish the API seam"');
+    expect(html).toContain('aria-describedby="today-goals-feedback"');
+    expect(html).toContain('id="today-goals-feedback"');
+    expect(html).toContain('role="alert"');
+    expect(html).toContain('That change could not be saved. Check the form and try again.');
+  });
+
+  it('announces the existing goals confirmation politely in its own scope', () => {
+    const html = renderGoalsPanel({
+      statusMessage: 'Goals saved.',
+    } as Partial<TodayGoalsPanelProps>);
+
+    expect(html).toContain('Goals saved.');
+    expect(html).toContain('role="status"');
+  });
+
   it('renders empty guidance without backend terminology', () => {
     const html = renderGoalsPanel({ goals: [] });
 

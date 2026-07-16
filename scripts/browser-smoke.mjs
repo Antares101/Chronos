@@ -13,32 +13,20 @@ const routeChecks = [
   {
     path: '/app/today',
     semanticChecks: [
-      { name: 'app heading', text: 'Run the day' },
+      { name: 'app heading', text: 'Run the Day' },
       {
-        name: 'today actions heading',
-        selector: '#today-actions-title',
-        text: 'Start, shape, and capture work',
+        name: 'quick task capture heading',
+        selector: '#today-quick-capture-title',
+        text: 'Add a Task',
       },
-      {
-        name: 'daily timeline heading',
-        selector: '#daily-timeline-title',
-        text: "Today's timeline",
-      },
-      {
-        name: 'block detail heading',
-        selector: '#block-detail-title',
-        text: 'Selected block',
-      },
+      { name: 'day sheet heading', selector: '#today-sheet-title', text: 'Day Sheet' },
       {
         name: 'active block context',
-        selector: 'article[aria-label="Active block context"]',
-        text: 'Check the active block',
+        selector: '.today-active-block',
+        text: 'CURRENT EXECUTION',
       },
     ],
-    hydrationTargets: [
-      { name: 'daily-timeline', selector: '.daily-timeline' },
-      { name: 'block-detail', selector: '.block-detail' },
-    ],
+    hydrationTargets: [{ name: 'today-quick-capture', selector: '.today-quick-capture' }],
   },
   {
     path: '/app/planning',
@@ -422,7 +410,7 @@ async function waitForOwnedDevServer(baseUrl) {
       const response = await fetch(`${baseUrl}/app/today`);
       const html = await response.text();
 
-      if (response.ok && html.includes('Run the day')) {
+      if (response.ok && html.includes('Run the Day')) {
         return;
       }
 

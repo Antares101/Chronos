@@ -1,292 +1,322 @@
 ---
-import BlockDetail from '../../components/block/BlockDetail';
+import { createElement } from 'react';
 import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
-import DailyTimeline from '../../components/timeline/DailyTimeline';
+import TodayCloseout from '../../components/today/TodayCloseout';
+import TodayDailyHeader from '../../components/today/TodayDailyHeader';
+import TodayActiveBlock from '../../components/today/TodayActiveBlock';
+import TodayDaySheet from '../../components/today/TodayDaySheet';
 import TodayGoalsPanel from '../../components/today/TodayGoalsPanel';
-import TodayOperatingSummary from '../../components/today/TodayOperatingSummary';
-import QuickTaskCapture from '../../components/today/QuickTaskCapture';
-import TodayActionsGrid from '../../components/today/TodayActionsGrid';
-import TodayTaskPanel from '../../components/today/TodayTaskPanel';
-import { buildQuickSchedulePreview } from '../../components/today/quick-schedule-selector';
+import TodayTaskInbox from '../../components/today/TodayTaskInbox';
+import TodayQuickBlock from '../../components/today/TodayQuickBlock';
+import TodayQuickTaskCapture from '../../components/today/TodayQuickTaskCapture';
+import TodayShortcutReference from '../../components/today/TodayShortcutReference';
+import type { TodayBlockAction } from '../../components/today/TodayBlockActions';
+import type { TodayBlockDetail } from '../../components/today/TodayBlockRow';
 import type { ChronosAuthLocals } from '../../server/auth';
+// Route-local composition keeps legacy components available for rollback.
 import { loadChronosTodayState } from '../../server/app/chronos-app';
+import { composeTodayBlockPauses } from './today-block-pause-composition';
+import { resolveTodayLocalFeedback } from './today-feedback-scoping';
 import {
   chronosAppRoutes,
   resolveChronosActionRouteContext,
 } from '../../server/app/route-contract';
 
 const routePath = chronosAppRoutes.today;
-
 const routeContext = await resolveChronosActionRouteContext({
   user: (Astro.locals as ChronosAuthLocals).user,
   request: Astro.request,
   currentUrl: Astro.url,
   routePath,
 });
-
 if (routeContext.kind === 'redirect') {
   return Astro.redirect(routeContext.location, routeContext.status);
 }
 
-const { actionError, email, repositories, statusMessage, userId } = routeContext;
+const { actionDraft, actionError, email, feedbackOrigin, repositories, statusMessage, userId } =
+  routeContext;
 const appState = await loadChronosTodayState(repositories, userId);
-const quickBlockPreview = buildQuickSchedulePreview({
-  date: appState.quickBlockDefaults.date,
-  todayDate: appState.todayDate,
-  startTime: appState.quickBlockDefaults.startTime,
-  endTime: appState.quickBlockDefaults.endTime,
-});
+const localFeedback = resolveTodayLocalFeedback(
+  actionDraft,
+  actionError,
+  statusMessage,
+  feedbackOrigin,
+);
+const headerDraft = actionDraft?.action === 'today-save-daily-header' ? actionDraft : undefined;
+const captureDraft = actionDraft?.action === 'today-create-task' ? actionDraft : undefined;
+const closeoutDraft = actionDraft?.action === 'today-save-closeout' ? actionDraft : undefined;
+const goalsDraft = actionDraft?.action === 'today-save-goals' ? actionDraft : undefined;
+const inboxDraft = actionDraft?.action === 'assign-task' ? actionDraft : undefined;
+const quickBlockDraft = actionDraft?.action === 'create-planned-block' ? actionDraft : undefined;
+const shellActionError = localFeedback.actionError ? null : actionError;
+const shellStatusMessage = localFeedback.statusMessage ? null : statusMessage;
+const closeReviewFeedback =
+  localFeedback.actionError?.action === 'conclude-block' ||
+  localFeedback.statusMessage?.action === 'conclude-block' ||
+  localFeedback.statusMessage?.action === 'conclude-block-without-review'
+    ? {
+        actionError:
+          localFeedback.actionError?.action === 'conclude-block'
+            ? localFeedback.actionError.message
+            : null,
+        statusMessage:
+          localFeedback.statusMessage?.action === 'conclude-block' ||
+          localFeedback.statusMessage?.action === 'conclude-block-without-review'
+            ? localFeedback.statusMessage.message
+            : null,
+      }
+    : undefined;
+const pausesByBlockId = composeTodayBlockPauses(
+  appState.workspace.sheet.rows.flatMap((row) => (row.kind === 'block' ? [row.block.id] : [])),
+  appState.dailyTimeline.pauses ?? [],
+);
+const highlightedEventsByBlockId = Object.fromEntries(
+  await Promise.all(
+    appState.workspace.sheet.rows
+      .flatMap((row) => (row.kind === 'block' ? [row.block.id] : []))
+      .map(async (blockId) => [
+        blockId,
+        (await repositories.events.listForBlock({ userId, blockId })).map(({ id, title }) => ({
+          id,
+          title,
+        })),
+      ]),
+  ),
+);
+const blockDetails = Object.fromEntries(
+  appState.workspace.sheet.rows.flatMap((row): [string, TodayBlockDetail][] => {
+    if (row.kind !== 'block') return [];
+    const tasks = appState.tasksByBlockId[row.block.id] ?? [];
+    const pauses = pausesByBlockId[row.block.id] ?? [];
+    const openPause = pauses.find((pause) => !pause.endedAt);
+    // prettier-ignore
+    const actions: TodayBlockAction[] = row.block.phase === 'planning' ? [{ kind: 'start' }] : row.block.phase === 'execution' ? [...(openPause ? [{ kind: 'resume' as const, pauseId: openPause.id }] : [{ kind: 'pause' as const }]), { kind: 'event' }, { kind: 'task' }, ...(!openPause ? [{ kind: 'conclusion' as const, tasks }] : [])] : [];
+    return [
+      [
+        row.block.id,
+        {
+          tasks,
+          highlightedEvents: highlightedEventsByBlockId[row.block.id] ?? [],
+          pauses,
+          permittedActions: actions,
+        },
+      ],
+    ];
+  }),
+);
+const activeRow =
+  appState.workspace.sheet.rows.flatMap((row) =>
+    row.kind === 'block' && row.block.id === appState.workspace.sheet.activeBlockId ? [row] : [],
+  )[0] ?? null;
+const activeDetail = activeRow ? (blockDetails[activeRow.block.id] ?? null) : null;
+// prettier-ignore
+const goalsForm = createElement(TodayGoalsPanel, { title: 'Edit Objectives', description: 'Pick up to 3 outcomes for today.', goals: appState.todayGoals, maxGoals: 3, actionPath: routePath, draft: goalsDraft, actionError: localFeedback.actionError?.action === 'today-save-goals' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'today-save-goals' ? localFeedback.statusMessage.message : null });
+// prettier-ignore
+const headerProps = { date: appState.workspace.date.date, header: appState.workspace.header, actionPath: routePath, goalsForm, draft: headerDraft, actionError: localFeedback.actionError?.action === 'today-save-daily-header' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'today-save-daily-header' ? localFeedback.statusMessage.message : null };
+// prettier-ignore
+const captureProps = { capture: appState.workspace.capture, actionPath: routePath, draft: captureDraft, actionError: localFeedback.actionError?.action === 'today-create-task' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'today-create-task' ? localFeedback.statusMessage.message : null };
+// prettier-ignore
+const sheetProps = { rows: appState.workspace.sheet.rows, currentTime: appState.workspace.sheet.currentTime, actionPath: routePath, blockDetails, statusMessage: localFeedback.statusMessage?.action === 'create-task' ? localFeedback.statusMessage.message : null };
+// prettier-ignore
+const inboxProps = { actionPath: routePath, tasks: appState.workspace.openTasks.tasks, targets: appState.workspace.sheet.assignmentTargets, draft: inboxDraft, actionError: localFeedback.actionError?.action === 'assign-task' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'assign-task' ? localFeedback.statusMessage.message : null };
+// prettier-ignore
+const closeoutProps = { closeout: appState.workspace.closeout, actionPath: routePath, draft: closeoutDraft, actionError: localFeedback.actionError?.action === 'today-save-closeout' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'today-save-closeout' ? localFeedback.statusMessage.message : null };
+// prettier-ignore
+const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, quickBlockDefaults: appState.quickBlockDefaults, recentNames: appState.recentBlockNames, draft: quickBlockDraft, actionError: localFeedback.actionError?.action === 'create-planned-block' ? localFeedback.actionError.message : null, statusMessage: localFeedback.statusMessage?.action === 'create-planned-block' ? localFeedback.statusMessage.message : null };
 ---
 
 <ChronosAppShell
   title="Chronos Today"
   eyebrow="CHRONOS"
-  heading="Run the day"
-  summary="Run today from now, timeline, tasks, and blocks."
+  heading="Run the Day"
+  summary="Set today’s intention, work the day sheet, and close the day. Review keeps detailed analysis."
   email={email}
   currentPath={routePath}
-  actionError={actionError}
-  statusMessage={statusMessage}
+  actionError={shellActionError}
+  statusMessage={shellStatusMessage}
 >
   <div class="app-route app-route--today">
-    <div class="today-summary-block">
-      <TodayOperatingSummary {...appState.todayOperatingSummary} />
+    <div id="today-active-block" class="today-focus-target" data-focus-target tabindex="-1">
+      {
+        closeReviewFeedback?.statusMessage ? (
+          <p id="today-close-review-feedback" role="status">
+            {closeReviewFeedback.statusMessage}
+          </p>
+        ) : null
+      }
+      <TodayActiveBlock
+        row={activeRow}
+        detail={activeDetail}
+        actionPath={routePath}
+        quickBlockAnchor="#today-capture"
+        conclusionFeedback={closeReviewFeedback}
+      />
     </div>
 
-    <section class="islands today-workspace" aria-label="Chronos today workspace">
-      <div class="today-workspace__timeline">
-        <DailyTimeline {...appState.dailyTimeline} client:load />
-        {
-          appState.blockDetail ? (
-            <BlockDetail
-              {...appState.blockDetail}
-              pauseActionPath={routePath}
-              taskActionPath={routePath}
-              client:load
-            />
-          ) : (
-            <section class="empty-panel">
-              <h2>No block selected yet</h2>
-              <p>
-                Create or start a planning block to see its tasks, events, and pause controls here.
-              </p>
-            </section>
-          )
-        }
+    <div class="today-workspace">
+      <div
+        id="today-capture"
+        class="today-workspace__capture today-focus-target"
+        data-focus-target
+        tabindex="-1"
+      >
+        <TodayQuickTaskCapture {...captureProps} client:load />
       </div>
 
-      <aside class="today-workspace__utility" aria-label="Today controls and lists">
-        <section class="actions" aria-labelledby="today-actions-title">
-          <div class="actions__header">
-            <p class="eyebrow">Today controls</p>
-            <h2 id="today-actions-title">Start, shape, and capture work</h2>
-          </div>
-
-          <QuickTaskCapture
-            blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
-            currentBlockId={appState.todayTaskPanel.currentBlockId}
-            currentBlockTitle={appState.todayTaskPanel.currentBlockTitle}
-          />
-
-          <TodayActionsGrid
-            planningBlocks={appState.planningBlocks}
-            blocks={appState.blocks.map(({ id, title, phase }) => ({ id, title, phase }))}
-            todayDate={appState.todayDate}
-            quickBlockDefaults={appState.quickBlockDefaults}
-            quickBlockPreview={quickBlockPreview}
-          />
-        </section>
-
-        <div class="today-grid" aria-label="Today tasks and goals">
-          <TodayTaskPanel {...appState.todayTaskPanel} actionPath={routePath} />
-          <TodayGoalsPanel
-            title="Goals for today"
-            description="Pick up to three outcomes for today."
-            goals={appState.todayGoals}
-            maxGoals={3}
-            actionPath={routePath}
-          />
-        </div>
+      <aside
+        id="today-open-tasks"
+        class="today-workspace__shelf today-focus-target"
+        data-focus-target
+        tabindex="-1"
+        aria-label="Task inbox"
+      >
+        <TodayTaskInbox {...inboxProps} />
       </aside>
-    </section>
+
+      <div
+        id="today-quick-block"
+        class="today-workspace__quick-block today-focus-target"
+        data-focus-target
+        tabindex="-1"
+      >
+        <TodayQuickBlock {...quickBlockProps} />
+      </div>
+
+      <div
+        id="today-day-sheet"
+        class="today-workspace__sheet today-focus-target"
+        data-focus-target
+        tabindex="-1"
+      >
+        <TodayDaySheet {...sheetProps} />
+      </div>
+
+      <div
+        id="today-intention"
+        class="today-workspace__intention today-focus-target"
+        data-focus-target
+        tabindex="-1"
+      >
+        <TodayDailyHeader {...headerProps} />
+      </div>
+
+      <div
+        id="today-closeout"
+        class="today-workspace__closeout today-focus-target"
+        data-focus-target
+        tabindex="-1"
+      >
+        <TodayCloseout {...closeoutProps} />
+      </div>
+    </div>
   </div>
 </ChronosAppShell>
 
+<TodayShortcutReference />
+
 <script>
   import { bindQuickScheduleSelectors } from '../../components/today/quick-schedule-selector';
+  import { bindTodayAssignmentInteractions } from './today-assignment-interactions';
+  import { bindTodayCloseReviewDismissal } from './today-close-review';
+  import { bindTodayShortcuts } from './today-shortcuts';
+  import {
+    closeTodayDisclosure,
+    persistTodayFocusTargetForSubmit,
+    restoreTodayFocus,
+  } from './today-focus-restoration';
 
-  const bindQuickSchedule = () => bindQuickScheduleSelectors(document);
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindQuickSchedule, { once: true });
-  } else {
-    bindQuickSchedule();
-  }
+  const focusKey = 'chronos:today:return-focus';
+  const storage = (() => {
+    try {
+      return window.sessionStorage;
+    } catch {
+      return undefined;
+    }
+  })();
+  document.addEventListener('submit', (event) => {
+    const form = event.target instanceof HTMLFormElement ? event.target : null;
+    const target = form?.closest<HTMLElement>('[data-focus-target]');
+    if (target?.id) persistTodayFocusTargetForSubmit(event, storage, focusKey, target.id);
+  });
+  document.addEventListener('click', (event) => {
+    const cancel =
+      event.target instanceof Element ? event.target.closest('[data-today-inbox-cancel]') : null;
+    const details = cancel
+      ?.closest('[data-today-inbox-assignment]')
+      ?.closest('details') as HTMLDetailsElement | null;
+    if (details) closeTodayDisclosure(details);
+  });
+  const restoreFocus = () => {
+    restoreTodayFocus(storage, focusKey, document);
+  };
+  const assignmentBinding = bindTodayAssignmentInteractions(document);
+  const closeReviewDismissal = bindTodayCloseReviewDismissal(document);
+  const shortcutBinding = bindTodayShortcuts(document);
+  bindQuickScheduleSelectors(document);
+  window.addEventListener(
+    'pagehide',
+    () => {
+      assignmentBinding?.destroy();
+      closeReviewDismissal();
+      shortcutBinding();
+    },
+    { once: true },
+  );
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', restoreFocus, { once: true });
+  else restoreFocus();
 </script>
 
 <style>
-  .app-route--today {
-    --today-chrome-max: 96rem;
-    --today-workspace-max: 96rem;
-    --app-route-max: var(--today-workspace-max);
+  /* prettier-ignore */
+  .app-route--today { --app-route-max: 90rem; --today-surface: var(--chronos-surface, var(--card, #fff)); --today-border: var(--chronos-border, var(--border, rgba(99, 102, 241, 0.22))); display: grid; gap: clamp(0.85rem, 1.5vw, 1.25rem); min-width: 0; }
+  /* prettier-ignore */
+  .app-route--today, .app-route--today *, .app-route--today *::before, .app-route--today *::after { box-sizing: border-box; }
+  /* prettier-ignore */
+  .today-focus-target, .today-workspace, .today-workspace > * { min-width: 0; max-width: 100%; }
+  /* prettier-ignore */
+  .today-focus-target:focus-visible, [data-focus-target]:focus { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 4px; }
+  /* prettier-ignore */
+  .today-workspace { display: grid; grid-template-columns: minmax(min(100%, 20rem), 1fr) minmax(0, 2fr); grid-template-areas: 'capture shelf' 'quick-block sheet' 'intention sheet' 'closeout sheet'; align-items: start; gap: clamp(0.85rem, 1.5vw, 1.25rem); }
+  /* prettier-ignore */
+  .today-workspace__capture { grid-area: capture; }
+  .today-workspace__sheet {
+    grid-area: sheet;
   }
-
-  :global(.shell:has(.app-route--today)) {
-    --today-chrome-max: 96rem;
+  .today-workspace__shelf {
+    grid-area: shelf;
   }
-
-  :global(.shell:has(.app-route--today) .command-bar) {
-    width: min(100%, var(--today-chrome-max));
+  .today-workspace__quick-block {
+    grid-area: quick-block;
   }
-
-  .today-summary-block {
-    width: min(100%, var(--today-chrome-max));
-    max-width: var(--today-chrome-max);
-    margin: 0.85rem auto 0;
-    min-width: 0;
+  .today-workspace__intention {
+    grid-area: intention;
   }
-
-  .today-summary-block :global(.today-operating-strip) {
-    width: 100%;
-    max-width: 100%;
+  .today-workspace__closeout {
+    grid-area: closeout;
   }
-
-  .today-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    gap: clamp(0.85rem, 1.4vw, 1.15rem);
-    margin-top: 0.85rem;
-    min-width: 0;
-  }
-
-  .today-workspace,
-  .today-workspace__timeline,
-  .today-workspace__utility,
-  .today-grid {
-    min-width: 0;
-  }
-
-  .today-workspace__timeline,
-  .today-workspace__utility {
-    display: grid;
-    gap: clamp(0.85rem, 1.4vw, 1.15rem);
-  }
-
-  .today-workspace__utility .actions {
-    width: 100%;
-    margin: 0;
-    padding: clamp(0.9rem, 1.5vw, 1.15rem);
-  }
-
-  .today-workspace__utility .actions__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.35rem 0.85rem;
-    max-width: none;
-  }
-
-  .today-workspace__utility .actions__header h2 {
-    font-size: clamp(1.15rem, 1.5vw, 1.45rem);
-  }
-
-  .today-workspace__utility :global(.quick-task-capture) {
-    margin-top: 0.8rem;
-  }
-
-  .today-workspace__utility :global(.quick-task-capture__form) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .today-workspace__utility :global(.actions__grid) {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-    gap: 0.8rem;
-    margin-top: 0.8rem;
-  }
-
-  .today-workspace__utility :global(.action-card) {
-    padding: clamp(0.85rem, 1.2vw, 1rem);
-  }
-
-  .today-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-    gap: clamp(0.85rem, 1.4vw, 1rem);
-  }
-
-  @media (min-width: 88rem) {
-    .today-workspace {
-      grid-template-columns: minmax(0, 1.45fr) minmax(24rem, 0.8fr);
-    }
-
-    .today-workspace__timeline {
-      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.75fr);
-    }
-
-    .today-workspace__timeline :global(.block-detail__task) {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-    }
-
-    .today-workspace__timeline :global(.block-detail__task > span:first-child) {
-      grid-column: 1 / -1;
-      overflow-wrap: break-word;
-      word-break: normal;
-    }
-
-    .today-workspace__timeline :global(.block-detail__task form) {
-      justify-self: end;
-    }
-
-    .today-workspace__timeline > *,
-    .today-workspace__utility > * {
-      min-width: 0;
-      overflow-wrap: anywhere;
-    }
-
-    .today-workspace__utility {
-      position: sticky;
-      top: clamp(0.75rem, 1.5vw, 1.25rem);
-      align-self: start;
-    }
-  }
-
-  @media (min-width: 100rem) {
-    .app-route--today {
-      --today-workspace-max: 120rem;
-    }
-
-    .today-workspace {
-      grid-template-columns: minmax(0, 1.55fr) minmax(30rem, 0.85fr);
-    }
-  }
-
-  @media (min-width: 120rem) {
-    .app-route--today {
-      --today-workspace-max: 152rem;
-    }
-
-    .today-workspace {
-      grid-template-columns: minmax(0, 1.65fr) minmax(36rem, 0.9fr);
-    }
-  }
-
-  @media (min-width: 150rem) {
-    .app-route--today {
-      --today-workspace-max: 176rem;
-    }
-
-    .today-workspace {
-      grid-template-columns: minmax(0, 1.75fr) minmax(40rem, 0.85fr);
-    }
-  }
-
-  @media (max-width: 54rem) {
-    .today-workspace__utility .actions__header {
-      display: grid;
-    }
-  }
+  /* prettier-ignore */
+  .today-workspace :global(section), .today-workspace :global(form), .today-workspace :global(label) { min-width: 0; }
+  /* prettier-ignore */
+  .today-workspace :global(form) { display: grid; gap: 0.65rem; }
+  /* prettier-ignore */
+  .today-workspace :global(input), .today-workspace :global(select), .today-workspace :global(textarea), .today-workspace :global(button) { width: 100%; max-width: 100%; min-height: 44px; }
+  /* prettier-ignore */
+  .today-workspace :global(button), .today-workspace :global(.today-tasks__actions) { flex-wrap: wrap; touch-action: manipulation; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture) { min-width: 0; overflow-wrap: anywhere; color: var(--chronos-text, var(--foreground, #0f172a)); background: var(--today-surface); border: 1px solid var(--today-border); border-radius: var(--radius, 1rem); padding: clamp(1rem, 2vw, 1.5rem); }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture header) { display: flex; align-items: baseline; gap: 0.65rem; flex-wrap: wrap; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture header p), .today-workspace :global(.today-quick-capture h2) { margin: 0; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture header p) { color: var(--chronos-primary, var(--primary, #4f46e5)); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture input:focus-visible), .today-workspace :global(.today-quick-capture select:focus-visible), .today-workspace :global(.today-quick-capture button:focus-visible) { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 2px; }
+  /* prettier-ignore */
+  @media (max-width: 72rem) { .today-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'capture' 'shelf' 'quick-block' 'sheet' 'intention' 'closeout'; } }
+  /* prettier-ignore */
+  @media (max-width: 48rem) { .app-route--today { padding-inline-start: max(0.25rem, env(safe-area-inset-left)); padding-inline-end: max(0.25rem, env(safe-area-inset-right)); } .today-workspace :global(button[type='submit']) { width: 100%; } }
+  /* prettier-ignore */
+  @media (prefers-reduced-motion: reduce) { .app-route--today *, .app-route--today *::before, .app-route--today *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 </style>

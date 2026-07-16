@@ -24,6 +24,7 @@ import type {
 } from '../../domain/repositories';
 import { orderBlocksForChronogram } from '../../domain/services/chronogram';
 import {
+  assertBlockCanBeConcluded,
   assertReviewMatchesBlock,
   concludeBlock,
   startBlock,
@@ -87,6 +88,12 @@ export type TodayQuickBlockDefaults = {
   endTime: string;
 };
 
+export type TodayAssignmentTarget = {
+  blockId: string;
+  label: string;
+  lifecycle: Extract<DaySheetRow, { kind: 'block' }>['lifecycle'];
+};
+
 export type TodayWorkspaceView = {
   date: TodayDateContext;
   header: {
@@ -95,7 +102,12 @@ export type TodayWorkspaceView = {
     goals: TodayGoal[];
     state: 'empty' | 'ready' | 'error';
   };
-  sheet: { rows: DaySheetRow[]; currentTime: string | null; activeBlockId: string | null };
+  sheet: {
+    rows: DaySheetRow[];
+    currentTime: string | null;
+    activeBlockId: string | null;
+    assignmentTargets: TodayAssignmentTarget[];
+  };
   capture: { defaultDestination: TaskDestination | null; destinations: TaskDestination[] };
   openTasks: TodayTaskPanelProps;
   closeout: {
@@ -120,6 +132,7 @@ export type ChronosTodayState = Pick<
   todayGoals: TodayGoal[];
   todayTaskPanel: TodayTaskPanelProps;
   quickBlockDefaults: TodayQuickBlockDefaults;
+  recentBlockNames: string[];
   workspace: TodayWorkspaceView;
 };
 
@@ -158,6 +171,7 @@ export type ChronosAppActionStatus =
   | 'pause-ended'
   | 'event-created'
   | 'concluded'
+  | 'block-concluded'
   | 'goals-saved'
   | 'daily-header-saved'
   | 'daily-closeout-saved'
@@ -169,6 +183,10 @@ export type ChronosAppActionResult = {
 };
 
 type Clock = () => string;
+type RecentBlockCandidate = Pick<Block, 'id' | 'title'> &
+  Partial<Pick<Block, 'plannedStart' | 'updatedAt'>>;
+
+const titleWhitespace = /\s+/g;
 
 const statusMessages: Record<ChronosAppActionStatus, string> = {
   created: 'Block added.',
@@ -180,6 +198,7 @@ const statusMessages: Record<ChronosAppActionStatus, string> = {
   'pause-ended': 'Pause ended.',
   'event-created': 'Event added.',
   concluded: 'Review saved.',
+  'block-concluded': 'Block concluded.',
   'goals-saved': 'Goals saved.',
   'daily-header-saved': 'Daily header saved.',
   'daily-closeout-saved': 'Closeout saved.',
@@ -275,6 +294,8 @@ export async function loadChronosTodayState(
   const daily = dailyResult.workspace;
   const dailyState = dailyResult.failed ? 'error' : daily ? 'ready' : 'empty';
   const todayTaskPanel = buildTodayTaskPanel(tasks, todayBlocks, todaySelection.currentBlock);
+  const sheetRows = buildDaySheetRows(blocks, date, pauses);
+  const activeBlockId = defaultDestination?.kind === 'block' ? defaultDestination.blockId : null;
 
   return {
     blocks: todayBlocks,
@@ -296,6 +317,7 @@ export async function loadChronosTodayState(
     todayGoals,
     todayTaskPanel,
     quickBlockDefaults: getQuickBlockDefaults(nowIso),
+    recentBlockNames: selectRecentBlockNames(blocks, nowIso),
     workspace: {
       date,
       header: {
@@ -305,9 +327,10 @@ export async function loadChronosTodayState(
         state: dailyState,
       },
       sheet: {
-        rows: buildDaySheetRows(blocks, date, pauses),
+        rows: sheetRows,
         currentTime: getCurrentTimeForDay(nowIso, date),
-        activeBlockId: defaultDestination?.kind === 'block' ? defaultDestination.blockId : null,
+        activeBlockId,
+        assignmentTargets: buildTodayAssignmentTargets(sheetRows),
       },
       capture: { defaultDestination, destinations },
       openTasks: todayTaskPanel,
@@ -654,24 +677,13 @@ export async function handleChronosAppAction(
         userId,
         blockId: requireFormString(formData, 'blockId'),
       });
-      const blockQuery = { userId, blockId: block.id };
-      const pauses = await repositories.pauses.listForBlock(blockQuery);
       const completedTaskIds = readStringList(formData, 'completedTaskIds');
       const notes = requireFormString(formData, 'notes');
       const nextAdjustment = readOptionalFormString(formData, 'nextAdjustment');
-
-      assertNoOpenPauses(pauses);
-
-      const actualEntries = await repositories.actualTimeEntries.listForBlock(blockQuery);
-      const closedActualEntries = await closeActiveFocusEntry(
-        repositories,
-        blockQuery,
-        actualEntries,
-        now(),
-      );
+      const actualEntries = await prepareBlockConclusion(repositories, block, now());
       const result = concludeBlock({
         block,
-        actualEntries: closedActualEntries,
+        actualEntries,
         completedTaskIds,
         notes,
         nextAdjustment,
@@ -682,6 +694,25 @@ export async function handleChronosAppAction(
       await repositories.blocks.updatePhase({ userId, blockId: block.id }, result.phase);
 
       return { status: 'concluded' };
+    }
+    case 'conclude-block-without-review': {
+      const block = await findRequiredBlock(repositories.blocks, {
+        userId,
+        blockId: requireFormString(formData, 'blockId'),
+      });
+      const endedAt = now();
+      const actualEntries = await prepareBlockConclusion(repositories, block, endedAt, false);
+
+      assertBlockCanBeConcluded(block);
+      await repositories.blocks.updatePhase({ userId, blockId: block.id }, 'conclusion');
+      await closeActiveFocusEntry(
+        repositories,
+        { userId, blockId: block.id },
+        actualEntries,
+        endedAt,
+      );
+
+      return { status: 'block-concluded' };
     }
     default:
       throw new Error('Unsupported Chronos app action.');
@@ -951,6 +982,54 @@ function calculateOpenTime(
     detail: 'Open time until the day ends.',
     minutes,
   };
+}
+
+function buildTodayAssignmentTargets(rows: readonly DaySheetRow[]): TodayAssignmentTarget[] {
+  return rows.flatMap((row) =>
+    row.kind === 'block'
+      ? [{ blockId: row.block.id, label: row.block.title, lifecycle: row.lifecycle }]
+      : [],
+  );
+}
+
+export function selectRecentBlockNames(
+  blocks: readonly RecentBlockCandidate[],
+  nowIso: string,
+): string[] {
+  const candidates = blocks
+    .flatMap((block) => {
+      const title = block.title.trim().replace(titleWhitespace, ' ');
+
+      return title && block.plannedStart && block.plannedStart <= nowIso
+        ? [
+            {
+              id: block.id,
+              title,
+              plannedStart: block.plannedStart,
+              updatedAt: block.updatedAt ?? '',
+            },
+          ]
+        : [];
+    })
+    .sort(
+      (left, right) =>
+        right.plannedStart.localeCompare(left.plannedStart) ||
+        right.updatedAt.localeCompare(left.updatedAt) ||
+        left.id.localeCompare(right.id),
+    );
+  const seen = new Set<string>();
+  const names: string[] = [];
+
+  for (const candidate of candidates) {
+    if (names.length === 5) break;
+    const key = candidate.title.toLowerCase();
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+    names.push(candidate.title);
+  }
+
+  return names;
 }
 
 function buildTodayTaskPanel(
@@ -1262,6 +1341,32 @@ function groupTasksByBlockId(tasks: ChronosTask[]): Record<string, ChronosTask[]
   }, {});
 }
 
+async function prepareBlockConclusion(
+  repositories: ChronosAppRepositories,
+  block: Block,
+  endedAt: string,
+  closeFocusEntry = true,
+): Promise<ActualTimeEntry[]> {
+  const query = { userId: block.userId, blockId: block.id };
+  const pauses = await repositories.pauses.listForBlock(query);
+
+  assertNoOpenPauses(pauses);
+
+  const actualEntries = await repositories.actualTimeEntries.listForBlock(query);
+  if (!closeFocusEntry) {
+    const activeFocusEntry = findActiveFocusEntry(actualEntries, query);
+    if (activeFocusEntry) {
+      assertEndTimeNotBeforeStart(
+        activeFocusEntry.startedAt,
+        endedAt,
+        'Focus actual entry end time must not be before its start time.',
+      );
+    }
+    return actualEntries;
+  }
+  return closeActiveFocusEntry(repositories, query, actualEntries, endedAt);
+}
+
 async function closeActiveFocusEntry(
   repositories: ChronosAppRepositories,
   query: BlockQuery,
@@ -1314,7 +1419,8 @@ function findActiveFocusEntry(
         entry.blockId === query.blockId &&
         entry.phase === 'execution' &&
         entry.activity === 'focus' &&
-        entry.pauseId === null,
+        entry.pauseId === null &&
+        entry.endedAt === entry.startedAt,
     )
     .sort((first, second) => first.startedAt.localeCompare(second.startedAt));
 

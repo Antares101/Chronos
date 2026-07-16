@@ -1,18 +1,19 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { Block, Pause } from '../../domain/models';
+import type { Block } from '../../domain/models';
 import type { DaySheetRow } from '../../domain/services/today-workspace';
+import type { DailyTimelinePause } from '../timeline/DailyTimeline';
 import TodayDaySheet, { type TodayDaySheetProps } from './TodayDaySheet';
 
 // prettier-ignore
 const block = (overrides: Partial<Block> = {}): Block => ({ id: 'block-1', userId: 'user-1', category: 'work', title: 'Deep work with a very long title that must remain readable', plannedStart: '2026-07-11T09:00:00.000Z', plannedEnd: '2026-07-11T10:00:00.000Z', phase: 'execution', createdAt: '2026-07-11T08:00:00.000Z', updatedAt: '2026-07-11T08:00:00.000Z', ...overrides });
 // prettier-ignore
-const pause: Pause = { id: 'pause-1', userId: 'user-1', blockId: 'block-1', kind: 'untimed', startedAt: '2026-07-11T09:30:00.000Z', endedAt: null, note: 'Coffee', createdAt: '2026-07-11T09:30:00.000Z', updatedAt: '2026-07-11T09:30:00.000Z' };
+const pause: DailyTimelinePause = { id: 'pause-1', blockId: 'block-1', kind: 'untimed', startedAt: '2026-07-11T09:30:00.000Z', endedAt: null, note: 'Coffee' };
 // prettier-ignore
 const row = (overrides: Partial<Extract<DaySheetRow, { kind: 'block' }>> = {}) => ({ kind: 'block' as const, block: block(), clippedStart: '2026-07-11T09:00:00.000Z', clippedEnd: '2026-07-11T10:00:00.000Z', edge: 'inside' as const, overlapDepth: 0, lifecycle: 'active' as const, ...overrides });
 // prettier-ignore
-const defaults: TodayDaySheetProps = { rows: [{ kind: 'gap', start: '2026-07-11T00:00:00.000Z', end: '2026-07-11T09:00:00.000Z' }, row()], currentTime: '2026-07-11T09:15:00.000Z', actionPath: '/app/today', blockDetails: { 'block-1': { tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }], pauses: [pause], permittedActions: [{ kind: 'pause' }, { kind: 'resume', pauseId: 'pause-1' }, { kind: 'event' }, { kind: 'task' }, { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }, { id: 'task-2', title: 'Share proposal', status: 'todo' }] }] } } };
+const defaults: TodayDaySheetProps = { rows: [{ kind: 'gap', start: '2026-07-11T00:00:00.000Z', end: '2026-07-11T09:00:00.000Z' }, row()], currentTime: '2026-07-11T09:15:00.000Z', actionPath: '/app/today', blockDetails: { 'block-1': { tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }], highlightedEvents: [{ id: 'event-1', title: 'Resolved blocker' }], pauses: [pause], permittedActions: [{ kind: 'pause' }, { kind: 'resume', pauseId: 'pause-1' }, { kind: 'event' }, { kind: 'task' }, { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }, { id: 'task-2', title: 'Share proposal', status: 'todo' }] }] } } };
 const render = (props: Partial<TodayDaySheetProps> = {}) =>
   renderToStaticMarkup(createElement(TodayDaySheet, { ...defaults, ...props }));
 const expectText = (html: string, values: string[]) =>
@@ -41,12 +42,78 @@ describe('TodayDaySheet', () => {
     ]);
   });
 
+  it('exposes each authoritative block row as a pointer assignment target', () => {
+    const html = render();
+
+    expect(html).toContain('data-assignment-target="block-1"');
+    expect(html).toContain(
+      'data-assignment-target-label="Deep work with a very long title that must remain readable"',
+    );
+  });
+
+  it('renders scheduled task status controls and highlighted events for each block', () => {
+    const html = render();
+    const taskForm =
+      html.match(
+        /<form[^>]*>[\s\S]*?name="action" value="today-set-task-status"[\s\S]*?<\/form>/,
+      )?.[0] ?? '';
+
+    expect(taskForm).toContain('name="taskId" value="task-1"');
+    expect(taskForm).toContain('name="status" value="todo"');
+    expect(taskForm).toContain('aria-label="Mark Draft proposal to do"');
+    expect(html).toContain(
+      'Highlighted events for Deep work with a very long title that must remain readable',
+    );
+    expect(html).toContain('Resolved blocker');
+  });
+
+  it('separates open-time chronology and labels a full-day gap as 24:00', () => {
+    const html = render({
+      rows: [
+        {
+          kind: 'gap',
+          start: '2026-07-11T00:00:00.000Z',
+          end: '2026-07-12T00:00:00.000Z',
+        },
+      ],
+      currentTime: '2026-07-11T17:23:00.000Z',
+      blockDetails: {},
+    });
+
+    expect(html.replace(/<[^>]*>/g, '')).toContain('00:00 · Now · 17:23 · 24:00');
+  });
+
+  it('preserves 00:00 for an open gap that ends at midnight but is not a full day', () => {
+    const html = render({
+      rows: [
+        {
+          kind: 'gap',
+          start: '2026-07-11T23:00:00.000Z',
+          end: '2026-07-12T00:00:00.000Z',
+        },
+      ],
+      currentTime: null,
+      blockDetails: {},
+    });
+
+    expect(html.replace(/<[^>]*>/g, '')).toContain('23:00 · 00:00');
+  });
+
   it('places the current marker inside its containing block interval', () => {
     const html = render();
     const start = html.indexOf('>09:00</time>');
     const current = html.indexOf('Now · 09:15');
     expect(start).toBeLessThan(current);
     expect(current).toBeLessThan(html.indexOf('>10:00</time>'));
+  });
+
+  it('gives conclusion task checkboxes a 44px label hit target without enlarging the checkbox', () => {
+    const html = render();
+
+    expect(html).toContain(
+      '.today-block fieldset label{display:flex;align-items:center;min-height:44px;padding:.25rem 0}',
+    );
+    expect(html).toContain('.today-block fieldset input{width:auto;min-height:auto}');
   });
 
   it('restores exact title browser-validation contracts per action', () => {
@@ -143,5 +210,14 @@ describe('TodayDaySheet', () => {
       'href="/app/planning"',
     ]);
     expect(html).not.toContain('<article');
+  });
+
+  it('renders one local polite task confirmation near the Day Sheet actions', () => {
+    const html = render({ statusMessage: 'Task added to Deep work.' });
+
+    expect(html).toContain('class="today-sheet__status"');
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('Task added to Deep work.');
   });
 });

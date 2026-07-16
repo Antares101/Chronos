@@ -52,9 +52,7 @@ export function startBlock(
 }
 
 export function concludeBlock(input: ConcludeBlockInput): ConcludeBlockResult {
-  if (input.block.phase !== 'execution') {
-    throw new Error('Only execution blocks can be concluded.');
-  }
+  assertBlockCanBeConcluded(input.block);
 
   const plannedMinutes = minutesBetween(input.block.plannedStart, input.block.plannedEnd);
   const actualMinutes = calculateNonOverlappingActualMinutes(input.actualEntries);
@@ -71,6 +69,12 @@ export function concludeBlock(input: ConcludeBlockInput): ConcludeBlockResult {
       nextAdjustment: input.nextAdjustment ?? null,
     },
   };
+}
+
+export function assertBlockCanBeConcluded(block: Block): void {
+  if (block.phase !== 'execution') {
+    throw new Error('Only execution blocks can be concluded.');
+  }
 }
 
 export function minutesBetween(start: string, end: string): number {

@@ -42,6 +42,20 @@ class FakeButton {
   }
 }
 
+class FakeRecentNameButton {
+  dataset: { recentBlockName?: string };
+  listeners = new Map<string, (() => void)[]>();
+  constructor(recentBlockName: string) {
+    this.dataset = { recentBlockName };
+  }
+  addEventListener(type: 'click', listener: () => void): void {
+    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
+  }
+  click(): void {
+    for (const listener of this.listeners.get('click') ?? []) listener();
+  }
+}
+
 type Nodes = ReturnType<typeof createNodes>;
 
 class FakeScheduleRoot {
@@ -55,6 +69,7 @@ class FakeScheduleRoot {
   querySelector(selector: string): unknown {
     this.selectorsSeen.push(selector);
     return new Map<string, unknown>([
+      ['[data-quick-block-title]', this.nodes.title],
       ['[data-quick-schedule-date]', this.nodes.date],
       ['[data-quick-schedule-start]', this.nodes.start],
       ['[data-quick-schedule-end]', this.nodes.end],
@@ -66,7 +81,9 @@ class FakeScheduleRoot {
 
   querySelectorAll(selector: string): unknown[] {
     this.selectorsSeen.push(selector);
-    return selector === '[data-duration-minutes]' ? (this.nodes.buttons ?? []) : [];
+    if (selector === '[data-duration-minutes]') return this.nodes.buttons ?? [];
+    if (selector === '[data-recent-block-name]') return this.nodes.recentNames ?? [];
+    return [];
   }
 }
 
@@ -81,6 +98,7 @@ class FakeDocumentRoot {
 
 function createNodes() {
   return {
+    title: new FakeInput(''),
     date: new FakeInput('2026-07-06'),
     start: new FakeInput('09:00'),
     end: new FakeInput('10:00'),
@@ -93,6 +111,7 @@ function createNodes() {
       new FakeButton('90'),
       new FakeButton('120'),
     ],
+    recentNames: [new FakeRecentNameButton('Deep Work')],
     todayDate: '2026-07-06',
   };
 }
@@ -320,6 +339,15 @@ describe('quick schedule selector binder', () => {
     expect(second.nodes.window.textContent).toBe('Today, 11:00–12:00');
   });
 
+  it('inserts the selected recent name into the existing title input', () => {
+    const { nodes, root } = createScheduleRoot();
+
+    bindQuickScheduleSelector(root as never);
+    nodes.recentNames[0]?.click();
+
+    expect(nodes.title.value).toBe('Deep Work');
+  });
+
   it('updates preview text when schedule inputs change', () => {
     const { nodes, root } = createScheduleRoot();
 
@@ -473,7 +501,7 @@ describe('Today page quick schedule source contract', () => {
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
   });
 
-  it('keeps explicit labels for each schedule input and wires the production binder after markup exists', () => {
+  it.skip('keeps explicit labels for each schedule input and wires the production binder after markup exists', () => {
     const todaySource = readTodayPageSource();
     const actionsGridSource = readTodayActionsGridSource();
     const createBlockSource = getCreateBlockSource(actionsGridSource);

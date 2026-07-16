@@ -77,6 +77,22 @@ describe('TodayDailyHeader', () => {
     expect(html).toContain('role="alert"');
   });
 
+  it('keeps each invalid field, error, helper copy, and action in its intended grid child', () => {
+    const html = render({ draft: headerDraft('x'.repeat(161), 'y'.repeat(501)) });
+    const fields = html.match(/<div class="daily-header__field">[\s\S]*?<\/div>/g) ?? [];
+
+    expect(fields).toHaveLength(2);
+    expect(fields[0]).toMatch(
+      /<label>Focus<input(?=[^>]*name="focus")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-focus-error")(?=[^>]*autofocus="")[^>]*><\/label><span id="daily-focus-error" class="daily-header__error">Keep the focus to 160 characters or fewer\.<\/span>/,
+    );
+    expect(fields[1]).toMatch(
+      /<label>Constraints<textarea(?=[^>]*name="constraints")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-constraints-error")[^>]*>[^<]*<\/textarea><\/label><span id="daily-constraints-error" class="daily-header__error">Keep the constraints to 500 characters or fewer\.<\/span>/,
+    );
+    expect(html).toMatch(
+      /<form[^>]*class="daily-header__form"[^>]*><input type="hidden" name="action" value="today-save-daily-header"\/><div class="daily-header__field">[\s\S]*?<\/div><div class="daily-header__field">[\s\S]*?<\/div><p id="daily-header-help">[\s\S]*?<\/p><button type="submit">Save Intention<\/button><\/form>/,
+    );
+  });
+
   it('keeps objectives when focus and constraints are cleared and distinguishes load failure', () => {
     const goals = [goal('goal-1', 'Ship the slice', 1)];
     const objectivesOnly = render({

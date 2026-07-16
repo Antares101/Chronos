@@ -59,6 +59,11 @@ type ShortcutButton = {
   addEventListener: (type: 'click', listener: () => void) => void;
 };
 
+type RecentNameButton = {
+  dataset?: { recentBlockName?: string };
+  addEventListener: (type: 'click', listener: () => void) => void;
+};
+
 export function buildQuickSchedulePreview(input: QuickScheduleInput): QuickSchedulePreview {
   const date = input.date.trim();
   const startTime = input.startTime;
@@ -128,6 +133,7 @@ export function getDurationShortcutEndTime(input: {
 export function bindQuickScheduleSelector(
   root: QuickScheduleSelectorRoot,
 ): QuickScheduleSelectorBinding | null {
+  const titleInput = asInputTarget(root.querySelector('[data-quick-block-title]'));
   const dateInput = asInputTarget(root.querySelector('[data-quick-schedule-date]'));
   const startInput = asInputTarget(root.querySelector('[data-quick-schedule-start]'));
   const endInput = asInputTarget(root.querySelector('[data-quick-schedule-end]'));
@@ -160,6 +166,20 @@ export function bindQuickScheduleSelector(
   for (const input of [dateInput, startInput, endInput]) {
     input.addEventListener('input', () => render());
     input.addEventListener('change', () => render());
+  }
+
+  const recentNameButtons = titleInput
+    ? toArray(root.querySelectorAll('[data-recent-block-name]'))
+        .map(asRecentNameButton)
+        .filter((button): button is RecentNameButton => button !== null)
+    : [];
+
+  for (const button of recentNameButtons) {
+    button.addEventListener('click', () => {
+      if (titleInput && button.dataset?.recentBlockName) {
+        titleInput.value = button.dataset.recentBlockName;
+      }
+    });
   }
 
   for (const button of shortcutButtons) {
@@ -318,6 +338,14 @@ function asShortcutButton(value: unknown): ShortcutButton | null {
   }
 
   return value as ShortcutButton;
+}
+
+function asRecentNameButton(value: unknown): RecentNameButton | null {
+  if (!isObject(value) || typeof value.addEventListener !== 'function') {
+    return null;
+  }
+
+  return value as RecentNameButton;
 }
 
 function asScheduleRoot(value: unknown): QuickScheduleSelectorRoot | null {

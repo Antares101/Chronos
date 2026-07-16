@@ -53,6 +53,22 @@ describe('TodayCloseout', () => {
     expect(html).toContain('Keep the adjustment to 280 characters or fewer.');
   });
 
+  it('keeps each invalid field, error, helper copy, and action in its intended grid child', () => {
+    const html = render({ draft: draft('x'.repeat(501), 'y'.repeat(281)) });
+    const fields = html.match(/<div class="today-closeout__field">[\s\S]*?<\/div>/g) ?? [];
+
+    expect(fields).toHaveLength(2);
+    expect(fields[0]).toMatch(
+      /<label>Outcome<textarea(?=[^>]*name="outcome")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="closeout-outcome-error")(?=[^>]*autofocus="")[^>]*>[^<]*<\/textarea><\/label><span id="closeout-outcome-error" class="today-closeout__error">Keep the outcome to 500 characters or fewer\.<\/span>/,
+    );
+    expect(fields[1]).toMatch(
+      /<label>Tomorrow’s Adjustment<textarea(?=[^>]*name="tomorrowAdjustment")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="closeout-adjustment-error")[^>]*>[^<]*<\/textarea><\/label><span id="closeout-adjustment-error" class="today-closeout__error">Keep the adjustment to 280 characters or fewer\.<\/span>/,
+    );
+    expect(html).toMatch(
+      /<form[^>]*class="today-closeout__form"[^>]*><input type="hidden" name="action" value="today-save-closeout"\/><div class="today-closeout__field">[\s\S]*?<\/div><div class="today-closeout__field">[\s\S]*?<\/div><p id="closeout-help">[\s\S]*?<\/p><button type="submit">Save Closeout<\/button><\/form>/,
+    );
+  });
+
   it('supports editing and revisiting a complete closeout', () => {
     const html = render({
       closeout: {

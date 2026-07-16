@@ -128,7 +128,7 @@ export class DrizzleTaskRepository implements TaskRepository {
     return expectOne(
       await this.db
         .update(tasks)
-        .set({ blockId: query.blockId, source: 'block', updatedAt: new Date().toISOString() })
+        .set({ blockId: query.blockId, updatedAt: new Date().toISOString() })
         .where(and(eq(tasks.userId, query.userId), eq(tasks.id, query.taskId)))
         .returning(),
       'task',
