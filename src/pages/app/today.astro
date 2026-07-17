@@ -127,9 +127,7 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
 <ChronosAppShell
   title="Chronos Today"
-  eyebrow="CHRONOS"
   heading="Run the Day"
-  summary="Set today’s intention, work the day sheet, and close the day. Review keeps detailed analysis."
   email={email}
   currentPath={routePath}
   actionError={shellActionError}
@@ -269,7 +267,7 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
 <style>
   /* prettier-ignore */
-  .app-route--today { --app-route-max: 90rem; --today-surface: var(--chronos-surface, var(--card, #fff)); --today-border: var(--chronos-border, var(--border, rgba(99, 102, 241, 0.22))); display: grid; gap: clamp(0.85rem, 1.5vw, 1.25rem); min-width: 0; }
+  .app-route--today { --app-route-max: 90rem; --today-surface: var(--chronos-surface, var(--card, #fff)); --today-border: var(--chronos-border, var(--border, rgba(99, 102, 241, 0.22))); display: grid; gap: clamp(0.85rem, 1.5vw, 1.25rem); width: min(100%, var(--app-route-max)); min-width: 0; margin-inline: auto; }
   /* prettier-ignore */
   .app-route--today, .app-route--today *, .app-route--today *::before, .app-route--today *::after { box-sizing: border-box; }
   /* prettier-ignore */
@@ -277,7 +275,7 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
   /* prettier-ignore */
   .today-focus-target:focus-visible, [data-focus-target]:focus { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 4px; }
   /* prettier-ignore */
-  .today-workspace { display: grid; grid-template-columns: minmax(min(100%, 20rem), 1fr) minmax(0, 2fr); grid-template-areas: 'capture shelf' 'quick-block sheet' 'intention sheet' 'closeout sheet'; align-items: start; gap: clamp(0.85rem, 1.5vw, 1.25rem); }
+  .today-workspace { display: grid; grid-template-columns: minmax(19rem, 23rem) minmax(0, 1fr); grid-template-areas: 'capture shelf' 'quick-block sheet' 'intention sheet' 'closeout sheet'; align-items: start; gap: clamp(0.85rem, 1.5vw, 1.25rem); }
   /* prettier-ignore */
   .today-workspace__capture { grid-area: capture; }
   .today-workspace__sheet {

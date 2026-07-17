@@ -42,9 +42,20 @@ describe('TodayQuickBlock', () => {
     );
     expect(html).not.toMatch(/<fieldset[^>]*data-quick-schedule-selector/);
     expect(html).toContain('role="status"');
-    expect(html).toMatch(
-      /summary\{font-weight:800;min-height:44px[\s\S]*\.today-quick-block__recent button\{min-width:0;max-width:100%;overflow-wrap:anywhere;white-space:normal\}[\s\S]*@media \(prefers-reduced-motion:reduce\)\{\.today-quick-block,\.today-quick-block \*\{transition-duration:\.01ms!important/,
+    expect(html).toContain('class="today-quick-block__presets"');
+    expect(html).toContain(
+      '.today-quick-block .today-quick-block__recent button{flex:0 1 auto;width:auto;',
     );
+    expect(html).toContain(
+      '.today-quick-block__durations{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))',
+    );
+    expect(html).toContain(
+      '.today-quick-block .today-quick-block__presets button{border:1px solid',
+    );
+    expect(html).toContain(
+      '.today-quick-block>form>button[type=submit]{width:100%;background:var(--chronos-primary',
+    );
+    expect(html).toContain('@media (prefers-reduced-motion:reduce)');
     expect(html).not.toContain('<dialog');
     expect(html).not.toContain('collision-free');
   });

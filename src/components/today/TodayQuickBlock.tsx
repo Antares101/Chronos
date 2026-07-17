@@ -66,27 +66,33 @@ export default function TodayQuickBlock({
           defaultValue={schedule.title}
           aria-describedby={actionError ? 'today-quick-block-error' : undefined}
         />
-        {recentNames.length > 0 ? (
-          <div className="today-quick-block__recent" role="group" aria-label="Recent names">
-            <span>Recent names</span>
-            {recentNames.map((name) => (
-              <button key={name} type="button" data-recent-block-name={name}>
-                {name}
+        <div className="today-quick-block__presets">
+          {recentNames.length > 0 ? (
+            <div className="today-quick-block__recent" role="group" aria-label="Recent names">
+              <span>Recent names</span>
+              {recentNames.map((name) => (
+                <button key={name} type="button" data-recent-block-name={name}>
+                  {name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div
+            className="today-quick-block__durations"
+            role="group"
+            aria-label="Duration shortcuts"
+          >
+            {durations.map(({ minutes, label }) => (
+              <button
+                key={minutes}
+                type="button"
+                data-duration-minutes={minutes}
+                aria-label={`Set duration to ${minutes} minutes`}
+              >
+                {label}
               </button>
             ))}
           </div>
-        ) : null}
-        <div className="today-quick-block__durations" role="group" aria-label="Duration shortcuts">
-          {durations.map(({ minutes, label }) => (
-            <button
-              key={minutes}
-              type="button"
-              data-duration-minutes={minutes}
-              aria-label={`Set duration to ${minutes} minutes`}
-            >
-              {label}
-            </button>
-          ))}
         </div>
         <details open={Boolean(draft && actionError)}>
           <summary>Schedule &amp; category</summary>
@@ -158,5 +164,5 @@ export default function TodayQuickBlock({
 
 const styles = `
   .today-quick-block{min-width:0;border:1px solid var(--chronos-border,var(--border,#cbd5e1));border-radius:var(--radius,1rem);background:var(--chronos-surface,var(--card,#fff));padding:clamp(1rem,2vw,1.5rem)}
-  .today-quick-block header,.today-quick-block form,.today-quick-block fieldset,.today-quick-block__recent,.today-quick-block__durations,.today-quick-block output{display:grid;gap:.65rem;min-width:0}.today-quick-block header p,.today-quick-block h2,.today-quick-block p{margin:0}.today-quick-block header>p{color:var(--chronos-primary,var(--primary,#4f46e5));font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.today-quick-block label{font-weight:800}.today-quick-block summary{font-weight:800;min-height:44px}.today-quick-block details{margin-top:.25rem}.today-quick-block fieldset{margin:.65rem 0 0}.today-quick-block input,.today-quick-block select,.today-quick-block button{min-height:44px;max-width:100%}.today-quick-block__recent,.today-quick-block__durations{grid-template-columns:repeat(auto-fit,minmax(min(100%,5rem),1fr))}.today-quick-block__recent span{grid-column:1/-1;color:var(--chronos-text-muted,var(--muted-foreground,#475569));font-weight:700}.today-quick-block__recent button{min-width:0;max-width:100%;overflow-wrap:anywhere;white-space:normal}.today-quick-block [role=alert]{color:var(--chronos-danger,#b91c1c);font-weight:700}.today-quick-block__status:empty{display:none}.today-quick-block :is(input,select,summary,button):focus-visible{outline:3px solid var(--chronos-ring,var(--ring,#818cf8));outline-offset:2px}@media (prefers-reduced-motion:reduce){.today-quick-block,.today-quick-block *{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+  .today-quick-block header,.today-quick-block form,.today-quick-block fieldset,.today-quick-block output{display:grid;gap:.65rem;min-width:0}.today-quick-block header p,.today-quick-block h2,.today-quick-block p{margin:0}.today-quick-block header>p{color:var(--chronos-primary,var(--primary,#4f46e5));font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.today-quick-block label{font-weight:800}.today-quick-block summary{min-height:44px;color:var(--chronos-text-muted,var(--muted-foreground,#475569));font-weight:750;cursor:pointer}.today-quick-block details{margin-top:.25rem}.today-quick-block fieldset{margin:.65rem 0 0}.today-quick-block input,.today-quick-block select,.today-quick-block button{min-height:44px;max-width:100%}.today-quick-block__presets{display:grid;gap:.75rem;min-width:0;padding:.75rem;border:1px solid var(--chronos-border,var(--border,#cbd5e1));border-radius:.85rem;background:var(--chronos-surface-muted,var(--muted,#f1f5f9))}.today-quick-block__recent{display:flex;flex-wrap:wrap;gap:.5rem;min-width:0}.today-quick-block__recent span{flex-basis:100%;color:var(--chronos-text-muted,var(--muted-foreground,#475569));font-weight:700}.today-quick-block .today-quick-block__recent button{flex:0 1 auto;width:auto;min-width:44px;max-width:100%;padding-inline:.8rem;text-align:left;overflow-wrap:anywhere;white-space:normal}.today-quick-block__durations{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;min-width:0}.today-quick-block .today-quick-block__presets button{border:1px solid var(--chronos-border,var(--border,#cbd5e1));background:var(--chronos-surface,var(--card,#fff));color:var(--chronos-text,var(--foreground,#0f172a));box-shadow:none}.today-quick-block .today-quick-block__presets button:hover{border-color:var(--chronos-primary,var(--primary,#4f46e5));background:var(--chronos-primary-soft,#e0e7ff)}.today-quick-block>form>button[type=submit]{width:100%;background:var(--chronos-primary,var(--primary,#4f46e5));color:var(--chronos-button-text,#fff)}.today-quick-block [role=alert]{color:var(--chronos-danger,#b91c1c);font-weight:700}.today-quick-block__status:empty{display:none}.today-quick-block :is(input,select,summary,button):focus-visible{outline:3px solid var(--chronos-ring,var(--ring,#818cf8));outline-offset:2px}@media (prefers-reduced-motion:reduce){.today-quick-block,.today-quick-block *{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 `;

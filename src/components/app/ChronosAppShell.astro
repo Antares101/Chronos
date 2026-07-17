@@ -9,9 +9,9 @@ type AppRoute = {
 
 interface Props {
   title: string;
-  eyebrow: string;
+  eyebrow?: string;
   heading: string;
-  summary: string;
+  summary?: string;
   email: string;
   currentPath: string;
   actionError?: string | null;
@@ -35,51 +35,68 @@ const routes: AppRoute[] = [
   { href: chronosAppRoutes.review, label: 'Review' },
   { href: chronosAppRoutes.insights, label: 'Insights' },
 ];
+const isTodayRoute = currentPath === chronosAppRoutes.today;
 ---
 
 <BaseLayout title={title}>
   <main class="shell">
     <a class="skip-link" href="#app-content">Skip to content</a>
 
-    <section class="command-bar ui-card" aria-labelledby="app-title">
+    <div class="command-bar__utilities" aria-label="Account and appearance actions">
+      <button
+        type="button"
+        class="sound-toggle ui-button ui-button--secondary"
+        data-sound-toggle
+        aria-label="Enable interaction sounds"
+        aria-pressed="false"
+        aria-disabled="true"
+        disabled
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Zm4.2 4.1a4 4 0 0 1 0 5.8M18 6.3a8 8 0 0 1 0 11.4"
+          ></path>
+        </svg>
+        <span class="visually-hidden" data-sound-toggle-label>Sound off</span>
+      </button>
+
+      <button
+        type="button"
+        class="theme-toggle ui-button ui-button--secondary"
+        data-theme-toggle
+        aria-label="Switch to dark theme"
+        aria-pressed="false"
+        aria-disabled="true"
+        disabled
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 12 3Z"></path>
+        </svg>
+        <span class="visually-hidden" data-theme-toggle-label>Dark mode</span>
+      </button>
+
+      <form method="post" action="/sign-out">
+        <button type="submit" class="sign-out-button ui-button" aria-label="Sign out">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <section
+      class:list={['command-bar', 'ui-card', { 'command-bar--today': isTodayRoute }]}
+      aria-labelledby="app-title"
+    >
       <div class="command-bar__identity">
-        <p class="eyebrow">{eyebrow}</p>
-        <h1 id="app-title">{heading}</h1>
-        <p class="summary">
-          {summary} Signed in as <strong>{email}</strong>
-        </p>
-      </div>
-
-      <div class="command-bar__utilities" aria-label="Account and appearance actions">
-        <button
-          type="button"
-          class="sound-toggle ui-button ui-button--secondary"
-          data-sound-toggle
-          aria-label="Enable interaction sounds"
-          aria-pressed="false"
-          aria-disabled="true"
-          disabled
-        >
-          <span class="sound-toggle__icon" aria-hidden="true">♪</span>
-          <span data-sound-toggle-label>Sound off</span>
-        </button>
-
-        <button
-          type="button"
-          class="theme-toggle ui-button ui-button--secondary"
-          data-theme-toggle
-          aria-label="Switch to dark theme"
-          aria-pressed="false"
-          aria-disabled="true"
-          disabled
-        >
-          <span class="theme-toggle__icon" aria-hidden="true">◐</span>
-          <span data-theme-toggle-label>Dark mode</span>
-        </button>
-
-        <form method="post" action="/sign-out">
-          <button type="submit" class="ui-button">Sign out</button>
-        </form>
+        {!isTodayRoute && eyebrow ? <p class="eyebrow">{eyebrow}</p> : null}
+        <h1 id="app-title" class:list={{ 'visually-hidden': isTodayRoute }}>{heading}</h1>
+        {
+          !isTodayRoute && summary ? (
+            <p class="summary">
+              {summary} Signed in as <strong>{email}</strong>
+            </p>
+          ) : null
+        }
       </div>
 
       <nav class="section-nav" aria-label="Chronos app sections">
@@ -305,17 +322,29 @@ const routes: AppRoute[] = [
     outline-offset: 0.5rem;
   }
 
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
   .command-bar {
     display: grid;
     grid-template-areas:
-      'identity utilities'
-      'nav nav';
-    grid-template-columns: minmax(0, 1fr) auto;
+      'identity'
+      'nav';
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: clamp(0.75rem, 1.6vw, 1rem);
     width: min(100%, var(--app-shell-readable-max));
     margin: 0 auto;
-    padding: clamp(0.85rem, 1.8vw, 1.15rem);
+    padding: 4rem clamp(0.85rem, 1.8vw, 1.15rem) clamp(0.85rem, 1.8vw, 1.15rem);
     border: 1px solid var(--app-border);
     border-radius: 1.5rem;
     background: color-mix(in srgb, var(--app-surface) 92%, transparent);
@@ -362,22 +391,23 @@ const routes: AppRoute[] = [
 
   .command-bar__utilities {
     display: flex;
-    flex: 0 1 auto;
-    flex-wrap: wrap;
-    grid-area: utilities;
-    justify-content: flex-end;
-    justify-self: end;
+    position: fixed;
+    z-index: 20;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
     align-items: center;
-    gap: 0.55rem;
-    min-width: 0;
-    max-width: min(100%, 13rem);
+    gap: 0.35rem;
+    padding: 0.3rem;
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+    box-shadow: var(--app-shadow-soft);
     white-space: nowrap;
+    backdrop-filter: blur(16px);
   }
 
   .command-bar__utilities form {
-    flex: 0 1 auto;
     margin: 0;
-    min-width: 0;
   }
 
   .command-bar > *,
@@ -578,18 +608,26 @@ const routes: AppRoute[] = [
   }
 
   .theme-toggle,
-  .sound-toggle {
+  .sound-toggle,
+  .sign-out-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
   }
 
-  .theme-toggle__icon,
-  .sound-toggle__icon {
-    color: var(--app-primary-strong);
-    font-size: 1rem;
-    line-height: 1;
+  .command-bar__utilities svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   button:hover:not(:disabled),
@@ -828,17 +866,18 @@ const routes: AppRoute[] = [
 
   @media (min-width: 88rem) {
     .command-bar {
-      grid-template-areas: 'identity nav utilities';
-      grid-template-columns: minmax(16rem, 0.85fr) minmax(24rem, 1.35fr) auto;
+      grid-template-areas: 'identity nav';
+      grid-template-columns: minmax(16rem, 0.85fr) minmax(24rem, 1.35fr);
       align-items: center;
       gap: clamp(0.75rem, 1.2vw, 1.1rem);
       min-height: 4.5rem;
       padding: 0.55rem 0.75rem;
+      padding-right: 10.5rem;
     }
 
-    .command-bar__utilities {
-      flex-wrap: nowrap;
-      max-width: none;
+    .command-bar--today {
+      grid-template-areas: 'nav';
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .eyebrow {
@@ -920,28 +959,24 @@ const routes: AppRoute[] = [
     .command-bar {
       grid-template-areas:
         'identity'
-        'utilities'
         'nav';
       grid-template-columns: minmax(0, 1fr);
       padding: 0.75rem;
     }
 
-    .command-bar__utilities,
-    .command-bar__utilities form {
-      width: auto;
-    }
-
     .command-bar__utilities {
-      justify-content: flex-start;
-      justify-self: start;
-      max-width: 100%;
-      white-space: normal;
+      top: max(0.5rem, env(safe-area-inset-top));
+      right: max(0.5rem, env(safe-area-inset-right));
     }
 
     .command-bar__utilities button,
     .command-bar__utilities .ui-button {
-      width: auto;
-      padding-inline: 0.8rem;
+      width: 2.75rem;
+      padding: 0;
+    }
+
+    .command-bar {
+      padding-top: 4rem;
     }
 
     .summary strong {
@@ -982,6 +1017,12 @@ const routes: AppRoute[] = [
     .shell,
     :root[data-theme='dark'] .shell {
       background: var(--app-bg);
+    }
+
+    .command-bar__utilities {
+      background: var(--app-surface);
+      backdrop-filter: none;
+      box-shadow: none;
     }
 
     .shell::before,

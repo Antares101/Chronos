@@ -157,9 +157,7 @@ describe('Today daily workspace route composition', () => {
     );
     expect(source).toContain('<TodayQuickBlock {...quickBlockProps} />');
     expect(source).toContain('bindQuickScheduleSelectors(document)');
-    expect(source).toContain(
-      'grid-template-columns: minmax(min(100%, 20rem), 1fr) minmax(0, 2fr);',
-    );
+    expect(source).toContain('grid-template-columns: minmax(19rem, 23rem) minmax(0, 1fr);');
     expect(source).toContain(
       "grid-template-areas: 'capture shelf' 'quick-block sheet' 'intention sheet' 'closeout sheet';",
     );
@@ -167,6 +165,16 @@ describe('Today daily workspace route composition', () => {
     expect(source).toContain(
       "grid-template-areas: 'capture' 'shelf' 'quick-block' 'sheet' 'intention' 'closeout';",
     );
+  });
+
+  it('bounds the route on wide screens without changing mobile DOM or grid-area order', () => {
+    const source = readTodaySource();
+
+    expect(source).toContain('width: min(100%, var(--app-route-max));');
+    expect(source).toContain('margin-inline: auto;');
+    expect(source).not.toContain('eyebrow="CHRONOS"');
+    expect(source).not.toContain('summary="Set today’s intention');
+    expect(source).toContain('heading="Run the Day"');
   });
 });
 

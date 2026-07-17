@@ -26,7 +26,39 @@ describe('ChronosAppShell command bar contract', () => {
     expect(shellSource).toMatch(/<button[\s\S]*data-sound-toggle/);
     expect(shellSource).toMatch(/<button[\s\S]*data-theme-toggle/);
     expect(shellSource).toContain('<form method="post" action="/sign-out">');
+    expect(shellSource).toContain('class="sign-out-button ui-button" aria-label="Sign out"');
+    expect(shellSource.match(/<svg viewBox="0 0 24 24" aria-hidden="true">/g)).toHaveLength(3);
+    expect(shellSource).toContain('class="visually-hidden" data-sound-toggle-label');
+    expect(shellSource).toContain('class="visually-hidden" data-theme-toggle-label');
     expect(shellSource).not.toContain('role="tab"');
+  });
+
+  it('keeps Today semantics hidden while retaining identity on the other routes', () => {
+    expect(shellSource).toContain('const isTodayRoute = currentPath === chronosAppRoutes.today;');
+    expect(shellSource).toContain("class:list={{ 'visually-hidden': isTodayRoute }}");
+    expect(shellSource).toContain('!isTodayRoute && eyebrow');
+    expect(shellSource).toContain('!isTodayRoute && summary');
+  });
+
+  it('keeps the fixed utility cluster outside the transformed command bar', () => {
+    const shellIndex = shellSource.indexOf('<main class="shell">');
+    const utilitiesIndex = shellSource.indexOf('<div class="command-bar__utilities"');
+    const commandBarIndex = shellSource.indexOf("class:list={['command-bar'");
+    const commandBarEndIndex = shellSource.indexOf('</section>', commandBarIndex);
+
+    expect(shellIndex).toBeGreaterThan(-1);
+    expect(utilitiesIndex).toBeGreaterThan(shellIndex);
+    expect(commandBarIndex).toBeGreaterThan(utilitiesIndex);
+    expect(commandBarEndIndex).toBeGreaterThan(commandBarIndex);
+    expect(shellSource.slice(commandBarIndex, commandBarEndIndex)).not.toContain(
+      'command-bar__utilities',
+    );
+    expect(shellSource).toMatch(/\.command-bar__utilities\s*{[\s\S]*position: fixed;/);
+    expect(shellSource).toContain('top: max(0.75rem, env(safe-area-inset-top));');
+    expect(shellSource).toContain('right: max(0.75rem, env(safe-area-inset-right));');
+    expect(shellSource).toMatch(
+      /\.sign-out-button\s*{[\s\S]*width: 2\.75rem;[\s\S]*height: 2\.75rem;/,
+    );
   });
 
   it('keeps utility and route focus order aligned with the visual command bar', () => {

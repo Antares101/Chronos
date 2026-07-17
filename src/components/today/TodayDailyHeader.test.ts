@@ -34,9 +34,26 @@ const goal = (id: string, title: string, position: number): TodayGoal => ({
 });
 
 describe('TodayDailyHeader', () => {
+  it('keeps its semantic title visually hidden with component-local CSS', () => {
+    const html = render();
+    const componentStyles = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)]
+      .map((match) => match[1])
+      .find((style) => style?.includes('.daily-header{'));
+
+    expect(html).toContain(
+      '<h2 id="daily-header-title" class="visually-hidden">Set Today’s Intention</h2>',
+    );
+    expect(componentStyles).toContain('.daily-header .visually-hidden{');
+    expect(componentStyles).toContain('position:absolute!important');
+    expect(componentStyles).toContain('clip:rect(0,0,0,0)!important');
+    expect(componentStyles).toContain('white-space:nowrap!important');
+  });
+
   it('renders a truthful empty state and exact sibling form contracts', () => {
     const html = render();
-    expect(html).toContain('Set Today’s Intention');
+    expect(html).toContain(
+      '<h2 id="daily-header-title" class="visually-hidden">Set Today’s Intention</h2>',
+    );
     expect(html).toContain('No focus, objectives, or constraints yet.');
     expect(html).toMatch(
       /(?=[\s\S]*today-save-daily-header)(?=[\s\S]*name="focus")(?=[\s\S]*maxLength="160")(?=[\s\S]*name="constraints")(?=[\s\S]*maxLength="500")(?=[\s\S]*today-save-goals)/,
