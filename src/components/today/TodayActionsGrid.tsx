@@ -154,7 +154,7 @@ export default function TodayActionsGrid({
                 />
               </div>
             </div>
-            <div className="quick-schedule__shortcuts" role="group" aria-label="Duration shortcuts">
+            <fieldset className="quick-schedule__shortcuts" aria-label="Duration shortcuts">
               <button
                 type="button"
                 data-duration-minutes="30"
@@ -183,7 +183,7 @@ export default function TodayActionsGrid({
               >
                 2h
               </button>
-            </div>
+            </fieldset>
             <p
               id="quick-schedule-status"
               className="quick-schedule__status"
@@ -336,6 +336,9 @@ const styles = `
 
   .quick-schedule__shortcuts {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.75rem), 1fr));
+    border: 0;
+    margin: 0;
+    padding: 0;
   }
 
   .quick-schedule__control {

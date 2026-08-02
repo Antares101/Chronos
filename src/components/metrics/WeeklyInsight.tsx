@@ -53,7 +53,7 @@ export default function WeeklyInsight({
       <div className="weekly-insight__grids">
         <article className="weekly-insight__panel" aria-label="Planned vs actual by category">
           <h3>By category</h3>
-          <ul role="list" className="weekly-insight__metric-list">
+          <ul className="weekly-insight__metric-list">
             {categories.map(([category, value]) => (
               <li key={category} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">
@@ -86,7 +86,7 @@ export default function WeeklyInsight({
 
         <article className="weekly-insight__panel" aria-label="Planned vs actual by phase">
           <h3>By phase</h3>
-          <ul role="list" className="weekly-insight__metric-list">
+          <ul className="weekly-insight__metric-list">
             {phases.map(([phase, value]) => (
               <li key={phase} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">{phase}</span>
@@ -113,7 +113,7 @@ export default function WeeklyInsight({
         {allBlocksSorted.length === 0 ? (
           <p className="weekly-insight__empty">No block metrics yet.</p>
         ) : (
-          <ul role="list" className="weekly-insight__metric-list">
+          <ul className="weekly-insight__metric-list">
             {allBlocksSorted.map(([blockId, value]) => (
               <li key={blockId} className="weekly-insight__metric-item">
                 <span className="weekly-insight__metric-name">{value.key}</span>
@@ -135,7 +135,7 @@ export default function WeeklyInsight({
         )}
       </article>
 
-      <footer className="weekly-insight__totals" aria-label="Weekly planned vs actual totals">
+      <footer className="weekly-insight__totals">
         <div>
           <span>Total planned</span>
           <strong>{totals.plannedMinutes}m</strong>

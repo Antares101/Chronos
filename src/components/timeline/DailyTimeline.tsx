@@ -96,7 +96,7 @@ export default function DailyTimeline({
       </div>
 
       {offWindowBlocks.length > 0 ? (
-        <div
+        <section
           className="daily-timeline__off-window"
           aria-label="Blocks outside this timeline window"
         >
@@ -106,10 +106,10 @@ export default function DailyTimeline({
               <li key={block.id}>{getOffWindowBlockLabel(block, visibleStart)}</li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
-      <div className="daily-timeline__track" aria-label={trackLabel}>
+      <section className="daily-timeline__track" aria-label={trackLabel}>
         {currentTime && currentPercent !== null ? (
           <div
             className="daily-timeline__current"
@@ -135,12 +135,12 @@ export default function DailyTimeline({
             visibleEnd={visibleEnd}
           />
         ))}
-      </div>
+      </section>
 
-      <div className="daily-timeline__notes" aria-label="Timeline notes">
+      <section className="daily-timeline__notes" aria-label="Timeline notes">
         <p>Pauses stay inside the block where they happened.</p>
         <p>Open gaps show where the day still has room.</p>
-      </div>
+      </section>
 
       <style>{dailyTimelineStyles}</style>
     </section>
@@ -200,7 +200,7 @@ function TimelineBlock({
       {block.note ? <span className="daily-timeline__block-note">{block.note}</span> : null}
 
       {pauses.length > 0 ? (
-        <div
+        <section
           className="daily-timeline__pause-lane"
           aria-label={`Pause segments recorded inside ${block.title}.`}
         >
@@ -214,7 +214,7 @@ function TimelineBlock({
               pause={pause}
             />
           ))}
-        </div>
+        </section>
       ) : null}
     </article>
   );
@@ -309,6 +309,7 @@ function PauseSegment({ block, blockEnd, blockStart, currentTime, pause }: Pause
   return (
     <span
       className="daily-timeline__pause-segment"
+      role="img"
       style={style}
       aria-label={`${label} from ${timeRange} inside ${block.title}.${
         pause.note ? ` ${pause.note}` : ''

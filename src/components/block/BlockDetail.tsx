@@ -94,7 +94,7 @@ export default function BlockDetail({
         ) : null}
 
         {sortedTasks.length > 0 ? (
-          <ul className="block-detail__tasks" role="list" aria-label="Tasks in active block">
+          <ul className="block-detail__tasks" aria-label="Tasks in active block">
             {sortedTasks.map((task) => (
               <li key={task.id} className={`block-detail__task block-detail__task--${task.status}`}>
                 <span>{task.title}</span>
@@ -134,7 +134,7 @@ export default function BlockDetail({
         ) : null}
 
         {sortedEvents.length > 0 ? (
-          <ul className="block-detail__events" role="list" aria-label="Highlighted block events">
+          <ul className="block-detail__events" aria-label="Highlighted block events">
             {sortedEvents.map((event) => (
               <li
                 key={event.id}

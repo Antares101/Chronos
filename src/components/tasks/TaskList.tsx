@@ -49,7 +49,7 @@ export default function TaskList({ eyebrow, title, description, tasks }: TaskLis
         ) : null}
 
         {sortedTasks.length > 0 ? (
-          <ul className="task-list__items" role="list" aria-label="Unassigned tasks">
+          <ul className="task-list__items" aria-label="Unassigned tasks">
             {sortedTasks.map((task) => (
               <li
                 key={task.id}

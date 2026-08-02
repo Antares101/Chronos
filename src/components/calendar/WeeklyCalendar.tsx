@@ -89,7 +89,7 @@ export default function WeeklyCalendar({
             ))}
           </div>
 
-          <div className="weekly-calendar__days" role="list" aria-label="Weekly planned blocks">
+          <ul className="weekly-calendar__days" aria-label="Weekly planned blocks">
             {days.map((day) => (
               <CalendarDay
                 key={day.date}
@@ -98,7 +98,7 @@ export default function WeeklyCalendar({
                 visibleEnd={visibleEnd}
               />
             ))}
-          </div>
+          </ul>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
   const isEmpty = day.blocks.length === 0;
 
   return (
-    <article className="weekly-calendar__day" role="listitem" aria-label={`${day.label} schedule`}>
+    <li className="weekly-calendar__day" aria-label={`${day.label} schedule`}>
       <header>
         <span>{day.label}</span>
         <time dateTime={day.date}>{day.date.slice(5)}</time>
@@ -140,7 +140,7 @@ function CalendarDay({ day, visibleStart, visibleEnd }: CalendarDayProps) {
           />
         ))}
       </div>
-    </article>
+    </li>
   );
 }
 
@@ -328,11 +328,7 @@ function CalendarBlock({ block, visibleStart, visibleEnd }: CalendarBlockProps) 
       <span className="weekly-calendar__block-title">{block.title}</span>
       <span className="weekly-calendar__block-time">{timeRange}</span>
       {block.highlightedEvents?.map((event) => (
-        <span
-          key={event.id}
-          className="weekly-calendar__event"
-          aria-label={`Highlighted event: ${event.title}`}
-        >
+        <span key={event.id} className="weekly-calendar__event">
           ★ {event.title}
         </span>
       ))}
@@ -480,12 +476,16 @@ const weeklyCalendarStyles = `
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.5rem;
+    list-style: none;
+    margin: 0;
     min-width: 0;
+    padding: 0;
   }
 
   .weekly-calendar__day {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
+    list-style: none;
     min-width: 0;
   }
 

@@ -85,7 +85,7 @@ export default function TodayOperatingSummary({
           <h2 id="today-operating-strip-title">Now, next, and open space</h2>
         </div>
 
-        <div className="today-operating-strip__utilities" aria-label="Current status and time">
+        <div className="today-operating-strip__utilities">
           <div className="today-operating-strip__status-chip">
             <span>Current status</span>
             <strong
@@ -94,7 +94,7 @@ export default function TodayOperatingSummary({
               {nowStatusLabels[now.status]}
             </strong>
           </div>
-          <div className="today-operating-strip__clock" aria-label="Current time snapshot">
+          <div className="today-operating-strip__clock">
             <span>Clock</span>
             <time className="today-operating-strip__time" dateTime={snapshotDateTime}>
               {nowLabel}
@@ -106,7 +106,7 @@ export default function TodayOperatingSummary({
         </div>
       </header>
 
-      <div className="today-operating-strip__signals" aria-label="Today operating signals">
+      <div className="today-operating-strip__signals">
         <article
           className="today-operating-strip__signal today-operating-strip__signal--focus"
           aria-labelledby="today-operating-now-title"

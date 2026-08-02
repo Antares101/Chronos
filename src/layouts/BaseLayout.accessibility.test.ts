@@ -30,7 +30,7 @@ function relativeLuminance(hex: string) {
     .match(/.{2}/g)
     ?.map((channel) => Number.parseInt(channel, 16) / 255);
 
-  if (!channels || channels.length !== 3) {
+  if (channels?.length !== 3) {
     throw new Error(`Expected an opaque six-digit hex color, received ${hex}.`);
   }
 

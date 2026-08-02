@@ -115,6 +115,9 @@ describe('TodayActionsGrid', () => {
     );
     expect(html).toContain('data-duration-minutes="30"');
     expect(html).toContain('data-duration-minutes="120"');
+    expect(html).toContain(
+      '<fieldset class="quick-schedule__shortcuts" aria-label="Duration shortcuts">',
+    );
     expect(html).toContain('data-quick-schedule-status="true"');
     expect(html).toContain('Ready.');
   });

@@ -101,7 +101,7 @@ describe('WeeklyInsight', () => {
     const categoryIndex = html.indexOf('aria-label="Planned vs actual by category"');
     const phaseIndex = html.indexOf('aria-label="Planned vs actual by phase"');
     const blockIndex = html.indexOf('aria-label="Planned vs actual by block"');
-    const totalsIndex = html.indexOf('aria-label="Weekly planned vs actual totals"');
+    const totalsIndex = html.indexOf('class="weekly-insight__totals"');
 
     expect(categoryIndex).toBeGreaterThanOrEqual(0);
     expect(phaseIndex).toBeGreaterThan(categoryIndex);

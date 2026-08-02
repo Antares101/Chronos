@@ -45,7 +45,7 @@ export default function TodayTaskInbox({
           No open tasks to place. <a href="#today-capture">Capture a task</a>
         </p>
       ) : (
-        <ul role="list">
+        <ul>
           {openTasks.map((task) => {
             const feedbackId = `today-inbox-feedback-${task.id}`;
             const hasError = draft?.taskId === task.id && Boolean(actionError);

@@ -217,7 +217,7 @@ export function isProtectedAppPath(pathname: string): boolean {
 }
 
 export function getSafeReturnPath(value: string | null, fallback = DEFAULT_APP_PATH): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+  if (!value?.startsWith('/') || value.startsWith('//')) {
     return fallback;
   }
 

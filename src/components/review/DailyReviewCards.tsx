@@ -60,7 +60,7 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
           {block.tasks.length === 0 ? (
             <p className="empty-copy">No tasks are attached to this block.</p>
           ) : (
-            <ul className="daily-review-card__tasks" role="list">
+            <ul className="daily-review-card__tasks">
               {block.tasks.map((task) => (
                 <li key={task.id}>
                   <label className="checkbox-label daily-review-card__checkbox">
@@ -92,7 +92,6 @@ function DailyReviewCard({ block }: DailyReviewCardProps) {
           ) : (
             <ul
               className="daily-review-card__open-list"
-              role="list"
               aria-label="Read-only planning handoff tasks"
             >
               {openTasks.map((task) => (

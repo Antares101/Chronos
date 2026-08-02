@@ -736,9 +736,10 @@ describe('Chronos app backend actions', () => {
       id: 'active-focus',
       endedAt: '2026-06-29T10:00:00.000Z',
     });
-    expect(
-      Date.parse(store.actualEntries[0]!.endedAt) - Date.parse(store.actualEntries[0]!.startedAt),
-    ).toBe(60 * 60_000);
+    const [actualEntry] = store.actualEntries;
+    expect(actualEntry).toBeDefined();
+    if (!actualEntry) throw new Error('Expected the active focus entry.');
+    expect(Date.parse(actualEntry.endedAt) - Date.parse(actualEntry.startedAt)).toBe(60 * 60_000);
     expect(store.reviews).toEqual([]);
   });
 

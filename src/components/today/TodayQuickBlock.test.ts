@@ -37,6 +37,10 @@ describe('TodayQuickBlock', () => {
       expect(html).toContain(`data-duration-minutes="${duration}"`);
     }
     expect(html).toContain('data-recent-block-name="Deep Work"');
+    expect(html).toContain('<legend>Recent names</legend>');
+    expect(html).toContain(
+      '<fieldset class="today-quick-block__durations" aria-label="Duration shortcuts">',
+    );
     expect(html).toMatch(
       /<form[^>]*data-quick-schedule-selector="true"[^>]*data-today-date="2026-07-14"/,
     );

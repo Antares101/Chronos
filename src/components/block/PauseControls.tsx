@@ -68,6 +68,7 @@ export default function PauseControls({
           : 'Start this block before logging pauses.'}
       </p>
 
+      {/* biome-ignore lint/a11y/useSemanticElements: Independent forms cannot share a fieldset. */}
       <div className="pause-controls__actions" role="group" aria-label="Pause actions">
         {(Object.keys(pauseButtonLabels) as PauseKind[]).map((kind) =>
           actionPath && blockId ? (
@@ -96,7 +97,7 @@ export default function PauseControls({
       {sortedPauses.length === 0 ? (
         <p className="pause-controls__empty">No pauses recorded yet.</p>
       ) : (
-        <ul role="list" className="pause-controls__history" aria-label="Pause history">
+        <ul className="pause-controls__history" aria-label="Pause history">
           {sortedPauses.map((pause) => {
             const endLabel = pause.endedAt
               ? formatPauseDuration(pause.startedAt, pause.endedAt)

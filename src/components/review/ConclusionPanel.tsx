@@ -99,7 +99,7 @@ export default function ConclusionPanel({
         ) : null}
 
         {completedTaskIds.length > 0 ? (
-          <ul className="conclusion-panel__tasks" role="list" aria-label="Completed tasks">
+          <ul className="conclusion-panel__tasks" aria-label="Completed tasks">
             {sortedCompletedTasks.map((task) => (
               <li key={task.id} className="conclusion-panel__task">
                 {task.title}

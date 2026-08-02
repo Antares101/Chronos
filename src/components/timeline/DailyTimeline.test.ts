@@ -97,7 +97,9 @@ describe('DailyTimeline', () => {
   it('renders pause segments inside the relevant active block semantics', () => {
     const html = renderDailyTimeline();
 
+    expect(html).toContain('<section class="daily-timeline__pause-lane"');
     expect(html).toContain('aria-label="Pause segments recorded inside Deep work sprint."');
+    expect(html).toContain('class="daily-timeline__pause-segment" role="img"');
     expect(html).toContain(
       'aria-label="10-minute pause from 09:15 to 09:25 inside Deep work sprint. Reset without shifting schedule."',
     );
@@ -131,7 +133,9 @@ describe('DailyTimeline', () => {
     expect(html).toContain(
       'aria-label="5-minute pause from 09:00 to 09:30 inside Carry-over execution."',
     );
-    expect(html).toMatch(/class="daily-timeline__pause-segment" style="left:25%;width:12\.5%"/);
+    expect(html).toMatch(
+      /class="daily-timeline__pause-segment" role="img" style="left:25%;width:12\.5%"/,
+    );
   });
 
   it('marks a running execution block as current even before its planned start', () => {
@@ -208,5 +212,6 @@ describe('DailyTimeline', () => {
     expect(html).toContain(
       'aria-label="Daily timeline from 08:00 to 12:00. Current time is 09:30."',
     );
+    expect(html).toContain('<section class="daily-timeline__track"');
   });
 });

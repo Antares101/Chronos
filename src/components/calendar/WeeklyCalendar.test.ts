@@ -53,12 +53,13 @@ describe('WeeklyCalendar', () => {
   it('renders seven day lanes plus block and event labels', () => {
     const html = renderWeeklyCalendar();
 
+    expect(html).toContain('<ul class="weekly-calendar__days" aria-label="Weekly planned blocks">');
     expect(countMatches(html, /class="weekly-calendar__day"/g)).toBe(7);
-    expect(countMatches(html, /role="listitem"/g)).toBe(7);
+    expect(countMatches(html, /<li class="weekly-calendar__day"/g)).toBe(7);
     expect(html).toContain('aria-label="Mon schedule"');
     expect(html).toContain('Focus block');
     expect(html).toContain('09:00 to 11:00');
-    expect(html).toContain('aria-label="Highlighted event: Release note"');
+    expect(html).not.toContain('aria-label="Highlighted event: Release note"');
     expect(html).toContain('★ Release note');
     expect(html).toContain('background-color:var(--chronos-primary-soft, #e0e7ff)');
   });

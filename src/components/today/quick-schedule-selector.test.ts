@@ -470,7 +470,7 @@ describe('Today page quick schedule source contract', () => {
     }
 
     expect(createBlockSource).toMatch(
-      /<div className="quick-schedule__shortcuts"[\s\S]*role="group"[\s\S]*aria-label="Duration shortcuts"/,
+      /<fieldset className="quick-schedule__shortcuts"[\s\S]*aria-label="Duration shortcuts"/,
     );
 
     for (const [durationMinutes, ariaLabel] of [

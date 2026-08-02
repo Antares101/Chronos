@@ -59,7 +59,7 @@ export default function TodayTaskPanel({
               {placement === 'unassigned' ? 'No open tasks to place.' : 'No tasks here yet.'}
             </p>
           ) : null}
-          <ul role="list">
+          <ul>
             {groupedTasks[placement].map((task) => (
               <li key={task.id} className="today-tasks__task">
                 <div className="today-tasks__task-content">
