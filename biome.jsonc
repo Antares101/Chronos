@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["**/*", "!**/*.astro", "!dist", "!node_modules", "!coverage"],
+  },
+  // Prettier retains formatter ownership, including Astro via prettier-plugin-astro.
+  "formatter": {
+    "enabled": false,
+  },
+  // Import organization is deferred to a dedicated source migration.
+  "assist": {
+    "enabled": false,
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedFunctionParameters": "error",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnsafeOptionalChaining": "error",
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error",
+        "noGlobalEval": "error",
+      },
+      "suspicious": {
+        "noConsole": "warn",
+        "noExplicitAny": "warn",
+      },
+    },
+  },
+  "overrides": [
+    {
+      // The smoke harness intentionally prints its structured report and cleanup warning.
+      "includes": ["scripts/browser-smoke.mjs"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off",
+          },
+        },
+      },
+    },
+  ],
+}
