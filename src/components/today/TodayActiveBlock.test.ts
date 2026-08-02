@@ -89,6 +89,17 @@ describe('TodayActiveBlock', () => {
     expect(markup).not.toContain('today-set-task-status');
   });
 
+  it('renders the all-complete task state without a task-status form', () => {
+    const markup = render({
+      detail: detail({ tasks: [{ id: 'task-1', title: 'Finished task', status: 'done' }] }),
+    });
+
+    expect(markup).toContain('0 incomplete tasks');
+    expect(markup).toContain('No incomplete tasks in this block.');
+    expect(markup).not.toContain('Finished task');
+    expect(markup).not.toContain('today-set-task-status');
+  });
+
   it('renders a no-active-block state with existing capture and planning calls to action without a start form', () => {
     const markup = render({ row: null, detail: null });
 

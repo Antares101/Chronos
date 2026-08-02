@@ -60,7 +60,9 @@ describe('TodayDailyHeader', () => {
     );
     const forms = html.match(/<form[\s\S]*?<\/form>/g) ?? [];
     expect(forms).toHaveLength(2);
-    forms.forEach((form) => expect(form.match(/<form/g)).toHaveLength(1));
+    forms.forEach((form) => {
+      expect(form.match(/<form/g)).toHaveLength(1);
+    });
     const status = render({ statusMessage: 'Daily intention saved.' });
     expect(status).toContain('role="status"');
   });
@@ -73,6 +75,9 @@ describe('TodayDailyHeader', () => {
       goal('fourth', 'Fourth', 4),
     ];
     const html = render({ header: { focus: '', constraints: '', goals, state: 'ready' } });
+    expect(html).toContain(
+      '<section class="daily-header__objectives" aria-labelledby="daily-objectives-title">',
+    );
     expect(html.indexOf('First')).toBeLessThan(html.indexOf('Second'));
     expect(html.indexOf('Second')).toBeLessThan(html.indexOf('Third'));
     expect(html).not.toContain('Fourth');
@@ -86,10 +91,10 @@ describe('TodayDailyHeader', () => {
     });
     expect(html).toContain(`value="${'x'.repeat(161)}"`);
     expect(html).toMatch(
-      /<input(?=[^>]*name="focus")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-focus-error")(?=[^>]*autofocus="")[^>]*>/,
+      /<input(?=[^>]*id="daily-focus")(?=[^>]*name="focus")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-focus-error")(?=[^>]*autofocus="")[^>]*>/,
     );
     expect(html).toMatch(
-      /<textarea(?=[^>]*name="constraints")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-constraints-error")[^>]*>/,
+      /<textarea(?=[^>]*id="daily-constraints")(?=[^>]*name="constraints")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-constraints-error")[^>]*>/,
     );
     expect(html).toContain('role="alert"');
   });
@@ -100,10 +105,10 @@ describe('TodayDailyHeader', () => {
 
     expect(fields).toHaveLength(2);
     expect(fields[0]).toMatch(
-      /<label>Focus<input(?=[^>]*name="focus")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-focus-error")(?=[^>]*autofocus="")[^>]*><\/label><span id="daily-focus-error" class="daily-header__error">Keep the focus to 160 characters or fewer\.<\/span>/,
+      /<label for="daily-focus">Focus<input(?=[^>]*id="daily-focus")(?=[^>]*name="focus")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-focus-error")(?=[^>]*autofocus="")[^>]*><\/label><span id="daily-focus-error" class="daily-header__error">Keep the focus to 160 characters or fewer\.<\/span>/,
     );
     expect(fields[1]).toMatch(
-      /<label>Constraints<textarea(?=[^>]*name="constraints")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-constraints-error")[^>]*>[^<]*<\/textarea><\/label><span id="daily-constraints-error" class="daily-header__error">Keep the constraints to 500 characters or fewer\.<\/span>/,
+      /<label for="daily-constraints">Constraints<textarea(?=[^>]*id="daily-constraints")(?=[^>]*name="constraints")(?=[^>]*aria-invalid="true")(?=[^>]*aria-describedby="daily-constraints-error")[^>]*>[^<]*<\/textarea><\/label><span id="daily-constraints-error" class="daily-header__error">Keep the constraints to 500 characters or fewer\.<\/span>/,
     );
     expect(html).toMatch(
       /<form[^>]*class="daily-header__form"[^>]*><input type="hidden" name="action" value="today-save-daily-header"\/><div class="daily-header__field">[\s\S]*?<\/div><div class="daily-header__field">[\s\S]*?<\/div><p id="daily-header-help">[\s\S]*?<\/p><button type="submit">Save Intention<\/button><\/form>/,

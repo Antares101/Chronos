@@ -23,7 +23,6 @@ export default function TodayActiveBlock({
   if (!row) return <NoActiveBlock quickBlockAnchor={quickBlockAnchor} />;
 
   const theme = getCategoryTheme(row.block.category);
-  const incompleteTasks = detail?.tasks.filter((task) => task.status !== 'done') ?? [];
   const stateLabel = row.lifecycle === 'paused' ? 'Paused' : 'Active';
 
   return (
@@ -52,32 +51,11 @@ export default function TodayActiveBlock({
         </p>
       ) : (
         <>
-          <section
-            className="today-active-block__tasks"
-            aria-labelledby="today-active-block-tasks-title"
-          >
-            <div className="today-active-block__section-heading">
-              <h3 id="today-active-block-tasks-title">Tasks</h3>
-              {detail.tasks.length ? (
-                <p>
-                  {incompleteTasks.length} incomplete task{incompleteTasks.length === 1 ? '' : 's'}
-                </p>
-              ) : null}
-            </div>
-            {detail.tasks.length ? (
-              incompleteTasks.length ? (
-                <TodayBlockTaskList
-                  actionPath={actionPath}
-                  blockTitle={row.block.title}
-                  tasks={incompleteTasks}
-                />
-              ) : (
-                <p className="today-active-block__empty">No incomplete tasks in this block.</p>
-              )
-            ) : (
-              <p className="today-active-block__empty">No tasks in this block.</p>
-            )}
-          </section>
+          <ActiveBlockTasks
+            actionPath={actionPath}
+            blockTitle={row.block.title}
+            tasks={detail.tasks}
+          />
           {detail.highlightedEvents?.length ? (
             <section
               className="today-active-block__context-list"
@@ -121,6 +99,16 @@ export default function TodayActiveBlock({
       <style>{styles}</style>
     </section>
   );
+}
+
+// prettier-ignore
+type ActiveBlockTasksProps = { tasks: TodayBlockDetail['tasks']; actionPath: string; blockTitle: string };
+
+function ActiveBlockTasks({ tasks, actionPath, blockTitle }: ActiveBlockTasksProps) {
+  const incompleteTasks = tasks.filter((task) => task.status !== 'done');
+
+  // prettier-ignore
+  return <section className="today-active-block__tasks" aria-labelledby="today-active-block-tasks-title"><div className="today-active-block__section-heading"><h3 id="today-active-block-tasks-title">Tasks</h3>{tasks.length ? <p>{incompleteTasks.length} incomplete task{incompleteTasks.length === 1 ? '' : 's'}</p> : null}</div>{tasks.length ? incompleteTasks.length ? <TodayBlockTaskList actionPath={actionPath} blockTitle={blockTitle} tasks={incompleteTasks} /> : <p className="today-active-block__empty">No incomplete tasks in this block.</p> : <p className="today-active-block__empty">No tasks in this block.</p>}</section>;
 }
 
 function NoActiveBlock({ quickBlockAnchor }: Pick<TodayActiveBlockProps, 'quickBlockAnchor'>) {

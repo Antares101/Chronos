@@ -45,44 +45,44 @@ export default function TodayDailyHeader({ date, header, actionPath, goalsForm, 
       {header.state !== 'error' || draft ? (
         <form method="post" action={actionPath} className="daily-header__form">
           <input type="hidden" name="action" value="today-save-daily-header" />
-          <div className="daily-header__field">
-            <label>
-              Focus
-              <input
-                name="focus"
-                defaultValue={focus}
-                maxLength={160}
-                autoComplete="off"
-                aria-invalid={focusError ? true : undefined}
-                aria-describedby={focusError ? 'daily-focus-error' : 'daily-header-help'}
-                autoFocus={Boolean(focusError)}
-              />
-            </label>
-            {focusError ? (
-              <span id="daily-focus-error" className="daily-header__error">
-                {focusError}
-              </span>
-            ) : null}
-          </div>
-          <div className="daily-header__field">
-            <label>
-              Constraints
-              <textarea
-                name="constraints"
-                defaultValue={constraints}
-                maxLength={500}
-                autoComplete="off"
-                aria-invalid={constraintsError ? true : undefined}
-                aria-describedby={constraintsError ? 'daily-constraints-error' : 'daily-header-help'}
-                autoFocus={!focusError && Boolean(constraintsError)}
-              />
-            </label>
-            {constraintsError ? (
-              <span id="daily-constraints-error" className="daily-header__error">
-                {constraintsError}
-              </span>
-            ) : null}
-          </div>
+          <DailyHeaderField
+            id="daily-focus"
+            label="Focus"
+            error={focusError}
+            errorId="daily-focus-error"
+          >
+            <input
+              id="daily-focus"
+              name="focus"
+              defaultValue={focus}
+              maxLength={160}
+              autoComplete="off"
+              {...getDailyHeaderFieldA11yProps(
+                focusError,
+                'daily-focus-error',
+                Boolean(focusError),
+              )}
+            />
+          </DailyHeaderField>
+          <DailyHeaderField
+            id="daily-constraints"
+            label="Constraints"
+            error={constraintsError}
+            errorId="daily-constraints-error"
+          >
+            <textarea
+              id="daily-constraints"
+              name="constraints"
+              defaultValue={constraints}
+              maxLength={500}
+              autoComplete="off"
+              {...getDailyHeaderFieldA11yProps(
+                constraintsError,
+                'daily-constraints-error',
+                !focusError && Boolean(constraintsError),
+              )}
+            />
+          </DailyHeaderField>
           <p id="daily-header-help">
             Surrounding spaces are removed when saved. Leave both fields blank to clear only focus
             and constraints.
@@ -90,7 +90,7 @@ export default function TodayDailyHeader({ date, header, actionPath, goalsForm, 
           <button type="submit">Save Intention</button>
         </form>
       ) : null}
-      <div className="daily-header__objectives" aria-labelledby="daily-objectives-title">
+      <section className="daily-header__objectives" aria-labelledby="daily-objectives-title">
         <h3 id="daily-objectives-title">Objectives</h3>
         {goals.length ? (
           <ol>
@@ -102,9 +102,41 @@ export default function TodayDailyHeader({ date, header, actionPath, goalsForm, 
           <p>No objectives yet.</p>
         )}
         {goalsForm}
-      </div>
+      </section>
       <style>{styles}</style>
     </section>
+  );
+}
+
+function getDailyHeaderFieldA11yProps(error: string | null, errorId: string, autoFocus: boolean) {
+  return {
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': error ? errorId : 'daily-header-help',
+    autoFocus,
+  };
+}
+
+type DailyHeaderFieldProps = {
+  id: string;
+  label: string;
+  error: string | null;
+  errorId: string;
+  children: ReactNode;
+};
+
+function DailyHeaderField({ id, label, error, errorId, children }: DailyHeaderFieldProps) {
+  return (
+    <div className="daily-header__field">
+      <label htmlFor={id}>
+        {label}
+        {children}
+      </label>
+      {error ? (
+        <span id={errorId} className="daily-header__error">
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

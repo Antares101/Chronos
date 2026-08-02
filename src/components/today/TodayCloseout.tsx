@@ -9,20 +9,20 @@ export default function TodayCloseout({ closeout, actionPath, draft, actionError
   const outcome = draft?.outcome ?? closeout.outcome;
   const adjustment = draft?.tomorrowAdjustment ?? closeout.tomorrowAdjustment;
   const buttonLabel = closeout.state === 'ready' ? 'Update Closeout' : 'Save Closeout';
-  const outcomeError = draft
-    ? !outcome.trim()
-      ? 'Enter one outcome from today.'
-      : outcome.length > 500
-        ? 'Keep the outcome to 500 characters or fewer.'
-        : null
-    : null;
-  const adjustmentError = draft
-    ? !adjustment.trim()
-      ? 'Enter one adjustment for tomorrow.'
-      : adjustment.length > 280
-        ? 'Keep the adjustment to 280 characters or fewer.'
-        : null
-    : null;
+  const outcomeError = getCloseoutFieldError(
+    outcome,
+    draft,
+    'Enter one outcome from today.',
+    'Keep the outcome to 500 characters or fewer.',
+    500,
+  );
+  const adjustmentError = getCloseoutFieldError(
+    adjustment,
+    draft,
+    'Enter one adjustment for tomorrow.',
+    'Keep the adjustment to 280 characters or fewer.',
+    280,
+  );
 
   return (
     <section className="today-closeout" aria-labelledby="today-closeout-title">
@@ -50,55 +50,89 @@ export default function TodayCloseout({ closeout, actionPath, draft, actionError
       ) : null}
       {closeout.state !== 'error' || draft ? (
         <form method="post" action={actionPath} className="today-closeout__form">
-            <input type="hidden" name="action" value="today-save-closeout" />
-            <div className="today-closeout__field">
-              <label>
-                Outcome
-              <textarea
-                name="outcome"
-                defaultValue={outcome}
-                maxLength={500}
-                required
-                autoComplete="off"
-                aria-invalid={outcomeError ? true : undefined}
-                aria-describedby={outcomeError ? 'closeout-outcome-error' : 'closeout-help'}
-                autoFocus={Boolean(outcomeError)}
-              />
-            </label>
-            {outcomeError ? (
-              <span id="closeout-outcome-error" className="today-closeout__error">
-                {outcomeError}
-              </span>
-            ) : null}
-            </div>
-            <div className="today-closeout__field">
-              <label>
-                Tomorrow’s Adjustment
-              <textarea
-                name="tomorrowAdjustment"
-                defaultValue={adjustment}
-                maxLength={280}
-                required
-                autoComplete="off"
-                aria-invalid={adjustmentError ? true : undefined}
-                aria-describedby={adjustmentError ? 'closeout-adjustment-error' : 'closeout-help'}
-                autoFocus={!outcomeError && Boolean(adjustmentError)}
-              />
-            </label>
-            {adjustmentError ? (
-              <span id="closeout-adjustment-error" className="today-closeout__error">
-                {adjustmentError}
-              </span>
-            ) : null}
-            </div>
-            <p id="closeout-help">
-              Surrounding spaces are removed when saved. Both fields are required.
-            </p>
+          <input type="hidden" name="action" value="today-save-closeout" />
+          <CloseoutTextareaField
+            label="Outcome"
+            name="outcome"
+            value={outcome}
+            maxLength={500}
+            error={outcomeError}
+            errorId="closeout-outcome-error"
+            autoFocus={Boolean(outcomeError)}
+          />
+          <CloseoutTextareaField
+            label="Tomorrow’s Adjustment"
+            name="tomorrowAdjustment"
+            value={adjustment}
+            maxLength={280}
+            error={adjustmentError}
+            errorId="closeout-adjustment-error"
+            autoFocus={!outcomeError && Boolean(adjustmentError)}
+          />
+          <p id="closeout-help">
+            Surrounding spaces are removed when saved. Both fields are required.
+          </p>
           <button type="submit">{buttonLabel}</button>
         </form>
       ) : null}
       <style>{styles}</style>
     </section>
+  );
+}
+
+function getCloseoutFieldError(
+  value: string,
+  draft: TodayCloseoutProps['draft'],
+  requiredError: string,
+  maxLengthError: string,
+  maxLength: number,
+) {
+  if (!draft) return null;
+  if (!value.trim()) return requiredError;
+  return value.length > maxLength ? maxLengthError : null;
+}
+
+type CloseoutTextareaFieldProps = {
+  label: string;
+  name: 'outcome' | 'tomorrowAdjustment';
+  value: string;
+  maxLength: number;
+  error: string | null;
+  errorId: string;
+  autoFocus: boolean;
+};
+
+function CloseoutTextareaField({
+  label,
+  name,
+  value,
+  maxLength,
+  error,
+  errorId,
+  autoFocus,
+}: CloseoutTextareaFieldProps) {
+  return (
+    <div className="today-closeout__field">
+      <label>
+        {label}
+        <textarea
+          name={name}
+          defaultValue={value}
+          maxLength={maxLength}
+          required
+          autoComplete="off"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : 'closeout-help'}
+          // biome-ignore lint/a11y/noAutofocus: Server validation intentionally focuses the first invalid field.
+          autoFocus={autoFocus}
+        />
+      </label>
+      {error ? (
+        <span id={errorId} className="today-closeout__error">
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
