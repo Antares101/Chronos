@@ -16,15 +16,20 @@ const row = (overrides: Partial<Extract<DaySheetRow, { kind: 'block' }>> = {}) =
 const defaults: TodayDaySheetProps = { rows: [{ kind: 'gap', start: '2026-07-11T00:00:00.000Z', end: '2026-07-11T09:00:00.000Z' }, row()], currentTime: '2026-07-11T09:15:00.000Z', actionPath: '/app/today', blockDetails: { 'block-1': { tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }], highlightedEvents: [{ id: 'event-1', title: 'Resolved blocker' }], pauses: [pause], permittedActions: [{ kind: 'pause' }, { kind: 'resume', pauseId: 'pause-1' }, { kind: 'event' }, { kind: 'task' }, { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }, { id: 'task-2', title: 'Share proposal', status: 'todo' }] }] } } };
 const render = (props: Partial<TodayDaySheetProps> = {}) =>
   renderToStaticMarkup(createElement(TodayDaySheet, { ...defaults, ...props }));
-const expectText = (html: string, values: string[]) =>
-  values.forEach((value) => expect(html).toContain(value));
+const expectText = (html: string, values: string[]) => {
+  values.forEach((value) => {
+    expect(html).toContain(value);
+  });
+};
 const expectContract = (html: string, action: string, fields: string[]) => {
   const form =
     html.match(
       new RegExp(`<form[^>]*>[\\s\\S]*?name="action" value="${action}"[\\s\\S]*?</form>`),
     )?.[0] ?? '';
   expect(form).not.toBe('');
-  fields.forEach((field) => expect(form).toContain(`name="${field}"`));
+  fields.forEach((field) => {
+    expect(form).toContain(`name="${field}"`);
+  });
 };
 
 describe('TodayDaySheet', () => {

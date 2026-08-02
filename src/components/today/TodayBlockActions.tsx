@@ -34,7 +34,11 @@ export function TodayInlineBlockActions({
 }: TodayBlockActionsProps) {
   if (!actions.length) return <NoActions />;
   // prettier-ignore
-  return <div className="today-block__actions"><div className="today-block__action-groups">{actions.map((action, index) => <ActionForm key={`${action.kind}-${index}`} action={action} path={actionPath} block={block} conclusionFeedback={conclusionFeedback} />)}</div></div>;
+  return <div className="today-block__actions"><div className="today-block__action-groups">{actions.map((action) => <ActionForm key={getActionKey(action)} action={action} path={actionPath} block={block} conclusionFeedback={conclusionFeedback} />)}</div></div>;
+}
+
+function getActionKey(action: TodayBlockAction): string {
+  return action.kind === 'resume' ? `resume-${action.pauseId}` : action.kind;
 }
 
 function NoActions() {

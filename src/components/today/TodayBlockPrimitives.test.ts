@@ -2,10 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import TodayBlockActions, {
-  TodayTextBlockActionForm,
-  type TodayBlockAction,
-} from './TodayBlockActions';
+import TodayBlockActions, { TodayTextBlockActionForm } from './TodayBlockActions';
 import TodayBlockTaskList from './TodayBlockTaskList';
 
 describe('Today block shared primitives', () => {

@@ -19,10 +19,10 @@ export default function TodayGoalsPanel({
   actionError,
   statusMessage,
 }: TodayGoalsPanelProps) {
-  const fields = Array.from(
-    { length: maxGoals },
-    (_, index) => draft?.goals[index] ?? goals[index]?.title ?? '',
-  );
+  const fields = Array.from({ length: maxGoals }, (_, index) => ({
+    key: goals[index]?.id ? `goal-${goals[index].id}` : `goal-slot-${index + 1}`,
+    value: draft?.goals[index] ?? goals[index]?.title ?? '',
+  }));
 
   return (
     <section className="today-goals" aria-labelledby="today-goals-title">
@@ -39,8 +39,8 @@ export default function TodayGoalsPanel({
         aria-describedby={actionError ? 'today-goals-feedback' : undefined}
       >
         <input type="hidden" name="action" value="today-save-goals" />
-        {fields.map((value, index) => (
-          <label key={index}>
+        {fields.map(({ key, value }, index) => (
+          <label key={key}>
             Goal {index + 1}
             <input
               name="goals"

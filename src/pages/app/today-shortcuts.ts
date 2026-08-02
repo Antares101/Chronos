@@ -48,9 +48,9 @@ export function bindTodayShortcuts(root: ShortcutRoot): () => void {
     if (!canHandleShortcut(event)) return;
     if (event.key === '?') open(event.target as unknown as Focusable);
     else if (event.key === 'a') focus(root, '#today-active-block');
-    else if (event.key === 'i')
-      focus(root, '#today-open-tasks summary') || focus(root, '#today-task-inbox-title');
-    else if (event.key === 'q') focus(root, '#today-quick-task-title');
+    else if (event.key === 'i') {
+      if (!focus(root, '#today-open-tasks summary')) focus(root, '#today-task-inbox-title');
+    } else if (event.key === 'q') focus(root, '#today-quick-task-title');
     else if (event.key === 'b') focus(root, '#today-quick-block-title');
     else if (event.key === 'c') focusCloseReview(root);
     else return;

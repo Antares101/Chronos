@@ -1,17 +1,31 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 
 import TodayShortcutReference from '../../components/today/TodayShortcutReference';
 import { bindTodayShortcuts } from './today-shortcuts';
 
 type Listener = (event: KeyboardEvent | Event) => void;
+type FakeKeyboardEvent = Omit<Partial<KeyboardEvent>, 'target'> & { target: FakeElement };
 
-type FakeElement = ReturnType<typeof createElementFixture>;
+type FakeElement = {
+  tagName: string;
+  isContentEditable: boolean;
+  open: boolean;
+  focus: Mock<(options?: FocusOptions) => void>;
+  showModal: Mock<(this: { open: boolean }) => void>;
+  close: Mock<(this: { open: boolean }) => void>;
+  addEventListener: (type: string, listener: Listener) => void;
+  removeEventListener: (type: string, listener: Listener) => void;
+  dispatch: (type: string, event?: FakeKeyboardEvent) => Mock<() => void>;
+  closest: Mock<(selector: string) => FakeElement | null>;
+  querySelector: Mock<(selector: string) => FakeElement | null>;
+  querySelectorAll: Mock<(selector: string) => FakeElement[]>;
+};
 
-function createElementFixture(tagName = 'DIV'): any {
+function createElementFixture(tagName = 'DIV'): FakeElement {
   const listeners = new Map<string, Listener[]>();
-  return {
+  const element: FakeElement = {
     tagName,
     isContentEditable: false,
     open: false,
@@ -31,16 +45,21 @@ function createElementFixture(tagName = 'DIV'): any {
         (listeners.get(type) ?? []).filter((item) => item !== listener),
       );
     },
-    dispatch(type: string, event: Partial<KeyboardEvent> = {}) {
-      const preventDefault = vi.fn();
+    dispatch(type: string, event?: FakeKeyboardEvent) {
+      const preventDefault = vi.fn<() => void>();
       for (const listener of listeners.get(type) ?? [])
-        listener({ preventDefault, currentTarget: this, target: this, ...event } as KeyboardEvent);
+        listener({
+          preventDefault,
+          currentTarget: element,
+          ...(event ?? { target: element }),
+        } as unknown as KeyboardEvent);
       return preventDefault;
     },
-    closest: vi.fn(() => null),
-    querySelector: vi.fn(() => null),
-    querySelectorAll: vi.fn(() => []),
+    closest: vi.fn<(selector: string) => FakeElement | null>(() => null),
+    querySelector: vi.fn<(selector: string) => FakeElement | null>(() => null),
+    querySelectorAll: vi.fn<(selector: string) => FakeElement[]>(() => []),
   };
+  return element;
 }
 
 function createFixture({ inbox = true, closeEligible = true } = {}) {
@@ -89,8 +108,12 @@ function createFixture({ inbox = true, closeEligible = true } = {}) {
   };
 }
 
-function keyEvent(key: string, target: FakeElement, overrides: Record<string, unknown> = {}) {
-  return { key, target, ...overrides } as Partial<KeyboardEvent>;
+function keyEvent(
+  key: string,
+  target: FakeElement,
+  overrides: Omit<FakeKeyboardEvent, 'key' | 'target'> = {},
+): FakeKeyboardEvent {
+  return { key, target, ...overrides };
 }
 
 describe('TodayShortcutReference', () => {

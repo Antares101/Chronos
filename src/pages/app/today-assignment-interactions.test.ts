@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 
 import { bindTodayAssignmentInteractions } from './today-assignment-interactions';
 
 type Listener = (event: Record<string, unknown>) => void;
 
 type FakeNode = ReturnType<typeof createNode>;
+type NodeQueryMock = Mock<(selector: string) => FakeNode | null>;
+type NodeFocusMock = Mock<(options?: FocusOptions) => void>;
 
 function createNode(dataset: Record<string, string> = {}) {
   const listeners = new Map<string, Listener[]>();
@@ -119,14 +121,14 @@ describe('today assignment interactions', () => {
       querySelector: vi.fn(),
     }) as FakeNode & {
       open: boolean;
-      querySelector: any;
+      querySelector: NodeQueryMock;
     };
     const summary = Object.assign(createNode(), {
       closest: vi.fn(),
       focus: vi.fn(),
     }) as FakeNode & {
-      closest: any;
-      focus: any;
+      closest: NodeQueryMock;
+      focus: NodeFocusMock;
     };
     summary.closest.mockImplementation((selector: string) =>
       selector === 'details[open]' ? details : null,

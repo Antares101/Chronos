@@ -20,7 +20,10 @@ export function persistTodayFocusTarget(
 ): void {
   try {
     storage?.setItem(key, targetId);
-  } catch {}
+  } catch {
+    // Focus restoration is optional when browser storage is unavailable.
+    return;
+  }
 }
 
 export function persistTodayFocusTargetForSubmit(
