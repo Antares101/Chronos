@@ -8,7 +8,7 @@ import {
 } from './server/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const locals = context.locals as typeof context.locals & ChronosAuthLocals;
+  const locals = context.locals as ChronosAuthLocals;
   const mockLocalAuthLocals = createMockLocalAuthLocals(
     context.url,
     import.meta.env.DEV,

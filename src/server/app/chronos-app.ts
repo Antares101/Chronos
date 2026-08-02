@@ -594,55 +594,7 @@ export async function handleChronosAppAction(
       return { status: 'daily-header-saved' };
     }
     case 'today-create-task': {
-      const title = requireFormString(formData, 'title');
-      const requestedDestination = readOptionalFormString(formData, 'destination');
-      let destination = requestedDestination;
-
-      if (!destination) {
-        const ownedBlocks = (await repositories.blocks.listForUser(userId)).filter(
-          (block) => block.userId === userId,
-        );
-        const nowIso = now();
-        const todayDate = selectTodayDate(nowIso);
-        const dailyBlocks = ownedBlocks.filter(
-          (block) => getDateKey(block.plannedStart) === todayDate,
-        );
-        const carryOverBlocks = ownedBlocks.filter(
-          (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < todayDate,
-        );
-        const { currentBlock } = selectTodayBlocks(dailyBlocks, carryOverBlocks, nowIso);
-        const active = selectTaskDefault(
-          uniqueBlocks([...dailyBlocks, ...(currentBlock ? [currentBlock] : [])]),
-        );
-        destination = active?.kind === 'block' ? `block:${active.blockId}` : null;
-      }
-      if (!destination) throw new Error('destination is required.');
-
-      if (destination === 'unassigned') {
-        await repositories.tasks.create({
-          userId,
-          blockId: null,
-          title,
-          status: 'todo',
-          source: 'general',
-        });
-      } else if (destination.startsWith('block:')) {
-        const block = await findRequiredBlock(repositories.blocks, {
-          userId,
-          blockId: destination.slice('block:'.length),
-        });
-        await repositories.tasks.create({
-          userId,
-          blockId: block.id,
-          title,
-          status: 'todo',
-          source: 'block',
-        });
-      } else {
-        throw new Error('destination is invalid.');
-      }
-
-      return { status: 'task-created', destination };
+      return createTodayTask(repositories, userId, formData, now);
     }
     case 'today-save-closeout': {
       const workspaceDate = resolveTodayDateContext(now()).date;
@@ -717,6 +669,61 @@ export async function handleChronosAppAction(
     default:
       throw new Error('Unsupported Chronos app action.');
   }
+}
+
+async function createTodayTask(
+  repositories: ChronosAppRepositories,
+  userId: string,
+  formData: FormData,
+  now: Clock,
+): Promise<ChronosAppActionResult> {
+  const title = requireFormString(formData, 'title');
+  const requestedDestination = readOptionalFormString(formData, 'destination');
+  let destination = requestedDestination;
+
+  if (!destination) {
+    const ownedBlocks = (await repositories.blocks.listForUser(userId)).filter(
+      (block) => block.userId === userId,
+    );
+    const nowIso = now();
+    const todayDate = selectTodayDate(nowIso);
+    const dailyBlocks = ownedBlocks.filter((block) => getDateKey(block.plannedStart) === todayDate);
+    const carryOverBlocks = ownedBlocks.filter(
+      (block) => block.phase === 'execution' && getDateKey(block.plannedStart) < todayDate,
+    );
+    const { currentBlock } = selectTodayBlocks(dailyBlocks, carryOverBlocks, nowIso);
+    const active = selectTaskDefault(
+      uniqueBlocks([...dailyBlocks, ...(currentBlock ? [currentBlock] : [])]),
+    );
+    destination = active?.kind === 'block' ? `block:${active.blockId}` : null;
+  }
+  if (!destination) throw new Error('destination is required.');
+
+  if (destination === 'unassigned') {
+    await repositories.tasks.create({
+      userId,
+      blockId: null,
+      title,
+      status: 'todo',
+      source: 'general',
+    });
+  } else if (destination.startsWith('block:')) {
+    const block = await findRequiredBlock(repositories.blocks, {
+      userId,
+      blockId: destination.slice('block:'.length),
+    });
+    await repositories.tasks.create({
+      userId,
+      blockId: block.id,
+      title,
+      status: 'todo',
+      source: 'block',
+    });
+  } else {
+    throw new Error('destination is invalid.');
+  }
+
+  return { status: 'task-created', destination };
 }
 
 export function getChronosAppStatusMessage(value: string | null): string | null {
