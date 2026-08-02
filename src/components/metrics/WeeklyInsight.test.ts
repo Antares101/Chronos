@@ -115,6 +115,19 @@ describe('WeeklyInsight', () => {
     expect(html).toContain('-15m');
   });
 
+  it('uses inverse semantic delta tokens only within the dark totals surface', () => {
+    const html = renderWeeklyInsight();
+
+    expect(html).toContain(
+      '.weekly-insight__totals .weekly-insight__metric-delta--up {\n    color: var(--chronos-inverse-success-text, #bbf7d0);',
+    );
+    expect(html).toContain(
+      '.weekly-insight__totals .weekly-insight__metric-delta--down {\n    color: var(--chronos-inverse-danger-text, #fecaca);',
+    );
+    expect(html).toContain('color: var(--chronos-success-text, #065f46);');
+    expect(html).toContain('color: var(--chronos-danger-text, #991b1b);');
+  });
+
   it('stacks only the comparison panels at tablet width and collapses metric rows on mobile', () => {
     const html = renderWeeklyInsight();
     const tabletQueryIndex = html.indexOf('@media (max-width: 52rem)');

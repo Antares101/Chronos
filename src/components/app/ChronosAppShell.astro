@@ -42,59 +42,62 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
   <main class="shell">
     <a class="skip-link" href="#app-content">Skip to content</a>
 
-    <div class="command-bar__utilities" aria-label="Account and appearance actions">
-      <button
-        type="button"
-        class="sound-toggle ui-button ui-button--secondary"
-        data-sound-toggle
-        aria-label="Enable interaction sounds"
-        aria-pressed="false"
-        aria-disabled="true"
-        disabled
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Zm4.2 4.1a4 4 0 0 1 0 5.8M18 6.3a8 8 0 0 1 0 11.4"
-          ></path>
-        </svg>
-        <span class="visually-hidden" data-sound-toggle-label>Sound off</span>
-      </button>
-
-      <button
-        type="button"
-        class="theme-toggle ui-button ui-button--secondary"
-        data-theme-toggle
-        aria-label="Switch to dark theme"
-        aria-pressed="false"
-        aria-disabled="true"
-        disabled
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 12 3Z"></path>
-        </svg>
-        <span class="visually-hidden" data-theme-toggle-label>Dark mode</span>
-      </button>
-
-      <form method="post" action="/sign-out">
-        <button type="submit" class="sign-out-button ui-button" aria-label="Sign out">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"></path>
-          </svg>
-        </button>
-      </form>
-    </div>
-
     <section
       class:list={['command-bar', 'ui-card', { 'command-bar--today': isTodayRoute }]}
       aria-labelledby="app-title"
     >
+      <div class="command-bar__utilities" aria-label="Account and appearance actions">
+        <button
+          type="button"
+          class="sound-toggle ui-button ui-button--secondary"
+          data-sound-toggle
+          aria-label="Enable interaction sounds"
+          aria-pressed="false"
+          aria-disabled="true"
+          disabled
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Zm4.2 4.1a4 4 0 0 1 0 5.8M18 6.3a8 8 0 0 1 0 11.4"
+            ></path>
+          </svg>
+          <span class="visually-hidden" data-sound-toggle-label>Sound off</span>
+        </button>
+
+        <button
+          type="button"
+          class="theme-toggle ui-button ui-button--secondary"
+          data-theme-toggle
+          aria-label="Switch to dark theme"
+          aria-pressed="false"
+          aria-disabled="true"
+          disabled
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 12 3Z"></path>
+          </svg>
+          <span class="visually-hidden" data-theme-toggle-label>Dark mode</span>
+        </button>
+
+        <form method="post" action="/sign-out">
+          <button type="submit" class="sign-out-button ui-button" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+
       <div class="command-bar__identity">
         {!isTodayRoute && eyebrow ? <p class="eyebrow">{eyebrow}</p> : null}
         <h1 id="app-title" class:list={{ 'visually-hidden': isTodayRoute }}>{heading}</h1>
         {
           !isTodayRoute && summary ? (
-            <p class="summary">
-              {summary} Signed in as <strong>{email}</strong>
-            </p>
+            <>
+              <p class="summary">{summary}</p>
+              <p class="command-bar__account" aria-label={`Signed in as ${email}`}>
+                <strong>{email}</strong>
+              </p>
+            </>
           ) : null
         }
       </div>
@@ -455,7 +458,15 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
     line-height: 1.55;
   }
 
-  .summary strong {
+  .command-bar__account {
+    min-width: 0;
+    margin: 0.35rem 0 0;
+    color: var(--app-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .command-bar__account strong {
     display: inline-block;
     max-width: min(100%, 14rem);
     overflow: hidden;
@@ -958,6 +969,7 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
 
     .command-bar {
       grid-template-areas:
+        'utilities'
         'identity'
         'nav';
       grid-template-columns: minmax(0, 1fr);
@@ -965,8 +977,9 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
     }
 
     .command-bar__utilities {
-      top: max(0.5rem, env(safe-area-inset-top));
-      right: max(0.5rem, env(safe-area-inset-right));
+      position: static;
+      grid-area: utilities;
+      justify-self: end;
     }
 
     .command-bar__utilities button,
@@ -975,16 +988,19 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
       padding: 0;
     }
 
-    .command-bar {
-      padding-top: 4rem;
-    }
-
-    .summary strong {
+    .command-bar__account strong {
       max-width: 8.5rem;
     }
 
     .section-nav {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .section-nav__link {
+      min-height: 2.75rem;
+      padding: 0.65rem 0.7rem;
+      overflow-wrap: anywhere;
+      text-align: center;
     }
   }
 

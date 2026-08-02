@@ -6,10 +6,10 @@ function readPlanningSource() {
 }
 
 describe('Planning compact workbench', () => {
-  it('renders the weekly calendar and unassigned tasks before the action rail', () => {
+  it('keeps content first in source order while placing the action rail first in the mobile grid', () => {
     const source = readPlanningSource();
 
-    const mainIndex = source.indexOf('<main class="planning-workbench__main">');
+    const mainIndex = source.indexOf('<div class="planning-workbench__main">');
     const calendarIndex = source.indexOf('<WeeklyCalendar');
     const taskListIndex = source.indexOf('<TaskList');
     const railIndex = source.indexOf('class="planning-workbench__rail actions"');
@@ -18,6 +18,13 @@ describe('Planning compact workbench', () => {
     expect(calendarIndex).toBeGreaterThan(mainIndex);
     expect(taskListIndex).toBeGreaterThan(calendarIndex);
     expect(railIndex).toBeGreaterThan(taskListIndex);
+    expect(source).not.toContain('<main class="planning-workbench__main">');
+    expect(source).toContain('@media (max-width: 87.999rem)');
+    expect(source).toContain('.planning-workbench__main {\n    grid-area: main;\n  }');
+    expect(source).toContain('.planning-workbench__rail {\n    grid-area: rail;\n  }');
+    expect(source).toMatch(
+      /@media \(max-width: 87\.999rem\)\s*{\s*\.planning-workbench\s*{\s*grid-template-areas:\s*'rail'\s*'main';/,
+    );
     expect(source.slice(calendarIndex, source.indexOf('/>', calendarIndex))).toContain(
       'client:load',
     );
@@ -68,6 +75,7 @@ describe('Planning compact workbench', () => {
 
     expect(source).toContain('@media (min-width: 88rem)');
     expect(source).toContain('grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);');
+    expect(source).toContain("grid-template-areas: 'main rail';");
     expect(source).toContain('.planning-workbench__main,');
     expect(source).toContain('.planning-workbench__rail {');
     expect(source).toContain('min-width: 0;');

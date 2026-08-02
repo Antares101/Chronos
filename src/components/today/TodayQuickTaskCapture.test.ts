@@ -27,6 +27,11 @@ describe('TodayQuickTaskCapture', () => {
     expect(html).toContain('Target: Active focus');
     expect(html).not.toContain('<select');
     expect(html.match(/type="submit"/g)).toHaveLength(1);
+    expect(html).toContain(
+      'class="ui-button ui-button--secondary today-quick-capture__change-destination"',
+    );
+    expect(html).toContain('>Change Destination</button>');
+    expect(html).toContain('type="submit"');
   });
 
   it('reveals only owned destinations and deliberate unassigned override', () => {

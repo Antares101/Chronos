@@ -310,6 +310,14 @@ const weeklyInsightStyles = `
     color: var(--chronos-inverse-text-muted, #cbd5e1);
   }
 
+  .weekly-insight__totals .weekly-insight__metric-delta--up {
+    color: var(--chronos-inverse-success-text, #bbf7d0);
+  }
+
+  .weekly-insight__totals .weekly-insight__metric-delta--down {
+    color: var(--chronos-inverse-danger-text, #fecaca);
+  }
+
   .weekly-insight__empty {
     margin: 0;
     color: var(--chronos-text-soft, #64748b);

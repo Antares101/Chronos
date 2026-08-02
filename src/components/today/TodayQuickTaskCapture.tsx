@@ -88,7 +88,11 @@ export default function TodayQuickTaskCapture({
           <>
             <input type="hidden" name="destination" value={defaultKey} />
             <p>Target: {capture.defaultDestination?.label}</p>
-            <button type="button" onClick={() => setOverride(true)}>
+            <button
+              type="button"
+              className="ui-button ui-button--secondary today-quick-capture__change-destination"
+              onClick={() => setOverride(true)}
+            >
               Change Destination
             </button>
           </>

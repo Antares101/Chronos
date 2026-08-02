@@ -40,22 +40,23 @@ describe('ChronosAppShell command bar contract', () => {
     expect(shellSource).toContain('!isTodayRoute && summary');
   });
 
-  it('keeps the fixed utility cluster outside the transformed command bar', () => {
-    const shellIndex = shellSource.indexOf('<main class="shell">');
+  it('associates the fixed desktop utility cluster with the command bar and lets it scroll on mobile', () => {
     const utilitiesIndex = shellSource.indexOf('<div class="command-bar__utilities"');
     const commandBarIndex = shellSource.indexOf("class:list={['command-bar'");
     const commandBarEndIndex = shellSource.indexOf('</section>', commandBarIndex);
 
-    expect(shellIndex).toBeGreaterThan(-1);
-    expect(utilitiesIndex).toBeGreaterThan(shellIndex);
-    expect(commandBarIndex).toBeGreaterThan(utilitiesIndex);
+    expect(commandBarIndex).toBeGreaterThan(-1);
+    expect(utilitiesIndex).toBeGreaterThan(commandBarIndex);
     expect(commandBarEndIndex).toBeGreaterThan(commandBarIndex);
-    expect(shellSource.slice(commandBarIndex, commandBarEndIndex)).not.toContain(
+    expect(shellSource.slice(commandBarIndex, commandBarEndIndex)).toContain(
       'command-bar__utilities',
     );
     expect(shellSource).toMatch(/\.command-bar__utilities\s*{[\s\S]*position: fixed;/);
     expect(shellSource).toContain('top: max(0.75rem, env(safe-area-inset-top));');
     expect(shellSource).toContain('right: max(0.75rem, env(safe-area-inset-right));');
+    expect(shellSource).toMatch(
+      /@media \(max-width: 520px\)\s*{[\s\S]*\.command-bar__utilities\s*{[\s\S]*position: static;/,
+    );
     expect(shellSource).toMatch(
       /\.sign-out-button\s*{[\s\S]*width: 2\.75rem;[\s\S]*height: 2\.75rem;/,
     );
@@ -73,5 +74,16 @@ describe('ChronosAppShell command bar contract', () => {
     expect(sectionNavIndex).toBeGreaterThan(signOutIndex);
     expect(shellSource).not.toMatch(/\.theme-toggle\s*{[^}]*order:/);
     expect(shellSource).not.toMatch(/\.sound-toggle\s*{[^}]*order:/);
+  });
+
+  it('keeps two readable route columns and a compact account treatment on narrow screens', () => {
+    const mobileStyles = shellSource.slice(shellSource.indexOf('@media (max-width: 520px)'));
+
+    expect(mobileStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
+    expect(mobileStyles).toContain('min-height: 2.75rem;');
+    expect(shellSource).toContain(
+      'class="command-bar__account" aria-label={`Signed in as $' + '{email}`}',
+    );
+    expect(shellSource).not.toContain('{summary} Signed in as <strong>{email}</strong>');
   });
 });

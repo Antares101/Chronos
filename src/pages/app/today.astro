@@ -310,6 +310,10 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
   /* prettier-ignore */
   .today-workspace :global(.today-quick-capture header p) { color: var(--chronos-primary, var(--primary, #4f46e5)); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
   /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture__change-destination) { border: 1px solid var(--chronos-border-strong, rgba(99, 102, 241, 0.32)); background: transparent; color: var(--chronos-primary-strong, #4338ca); box-shadow: none; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-quick-capture__change-destination:hover:not(:disabled)) { background: var(--chronos-surface-tinted, #eef2ff); }
+  /* prettier-ignore */
   .today-workspace :global(.today-quick-capture input:focus-visible), .today-workspace :global(.today-quick-capture select:focus-visible), .today-workspace :global(.today-quick-capture button:focus-visible) { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 2px; }
   /* prettier-ignore */
   @media (max-width: 72rem) { .today-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'capture' 'shelf' 'quick-block' 'sheet' 'intention' 'closeout'; } }

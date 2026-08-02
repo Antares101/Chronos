@@ -54,14 +54,14 @@ const defaultEditEndTime = firstPlanningBlock
   statusMessage={statusMessage}
 >
   <div class="app-route app-route--planning planning-workbench">
-    <main class="planning-workbench__main">
+    <div class="planning-workbench__main">
       <section class="planning-workbench__calendar" aria-label="Weekly planning calendar">
         <WeeklyCalendar {...appState.weeklyCalendar} client:load />
       </section>
       <section class="planning-workbench__tasks" aria-label="Unassigned planning tasks">
         <TaskList {...appState.taskList} client:load />
       </section>
-    </main>
+    </div>
 
     <aside class="planning-workbench__rail actions" aria-labelledby="planning-actions-title">
       <div class="actions__header">
@@ -235,6 +235,14 @@ const defaultEditEndTime = firstPlanningBlock
     min-width: 0;
   }
 
+  .planning-workbench__main {
+    grid-area: main;
+  }
+
+  .planning-workbench__rail {
+    grid-area: rail;
+  }
+
   .planning-workbench__rail .actions__grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -275,6 +283,14 @@ const defaultEditEndTime = firstPlanningBlock
     box-shadow: none;
   }
 
+  @media (max-width: 87.999rem) {
+    .planning-workbench {
+      grid-template-areas:
+        'rail'
+        'main';
+    }
+  }
+
   @media (min-width: 88rem) {
     .app-route--planning {
       --app-route-max: 110rem;
@@ -283,6 +299,7 @@ const defaultEditEndTime = firstPlanningBlock
     .planning-workbench {
       align-items: start;
       grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
+      grid-template-areas: 'main rail';
     }
   }
 
