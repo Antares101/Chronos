@@ -239,12 +239,6 @@ export function createSignInUrl(currentUrl: URL, redirectTo = getPathWithSearch(
   return signInUrl;
 }
 
-export function createSignInRedirect(currentUrl: URL): Response {
-  const signInUrl = createSignInUrl(currentUrl);
-
-  return Response.redirect(signInUrl, 303);
-}
-
 export function resolveAuthMiddlewareDecision(
   currentUrl: URL,
   user: User | null,

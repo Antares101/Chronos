@@ -5,7 +5,6 @@ import {
   getChronosAppStatusMessage,
   handleChronosAppAction,
   type ChronosAppActionResult,
-  type ChronosAppActionStatus,
   type ChronosAppRepositories,
 } from './chronos-app';
 import { createMockLocalChronosAppRepositories } from './local-fixture';
@@ -112,14 +111,12 @@ export const chronosHomeRedirect = {
   status: 302,
 } as const satisfies ChronosRouteRedirectDecision;
 
-export const chronosAppIndexRedirect = chronosHomeRedirect;
-
 export function resolveChronosHomeRedirect(): ChronosRouteRedirectDecision {
   return chronosHomeRedirect;
 }
 
 export function resolveChronosAppIndexRedirect(): ChronosRouteRedirectDecision {
-  return chronosAppIndexRedirect;
+  return chronosHomeRedirect;
 }
 
 export function resolveChronosRouteAuth(
@@ -261,13 +258,12 @@ export async function resolveChronosRouteAction({
     const result = await actionHandler(repositories, userId, formData);
     const feedbackOrigin = readTodayFeedbackOrigin(formData.get('feedbackOrigin'));
 
-    return resolveChronosRouteActionRedirect(
-      currentUrl,
-      routePath,
-      result.status,
-      result.destination,
-      feedbackOrigin,
-    );
+    const nextUrl = new URL(routePath, currentUrl);
+    nextUrl.searchParams.set('status', result.status);
+    if (result.destination) nextUrl.searchParams.set('destination', result.destination);
+    if (feedbackOrigin) nextUrl.searchParams.set('feedbackOrigin', feedbackOrigin);
+
+    return { kind: 'redirect', location: getPathWithSearch(nextUrl), status: 303 };
   } catch (error) {
     const safeTodayError =
       routePath === chronosAppRoutes.today &&
@@ -285,21 +281,6 @@ export async function resolveChronosRouteAction({
         : {}),
     };
   }
-}
-
-export function resolveChronosRouteActionRedirect(
-  currentUrl: URL,
-  routePath: ChronosAppActionPath,
-  status: ChronosAppActionStatus,
-  destination?: string,
-  feedbackOrigin?: TodayFeedbackOrigin,
-): ChronosRouteActionDecision {
-  const nextUrl = new URL(routePath, currentUrl);
-  nextUrl.searchParams.set('status', status);
-  if (destination) nextUrl.searchParams.set('destination', destination);
-  if (feedbackOrigin) nextUrl.searchParams.set('feedbackOrigin', feedbackOrigin);
-
-  return { kind: 'redirect', location: getPathWithSearch(nextUrl), status: 303 };
 }
 
 async function resolveRouteStatusMessage(
