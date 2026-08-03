@@ -121,10 +121,6 @@ function createScheduleRoot(overrides: Partial<Nodes> = {}) {
   return { nodes, root: new FakeScheduleRoot(nodes) };
 }
 
-function readTodayPageSource(): string {
-  return readFileSync(new URL('../../pages/app/today.astro', import.meta.url), 'utf8');
-}
-
 function readTodayActionsGridSource(): string {
   return readFileSync(new URL('./TodayActionsGrid.tsx', import.meta.url), 'utf8');
 }
@@ -499,49 +495,5 @@ describe('Today page quick schedule source contract', () => {
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
-  });
-
-  it.skip('keeps explicit labels for each schedule input and wires the production binder after markup exists', () => {
-    const todaySource = readTodayPageSource();
-    const actionsGridSource = readTodayActionsGridSource();
-    const createBlockSource = getCreateBlockSource(actionsGridSource);
-
-    for (const [id, labelText] of [
-      ['quick-block-date', 'Date'],
-      ['quick-block-start', 'Start'],
-      ['quick-block-end', 'End'],
-    ]) {
-      const labelSource = `<label htmlFor="${id}">${labelText}</label>`;
-      const labelIndex = createBlockSource.indexOf(labelSource);
-      const inputIndex = createBlockSource.indexOf(`id="${id}"`);
-
-      expect(labelIndex).toBeGreaterThanOrEqual(0);
-      expect(inputIndex).toBeGreaterThan(labelIndex);
-      expect(createBlockSource).toMatch(
-        new RegExp(
-          `<input[\\s\\S]*id="${id}"[\\s\\S]*aria-describedby="quick-schedule-help quick-schedule-status"`,
-        ),
-      );
-    }
-
-    expect(createBlockSource).toContain(
-      '<div className="quick-schedule__control quick-schedule__control--date">',
-    );
-    expect(actionsGridSource).toMatch(
-      /@media \(max-width: 40rem\)[\s\S]*\.quick-schedule__control--date/,
-    );
-
-    const selectorIndex = todaySource.indexOf('<TodayActionsGrid');
-    const binderCallIndex = todaySource.indexOf('bindQuickScheduleSelectors(document)');
-
-    expect(todaySource).toContain(
-      "import { bindQuickScheduleSelectors } from '../../components/today/quick-schedule-selector';",
-    );
-    expect(binderCallIndex).toBeGreaterThan(selectorIndex);
-    expect(todaySource).toContain("document.readyState === 'loading'");
-    expect(todaySource).toContain(
-      "document.addEventListener('DOMContentLoaded', bindQuickSchedule",
-    );
-    expect(todaySource).toContain('{ once: true }');
   });
 });

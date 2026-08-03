@@ -89,7 +89,13 @@ describe('TodayQuickBlock', () => {
 
     expect(html).not.toContain('Recent names');
     expect(html).toContain('<label for="today-quick-block-title">Block name</label>');
-    expect(html).toContain('<label for="quick-block-date">Date</label>');
+    for (const [id, label] of [
+      ['quick-block-date', 'Date'],
+      ['quick-block-start', 'Start'],
+      ['quick-block-end', 'End'],
+    ]) {
+      expect(html).toContain(`<label for="${id}">${label}</label>`);
+    }
     expect(html).toContain('Block added.');
   });
 });

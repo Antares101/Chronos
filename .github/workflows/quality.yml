@@ -19,3 +19,5 @@ jobs:
         run: npm run audit:production
       - name: Run quality checks
         run: npm run quality:ci
+      - name: Run browser smoke
+        run: npm run smoke:browser

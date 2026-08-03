@@ -9,6 +9,19 @@ import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 
+const fixtureNow = '2026-07-02T11:30:00.000Z';
+const ownedServerEnvironment = {
+  ASTRO_TELEMETRY_DISABLED: '1',
+  BROWSER: 'none',
+  NODE_ENV: 'development',
+  PATH: process.env.PATH ?? '',
+  ...(process.platform === 'win32' && process.env.SystemRoot
+    ? { SystemRoot: process.env.SystemRoot }
+    : {}),
+  PUBLIC_SUPABASE_URL: 'https://chronos-smoke.invalid',
+  PUBLIC_SUPABASE_ANON_KEY: 'chronos-browser-smoke-anon-key',
+};
+
 const routeChecks = [
   {
     path: '/app/today',
@@ -31,7 +44,7 @@ const routeChecks = [
   {
     path: '/app/planning',
     semanticChecks: [
-      { name: 'app heading', text: 'Shape the week' },
+      { name: 'app heading', selector: '#app-title', text: 'Planning' },
       {
         name: 'planning actions heading',
         selector: '#planning-actions-title',
@@ -66,11 +79,11 @@ const routeChecks = [
   {
     path: '/app/review',
     semanticChecks: [
-      { name: 'app heading', text: 'Close the loop' },
+      { name: 'app heading', text: 'Close a block' },
       {
         name: 'review actions heading',
         selector: '#review-actions-title',
-        text: 'Finish blocks and save conclusions',
+        text: 'Close one block at a time',
       },
       {
         name: 'conclusion panel heading',
@@ -186,11 +199,7 @@ class CdpClient {
       }
     }
 
-    return failures.filter((message) =>
-      /_jsxDEV|TypeError|DailyTimeline|BlockDetail|WeeklyCalendar|TaskList|ConclusionPanel/i.test(
-        message,
-      ),
-    );
+    return failures;
   }
 }
 
@@ -198,10 +207,11 @@ async function main() {
   const chromePath = findChromePath();
   let smokeTarget;
   let chrome;
+  let client;
   let userDataDir;
 
   try {
-    smokeTarget = await resolveSmokeTarget();
+    smokeTarget = await startOwnedDevServer();
     const baseUrl = smokeTarget.baseUrl;
     const rootRedirectResult = await verifyRootRedirect(baseUrl);
     const debuggingPort = await getFreePort();
@@ -223,9 +233,10 @@ async function main() {
         windowsHide: true,
       },
     );
+    const getBrowserFailure = observeChildProcess(chrome, 'Browser', 'CDP became ready');
 
-    const webSocketUrl = await waitForWebSocketUrl(debuggingPort);
-    const client = new CdpClient(webSocketUrl);
+    const webSocketUrl = await waitForWebSocketUrl(debuggingPort, getBrowserFailure);
+    client = new CdpClient(webSocketUrl);
     await client.open();
     await client.send('Page.enable');
     await client.send('Runtime.enable');
@@ -237,10 +248,8 @@ async function main() {
 
     const signInResult = await verifySignInTargets(client, baseUrl);
     const consoleFailures = client.takeConsoleFailures();
-    await client.close();
-
     if (consoleFailures.length > 0) {
-      throw new Error(`Browser console hydration failures:\n${consoleFailures.join('\n')}`);
+      throw new Error(`Browser page failures:\n${consoleFailures.join('\n')}`);
     }
 
     console.log(
@@ -251,24 +260,13 @@ async function main() {
       ),
     );
   } finally {
+    await client?.close();
     await stopChildProcess(chrome);
     if (userDataDir) {
       await removeUserDataDir(userDataDir);
     }
     await smokeTarget?.close();
   }
-}
-
-async function resolveSmokeTarget() {
-  if (process.env.CHRONOS_BASE_URL) {
-    return {
-      baseUrl: process.env.CHRONOS_BASE_URL.replace(/\/$/, ''),
-      mode: 'external',
-      close: async () => undefined,
-    };
-  }
-
-  return startOwnedDevServer();
 }
 
 async function verifyRootRedirect(baseUrl) {
@@ -291,39 +289,51 @@ async function verifyRootRedirect(baseUrl) {
 async function startOwnedDevServer() {
   const port = await getFreePort();
   const baseUrl = `http://127.0.0.1:${port}`;
-  process.env.ASTRO_TELEMETRY_DISABLED ??= '1';
-  process.env.BROWSER ??= 'none';
   const astroDevEntry = pathToFileURL(
     path.join(process.cwd(), 'node_modules', 'astro', 'dist', 'core', 'dev', 'index.js'),
   ).href;
-  const { default: startAstroDevServer } = await import(astroDevEntry);
-  let devServer;
+  const devServer = spawn(
+    process.execPath,
+    ['--input-type=module', '--eval', createOwnedDevServerProgram(astroDevEntry, port)],
+    {
+      cwd: process.cwd(),
+      env: ownedServerEnvironment,
+      stdio: 'ignore',
+      windowsHide: true,
+    },
+  );
+  const getServerFailure = observeChildProcess(
+    devServer,
+    'Owned Chronos dev server',
+    'it became ready',
+  );
 
   try {
-    devServer = await startAstroDevServer({
-      root: process.cwd(),
-      logLevel: 'silent',
-      server: {
-        host: '127.0.0.1',
-        port,
-      },
-    });
-
-    if (devServer.address.port !== port) {
-      throw new Error(`Owned Chronos dev server bound to ${devServer.address.port}, not ${port}.`);
-    }
-
-    await waitForOwnedDevServer(baseUrl);
+    await waitForOwnedDevServer(baseUrl, getServerFailure);
   } catch (error) {
-    await devServer?.stop();
+    await stopChildProcess(devServer);
     throw error;
   }
 
   return {
     baseUrl,
     mode: 'owned-dev-server',
-    close: async () => devServer.stop(),
+    close: async () => stopChildProcess(devServer),
   };
+}
+
+function createOwnedDevServerProgram(astroDevEntry, port) {
+  return `
+const NativeDate = globalThis.Date;
+class FixedDate extends NativeDate {
+  constructor(...args) {
+    super(...(args.length === 0 ? [${JSON.stringify(fixtureNow)}] : args));
+  }
+}
+globalThis.Date = FixedDate;
+const { default: startAstroDevServer } = await import(${JSON.stringify(astroDevEntry)});
+await startAstroDevServer({ root: ${JSON.stringify(process.cwd())}, logLevel: 'silent', server: { host: '127.0.0.1', port: ${port} } });
+`;
 }
 
 function findChromePath() {
@@ -379,10 +389,15 @@ async function getFreePort() {
   return address.port;
 }
 
-async function waitForWebSocketUrl(port) {
+async function waitForWebSocketUrl(port, getLaunchError) {
   const deadline = Date.now() + 15000;
 
   while (Date.now() < deadline) {
+    const processFailure = getLaunchError();
+    if (processFailure) {
+      throw processFailure;
+    }
+
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`);
       const targets = await response.json();
@@ -401,11 +416,16 @@ async function waitForWebSocketUrl(port) {
   throw new Error('Chrome DevTools Protocol endpoint did not become ready.');
 }
 
-async function waitForOwnedDevServer(baseUrl) {
+async function waitForOwnedDevServer(baseUrl, getServerFailure) {
   const deadline = Date.now() + 45000;
   let lastError = 'server was not contacted';
 
   while (Date.now() < deadline) {
+    const processFailure = getServerFailure();
+    if (processFailure) {
+      throw processFailure;
+    }
+
     try {
       const response = await fetch(`${baseUrl}/app/today`);
       const html = await response.text();
@@ -423,6 +443,24 @@ async function waitForOwnedDevServer(baseUrl) {
   }
 
   throw new Error(`Owned Chronos dev server did not become ready at ${baseUrl}: ${lastError}`);
+}
+
+function observeChildProcess(childProcess, name, readiness) {
+  let launchError;
+  let exit;
+  childProcess.once('error', (error) => {
+    launchError = error;
+  });
+  childProcess.once('exit', (code, signal) => {
+    exit = { code, signal };
+  });
+
+  return () => {
+    if (launchError) return new Error(`Could not launch ${name}: ${launchError.message}`);
+    if (!exit) return null;
+    const outcome = exit.signal ? `signal ${exit.signal}` : `code ${exit.code}`;
+    return new Error(`${name} exited before ${readiness} with ${outcome}.`);
+  };
 }
 
 async function verifyHydratedRoute(client, baseUrl, routeCheck) {
