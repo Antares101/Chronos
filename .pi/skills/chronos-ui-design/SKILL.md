@@ -9,7 +9,7 @@ metadata:
 
 ## Activation Contract
 
-Use this skill for Chronos UI, `/app` layout, visual polish, responsive fixes, OpenPencil exploration, or updates to `Design.md`.
+Use this skill for Chronos UI, authenticated app layout, visual polish, responsive fixes, OpenPencil exploration, route navigation, or updates to `Design.md`.
 
 ## Hard Rules
 
@@ -18,12 +18,12 @@ Use this skill for Chronos UI, `/app` layout, visual polish, responsive fixes, O
 - Do not change server actions, field names, route behavior, auth behavior, or data semantics for visual work unless the user explicitly requests a route/navigation change.
 - Fix layout causes, not screenshots: sizing, wrapping, containment, and responsive contracts come first.
 - Keep edits inside the Chronos repo unless the user explicitly authorizes otherwise.
-- Keep the `/app` visual system on the documented light/dark Slate/Zinc canvas with indigo primary, sky support accents, semantic surfaces, and Plus Jakarta Sans typography unless a later design decision updates `Design.md`.
+- Keep the authenticated app visual system on the documented light/dark Slate/Zinc canvas with indigo primary, sky support accents, semantic surfaces, and Plus Jakarta Sans typography unless a later design decision updates `Design.md`.
 - Japanese RPG-inspired polish is allowed only as a restrained app-shell motif: menu-like panels, inset bevels, soft glow, constellation/quest ornaments, route identity, and tactile microinteractions. Do not let decoration reduce readability or change route semantics.
 - Use the local shadcn/ui-style CSS primitive contract (`--background`, `--foreground`, `--card`, `--primary`, `--muted`, `--border`, `--input`, `--ring`, `--radius`, and `--chronos-*` aliases). Do not add Tailwind, shadcn CLI output, or `components.json` unless the repo already has that stack and the user asks for it.
 - Theme behavior is client-side only: `chronos-theme` in `localStorage` wins, `prefers-color-scheme` is the fallback, and the app shell toggle must keep `aria-label` plus `aria-pressed` in sync.
 - Optional app-shell interaction sounds must be Web Audio API-only, client-only, visibly muted by default, persisted with `chronos-sound-muted`, keyboard-operable, and silent when unsupported or when reduced motion is requested.
-- Keep authenticated app navigation as lightweight shell/section navigation across `/app/today`, `/app/planning`, `/app/review`, and `/app/insights`; do not convert it into primary tabs or a sidebar-first layout.
+- Keep authenticated app navigation as lightweight shell/section navigation across `/today`, `/planning`, `/review`, and `/insights`; do not convert it into primary tabs or a sidebar-first layout.
 - Keep route pages section-local: do not eagerly render all forms or all React islands on a single route.
 - Chronos is personal-use software, not a product being sold. UI copy should be direct, practical, and operational. Avoid marketing, persuasion, onboarding explanations, and backend terms such as `stored`, `persisted`, `loaded`, `user scope`, `app shell`, and `route panels`. The home page should act as a launchpad/shortcut screen, not a landing page.
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function readPlanningSource() {
-  return readFileSync(new URL('./planning.astro', import.meta.url), 'utf8');
+  return readFileSync(new URL('../../pages/planning.astro', import.meta.url), 'utf8');
 }
 
 describe('Planning compact workbench', () => {

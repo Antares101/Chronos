@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function readReviewSource() {
-  return readFileSync(new URL('./review.astro', import.meta.url), 'utf8');
+  return readFileSync(new URL('../../pages/review.astro', import.meta.url), 'utf8');
 }
 
 describe('Review daily review route contract', () => {
@@ -10,7 +10,7 @@ describe('Review daily review route contract', () => {
     const source = readReviewSource();
 
     expect(source).toContain(
-      "import DailyReviewCards from '../../components/review/DailyReviewCards';",
+      "import DailyReviewCards from '../components/review/DailyReviewCards';",
     );
     expect(source).toContain('<DailyReviewCards');
 

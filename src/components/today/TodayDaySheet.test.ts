@@ -13,7 +13,7 @@ const pause: DailyTimelinePause = { id: 'pause-1', blockId: 'block-1', kind: 'un
 // prettier-ignore
 const row = (overrides: Partial<Extract<DaySheetRow, { kind: 'block' }>> = {}) => ({ kind: 'block' as const, block: block(), clippedStart: '2026-07-11T09:00:00.000Z', clippedEnd: '2026-07-11T10:00:00.000Z', edge: 'inside' as const, overlapDepth: 0, lifecycle: 'active' as const, ...overrides });
 // prettier-ignore
-const defaults: TodayDaySheetProps = { rows: [{ kind: 'gap', start: '2026-07-11T00:00:00.000Z', end: '2026-07-11T09:00:00.000Z' }, row()], currentTime: '2026-07-11T09:15:00.000Z', actionPath: '/app/today', blockDetails: { 'block-1': { tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }], highlightedEvents: [{ id: 'event-1', title: 'Resolved blocker' }], pauses: [pause], permittedActions: [{ kind: 'pause' }, { kind: 'resume', pauseId: 'pause-1' }, { kind: 'event' }, { kind: 'task' }, { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }, { id: 'task-2', title: 'Share proposal', status: 'todo' }] }] } } };
+const defaults: TodayDaySheetProps = { rows: [{ kind: 'gap', start: '2026-07-11T00:00:00.000Z', end: '2026-07-11T09:00:00.000Z' }, row()], currentTime: '2026-07-11T09:15:00.000Z', actionPath: '/today', blockDetails: { 'block-1': { tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }], highlightedEvents: [{ id: 'event-1', title: 'Resolved blocker' }], pauses: [pause], permittedActions: [{ kind: 'pause' }, { kind: 'resume', pauseId: 'pause-1' }, { kind: 'event' }, { kind: 'task' }, { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Draft proposal', status: 'done' }, { id: 'task-2', title: 'Share proposal', status: 'todo' }] }] } } };
 const render = (props: Partial<TodayDaySheetProps> = {}) =>
   renderToStaticMarkup(createElement(TodayDaySheet, { ...defaults, ...props }));
 const expectText = (html: string, values: string[]) => {
@@ -212,7 +212,7 @@ describe('TodayDaySheet', () => {
     expectText(html, [
       'No planned blocks',
       'The day is available from 00:00 to 24:00.',
-      'href="/app/planning"',
+      'href="/planning"',
     ]);
     expect(html).not.toContain('<article');
   });

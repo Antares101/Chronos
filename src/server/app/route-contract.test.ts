@@ -9,7 +9,6 @@ import {
   chronosHomeRoute,
   createChronosRouteRepositories,
   resolveChronosActionRouteContext,
-  resolveChronosAppIndexRedirect,
   resolveChronosHomeRedirect,
   resolveChronosReadRouteContext,
   resolveChronosRouteAction,
@@ -23,14 +22,6 @@ describe('Chronos app route contract', () => {
   it('redirects / home to the Today section', () => {
     expect(chronosHomeRoute).toBe('/');
     expect(resolveChronosHomeRedirect()).toEqual({
-      kind: 'redirect',
-      location: chronosAppRoutes.today,
-      status: 302,
-    });
-  });
-
-  it('redirects /app to the Today section', () => {
-    expect(resolveChronosAppIndexRedirect()).toEqual({
       kind: 'redirect',
       location: chronosAppRoutes.today,
       status: 302,
@@ -65,13 +56,13 @@ describe('Chronos app route contract', () => {
   it('preserves section query parameters in unauthenticated sign-in redirects', () => {
     const decision = resolveChronosRouteAuth(
       null,
-      new URL('https://chronos.test/app/today?status=started'),
+      new URL('https://chronos.test/today?status=started'),
       chronosAppRoutes.today,
     );
 
     expect(decision).toEqual({
       kind: 'redirect',
-      location: '/sign-in?redirectTo=%2Fapp%2Ftoday%3Fstatus%3Dstarted',
+      location: '/sign-in?redirectTo=%2Ftoday%3Fstatus%3Dstarted',
       status: 303,
     });
   });
@@ -79,7 +70,7 @@ describe('Chronos app route contract', () => {
   it('keeps authenticated section routes on the requested route', () => {
     const decision = resolveChronosRouteAuth(
       { id: 'user-1', email: 'user@chronos.test' },
-      new URL('https://chronos.test/app/today'),
+      new URL('https://chronos.test/today'),
       chronosAppRoutes.today,
     );
 
@@ -93,7 +84,7 @@ describe('Chronos app route contract', () => {
   it('falls back to signed-in user copy when authenticated email is unavailable', () => {
     const decision = resolveChronosRouteAuth(
       { id: 'user-1', email: undefined },
-      new URL('https://chronos.test/app/today'),
+      new URL('https://chronos.test/today'),
       chronosAppRoutes.today,
     );
 
@@ -107,8 +98,8 @@ describe('Chronos app route contract', () => {
     let delegated = false;
 
     const decision = await resolveChronosRouteAction({
-      request: new Request('https://chronos.test/app/today'),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      request: new Request('https://chronos.test/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories: fakeRepositories(),
       userId: 'user-1',
@@ -128,8 +119,8 @@ describe('Chronos app route contract', () => {
 
     const context = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: new Request('https://chronos.test/app/today?status=started'),
-      currentUrl: new URL('https://chronos.test/app/today?status=started'),
+      request: new Request('https://chronos.test/today?status=started'),
+      currentUrl: new URL('https://chronos.test/today?status=started'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: () => repositories,
       actionHandler: async () => {
@@ -154,8 +145,8 @@ describe('Chronos app route contract', () => {
 
     const context = await resolveChronosActionRouteContext({
       user: null,
-      request: new Request('https://chronos.test/app/review'),
-      currentUrl: new URL('https://chronos.test/app/review'),
+      request: new Request('https://chronos.test/review'),
+      currentUrl: new URL('https://chronos.test/review'),
       routePath: chronosAppRoutes.review,
       repositoryFactory: () => {
         repositoryCreated = true;
@@ -176,7 +167,7 @@ describe('Chronos app route contract', () => {
 
     const context = resolveChronosReadRouteContext({
       user: null,
-      currentUrl: new URL('https://chronos.test/app/insights'),
+      currentUrl: new URL('https://chronos.test/insights'),
       routePath: chronosAppRoutes.insights,
       repositoryFactory: () => {
         repositoryCreated = true;
@@ -197,7 +188,7 @@ describe('Chronos app route contract', () => {
 
     const context = resolveChronosReadRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      currentUrl: new URL('https://chronos.test/app/insights'),
+      currentUrl: new URL('https://chronos.test/insights'),
       routePath: chronosAppRoutes.insights,
       repositoryFactory: () => repositories,
     });
@@ -213,7 +204,7 @@ describe('Chronos app route contract', () => {
   it('uses deterministic local fixture repositories for the mock local user', async () => {
     const context = resolveChronosReadRouteContext({
       user: mockLocalUser,
-      currentUrl: new URL('http://localhost:4321/app/insights'),
+      currentUrl: new URL('http://localhost:4321/insights'),
       routePath: chronosAppRoutes.insights,
       repositoryFactory: createChronosRouteRepositories,
     });
@@ -240,10 +231,10 @@ describe('Chronos app route contract', () => {
   it('keeps safe route action errors in the resolved route setup', async () => {
     const context = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: createPostRequest('https://chronos.test/app/planning', {
+      request: createPostRequest('https://chronos.test/planning', {
         action: 'create-planned-block',
       }),
-      currentUrl: new URL('https://chronos.test/app/planning?status=created'),
+      currentUrl: new URL('https://chronos.test/planning?status=created'),
       routePath: chronosAppRoutes.planning,
       repositoryFactory: fakeRepositories,
       actionHandler: async () => {
@@ -310,11 +301,11 @@ describe('Chronos app route contract', () => {
     const repositories = fakeRepositories();
     const receivedFields: Array<[string, FormDataEntryValue]> = [];
     const decision = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'conclude-block-without-review',
         blockId: 'block-1',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories,
       userId: 'user-1',
@@ -330,7 +321,7 @@ describe('Chronos app route contract', () => {
     ]);
     expect(decision).toEqual({
       kind: 'redirect',
-      location: '/app/today?status=block-concluded',
+      location: '/today?status=block-concluded',
       status: 303,
     });
   });
@@ -338,12 +329,12 @@ describe('Chronos app route contract', () => {
   it('carries the close-review origin through success and failed Today conclusion handling', async () => {
     const repositories = fakeRepositories();
     const post = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'conclude-block-without-review',
         blockId: 'block-1',
         feedbackOrigin: 'today-close-review',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories,
       userId: 'user-1',
@@ -351,19 +342,19 @@ describe('Chronos app route contract', () => {
     });
     expect(post).toEqual({
       kind: 'redirect',
-      location: '/app/today?status=block-concluded&feedbackOrigin=today-close-review',
+      location: '/today?status=block-concluded&feedbackOrigin=today-close-review',
       status: 303,
     });
 
     const failed = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'conclude-block',
         blockId: 'block-1',
         notes: 'Review failed.',
         feedbackOrigin: 'today-close-review',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: () => repositories,
       actionHandler: async () => {
@@ -381,13 +372,13 @@ describe('Chronos app route contract', () => {
   it('carries only an allowlisted task feedback origin through POST redirect and GET context', async () => {
     const repositories = fakeRepositories();
     const post = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'create-task',
         blockId: 'block-1',
         title: 'Capture a note',
         feedbackOrigin: 'today-day-sheet',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories,
       userId: 'user-1',
@@ -397,7 +388,7 @@ describe('Chronos app route contract', () => {
     expect(post).toEqual({
       kind: 'redirect',
       location:
-        '/app/today?status=task-created&destination=block%3Ablock-1&feedbackOrigin=today-day-sheet',
+        '/today?status=task-created&destination=block%3Ablock-1&feedbackOrigin=today-day-sheet',
       status: 303,
     });
     if (post?.kind !== 'redirect') throw new Error('Expected a task creation redirect.');
@@ -415,13 +406,13 @@ describe('Chronos app route contract', () => {
     });
 
     const untrusted = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'create-task',
         blockId: 'block-1',
         title: 'Capture a note',
         feedbackOrigin: '<img src=x onerror=alert(1)>',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories,
       userId: 'user-1',
@@ -429,7 +420,7 @@ describe('Chronos app route contract', () => {
     });
     expect(untrusted).toEqual({
       kind: 'redirect',
-      location: '/app/today?status=task-created',
+      location: '/today?status=task-created',
       status: 303,
     });
   });
@@ -437,13 +428,13 @@ describe('Chronos app route contract', () => {
   it('carries the Today inbox origin through assignment redirect and GET context', async () => {
     const repositories = fakeRepositories();
     const post = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'assign-task',
         taskId: 'task-1',
         blockId: 'block-1',
         feedbackOrigin: 'today-inbox',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositories,
       userId: 'user-1',
@@ -452,7 +443,7 @@ describe('Chronos app route contract', () => {
 
     expect(post).toEqual({
       kind: 'redirect',
-      location: '/app/today?status=assigned&feedbackOrigin=today-inbox',
+      location: '/today?status=assigned&feedbackOrigin=today-inbox',
       status: 303,
     });
     if (post?.kind !== 'redirect') throw new Error('Expected an assignment redirect.');
@@ -470,13 +461,13 @@ describe('Chronos app route contract', () => {
   it('preserves an assignment draft for Today-scoped retry feedback', async () => {
     const context = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'assign-task',
         taskId: 'task-1',
         blockId: 'stale-block',
         feedbackOrigin: 'today-inbox',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: fakeRepositories,
       actionHandler: async () => {
@@ -492,10 +483,10 @@ describe('Chronos app route contract', () => {
 
   it('returns safe route action copy instead of redirecting when POST delegation fails', async () => {
     const decision = await resolveChronosRouteAction({
-      request: createPostRequest('https://chronos.test/app/planning', {
+      request: createPostRequest('https://chronos.test/planning', {
         action: 'create-planned-block',
       }),
-      currentUrl: new URL('https://chronos.test/app/planning?status=created'),
+      currentUrl: new URL('https://chronos.test/planning?status=created'),
       routePath: chronosAppRoutes.planning,
       repositories: fakeRepositories(),
       userId: 'user-1',
@@ -510,7 +501,7 @@ describe('Chronos app route contract', () => {
     });
     expect(
       resolveChronosRouteStatusMessage(
-        new URL('https://chronos.test/app/planning?status=created'),
+        new URL('https://chronos.test/planning?status=created'),
         'That change could not be saved. Check the form and try again.',
       ),
     ).toBeNull();
@@ -526,7 +517,7 @@ describe('Chronos app route contract', () => {
     await expect(
       resolveChronosRouteAction({
         request: unreadable,
-        currentUrl: new URL('https://chronos.test/app/today'),
+        currentUrl: new URL('https://chronos.test/today'),
         routePath: chronosAppRoutes.today,
         repositories: fakeRepositories(),
         userId: 'user-1',
@@ -548,8 +539,8 @@ describe('Chronos app route contract', () => {
     async (action, values) => {
       const context = await resolveChronosActionRouteContext({
         user: { id: 'user-1', email: 'user@chronos.test' },
-        request: createPostRequest('https://chronos.test/app/today', { action, ...values }),
-        currentUrl: new URL('https://chronos.test/app/today'),
+        request: createPostRequest('https://chronos.test/today', { action, ...values }),
+        currentUrl: new URL('https://chronos.test/today'),
         routePath: chronosAppRoutes.today,
         repositoryFactory: fakeRepositories,
         actionHandler: async () => {
@@ -585,8 +576,8 @@ describe('Chronos app route contract', () => {
     async (action, values) => {
       const context = await resolveChronosActionRouteContext({
         user: { id: 'user-1', email: 'user@chronos.test' },
-        request: createPostRequest('https://chronos.test/app/today', { action, ...values }),
-        currentUrl: new URL('https://chronos.test/app/today'),
+        request: createPostRequest('https://chronos.test/today', { action, ...values }),
+        currentUrl: new URL('https://chronos.test/today'),
         routePath: chronosAppRoutes.today,
         repositoryFactory: fakeRepositories,
         actionHandler: async () => {
@@ -608,11 +599,11 @@ describe('Chronos app route contract', () => {
   it('keeps every submitted Today goal in order when saving goals fails', async () => {
     const context = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'today-save-goals',
         goals: ['Finish recovery flow', 'Check accessible feedback', 'Ship the fix'],
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: fakeRepositories,
       actionHandler: async () => {
@@ -637,14 +628,14 @@ describe('Chronos app route contract', () => {
 
     const failure = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
-      request: createPostRequest('https://chronos.test/app/today', {
+      request: createPostRequest('https://chronos.test/today', {
         action: 'today-create-task',
         title: '  Retry me  ',
         destination: 'block:owned',
         destinationLabel: 'Forged label',
         userId: 'user-2',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: () => repositories,
       actionHandler: async () => {
@@ -659,8 +650,7 @@ describe('Chronos app route contract', () => {
         destination: 'block:owned',
       },
     });
-    const successUrl =
-      'https://chronos.test/app/today?status=task-created&destination=block%3Aowned';
+    const successUrl = 'https://chronos.test/today?status=task-created&destination=block%3Aowned';
     const success = await resolveChronosActionRouteContext({
       user: { id: 'user-1', email: 'user@chronos.test' },
       request: new Request(successUrl),

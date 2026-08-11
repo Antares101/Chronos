@@ -1,26 +1,23 @@
 ---
 import { createElement } from 'react';
-import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
-import TodayCloseout from '../../components/today/TodayCloseout';
-import TodayDailyHeader from '../../components/today/TodayDailyHeader';
-import TodayActiveBlock from '../../components/today/TodayActiveBlock';
-import TodayDaySheet from '../../components/today/TodayDaySheet';
-import TodayGoalsPanel from '../../components/today/TodayGoalsPanel';
-import TodayTaskInbox from '../../components/today/TodayTaskInbox';
-import TodayQuickBlock from '../../components/today/TodayQuickBlock';
-import TodayQuickTaskCapture from '../../components/today/TodayQuickTaskCapture';
-import TodayShortcutReference from '../../components/today/TodayShortcutReference';
-import type { TodayBlockAction } from '../../components/today/TodayBlockActions';
-import type { TodayBlockDetail } from '../../components/today/TodayBlockRow';
-import type { ChronosAuthLocals } from '../../server/auth';
+import ChronosAppShell from '../components/app/ChronosAppShell.astro';
+import TodayCloseout from '../components/today/TodayCloseout';
+import TodayDailyHeader from '../components/today/TodayDailyHeader';
+import TodayActiveBlock from '../components/today/TodayActiveBlock';
+import TodayDaySheet from '../components/today/TodayDaySheet';
+import TodayGoalsPanel from '../components/today/TodayGoalsPanel';
+import TodayTaskInbox from '../components/today/TodayTaskInbox';
+import TodayQuickBlock from '../components/today/TodayQuickBlock';
+import TodayQuickTaskCapture from '../components/today/TodayQuickTaskCapture';
+import TodayShortcutReference from '../components/today/TodayShortcutReference';
+import type { TodayBlockAction } from '../components/today/TodayBlockActions';
+import type { TodayBlockDetail } from '../components/today/TodayBlockRow';
+import type { ChronosAuthLocals } from '../server/auth';
 // Route-local composition keeps legacy components available for rollback.
-import { loadChronosTodayState } from '../../server/app/chronos-app';
-import { composeTodayBlockPauses } from './today-block-pause-composition';
-import { resolveTodayLocalFeedback } from './today-feedback-scoping';
-import {
-  chronosAppRoutes,
-  resolveChronosActionRouteContext,
-} from '../../server/app/route-contract';
+import { loadChronosTodayState } from '../server/app/chronos-app';
+import { composeTodayBlockPauses } from '../features/today/today-block-pause-composition';
+import { resolveTodayLocalFeedback } from '../features/today/today-feedback-scoping';
+import { chronosAppRoutes, resolveChronosActionRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.today;
 const routeContext = await resolveChronosActionRouteContext({
@@ -213,15 +210,15 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 <TodayShortcutReference />
 
 <script>
-  import { bindQuickScheduleSelectors } from '../../components/today/quick-schedule-selector';
-  import { bindTodayAssignmentInteractions } from './today-assignment-interactions';
-  import { bindTodayCloseReviewDismissal } from './today-close-review';
-  import { bindTodayShortcuts } from './today-shortcuts';
+  import { bindQuickScheduleSelectors } from '../components/today/quick-schedule-selector';
+  import { bindTodayAssignmentInteractions } from '../features/today/today-assignment-interactions';
+  import { bindTodayCloseReviewDismissal } from '../features/today/today-close-review';
+  import { bindTodayShortcuts } from '../features/today/today-shortcuts';
   import {
     closeTodayDisclosure,
     persistTodayFocusTargetForSubmit,
     restoreTodayFocus,
-  } from './today-focus-restoration';
+  } from '../features/today/today-focus-restoration';
 
   const focusKey = 'chronos:today:return-focus';
   const storage = (() => {

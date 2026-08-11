@@ -58,7 +58,7 @@ describe('PauseControls', () => {
 
   it('renders a backend action for ending an open untimed pause', () => {
     const html = renderPauseControls({
-      actionPath: '/app',
+      actionPath: '/today',
       blockId: 'block-1',
       pauses: [
         {

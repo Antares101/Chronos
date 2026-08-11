@@ -84,9 +84,9 @@ describe('BlockDetail', () => {
   });
 
   it('renders Today task status forms without changing pause controls', () => {
-    const html = renderBlockDetail({ pauseActionPath: '/app/today', taskActionPath: '/app/today' });
+    const html = renderBlockDetail({ pauseActionPath: '/today', taskActionPath: '/today' });
 
-    expect(html).toContain('action="/app/today"');
+    expect(html).toContain('action="/today"');
     expect(html).toContain('name="action" value="today-set-task-status"');
     expect(html).toContain('name="taskId" value="block-todo"');
     expect(html).toContain('name="status" value="done"');

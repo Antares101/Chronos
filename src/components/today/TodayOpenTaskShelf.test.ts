@@ -47,7 +47,7 @@ const html = () =>
         description: 'Work outside the visible rows.',
         currentBlockId: 'active',
         currentBlockTitle: 'Active',
-        actionPath: '/app/today',
+        actionPath: '/today',
         tasks,
       },
       rowTaskIds: ['row-task', 'row-task'],

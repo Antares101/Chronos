@@ -122,7 +122,7 @@ function NoActiveBlock({ quickBlockAnchor }: Pick<TodayActiveBlockProps, 'quickB
       <p>Choose the next block when you are ready to work.</p>
       <div className="today-active-block__links">
         <a href={quickBlockAnchor}>Capture a task</a>
-        <a href="/app/planning">Open Planning</a>
+        <a href="/planning">Open Planning</a>
       </div>
       <style>{styles}</style>
     </section>

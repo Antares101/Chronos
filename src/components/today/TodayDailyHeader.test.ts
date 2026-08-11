@@ -8,13 +8,13 @@ import TodayDailyHeader, { type TodayDailyHeaderProps } from './TodayDailyHeader
 const defaults: TodayDailyHeaderProps = {
   date: '2026-07-11',
   header: { focus: '', constraints: '', goals: [], state: 'empty' },
-  actionPath: '/app/today',
+  actionPath: '/today',
   goalsForm: createElement(TodayGoalsPanel, {
     title: 'Objectives',
     description: 'Keep up to 3 outcomes in order.',
     goals: [],
     maxGoals: 3,
-    actionPath: '/app/today',
+    actionPath: '/today',
   }),
 };
 const render = (props: Partial<TodayDailyHeaderProps> = {}) =>

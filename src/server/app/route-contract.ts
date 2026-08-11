@@ -9,30 +9,15 @@ import {
 } from './chronos-app';
 import { createMockLocalChronosAppRepositories } from './local-fixture';
 import { createChronosAppRepositories } from './repositories';
+import { chronosAppRoutes, type ChronosAppActionPath, type ChronosAppSectionPath } from './routes';
 
-export const chronosAppRoutes = {
-  index: '/app',
-  today: '/app/today',
-  planning: '/app/planning',
-  review: '/app/review',
-  insights: '/app/insights',
-} as const;
-
-export const chronosAppSectionPaths = [
-  chronosAppRoutes.today,
-  chronosAppRoutes.planning,
-  chronosAppRoutes.review,
-  chronosAppRoutes.insights,
-] as const;
-
-export const chronosAppActionPaths = [
-  chronosAppRoutes.today,
-  chronosAppRoutes.planning,
-  chronosAppRoutes.review,
-] as const;
-
-export type ChronosAppSectionPath = (typeof chronosAppSectionPaths)[number];
-export type ChronosAppActionPath = (typeof chronosAppActionPaths)[number];
+export {
+  chronosAppActionPaths,
+  chronosAppRoutes,
+  chronosAppSectionPaths,
+  type ChronosAppActionPath,
+  type ChronosAppSectionPath,
+} from './routes';
 export type ChronosRouteUser = Pick<User, 'id' | 'email'> & {
   app_metadata?: User['app_metadata'];
 };
@@ -112,10 +97,6 @@ export const chronosHomeRedirect = {
 } as const satisfies ChronosRouteRedirectDecision;
 
 export function resolveChronosHomeRedirect(): ChronosRouteRedirectDecision {
-  return chronosHomeRedirect;
-}
-
-export function resolveChronosAppIndexRedirect(): ChronosRouteRedirectDecision {
   return chronosHomeRedirect;
 }
 

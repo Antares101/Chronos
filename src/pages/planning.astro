@@ -1,19 +1,16 @@
 ---
-import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
-import TaskList from '../../components/tasks/TaskList';
-import WeeklyCalendar from '../../components/calendar/WeeklyCalendar';
-import { blockCategories } from '../../domain/models';
-import type { ChronosAuthLocals } from '../../server/auth';
+import ChronosAppShell from '../components/app/ChronosAppShell.astro';
+import TaskList from '../components/tasks/TaskList';
+import WeeklyCalendar from '../components/calendar/WeeklyCalendar';
+import { blockCategories } from '../domain/models';
+import type { ChronosAuthLocals } from '../server/auth';
 import {
   categoryLabels,
   getDateInputValue,
   getTimeInputValue,
   loadChronosPlanningState,
-} from '../../server/app/chronos-app';
-import {
-  chronosAppRoutes,
-  resolveChronosActionRouteContext,
-} from '../../server/app/route-contract';
+} from '../server/app/chronos-app';
+import { chronosAppRoutes, resolveChronosActionRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.planning;
 

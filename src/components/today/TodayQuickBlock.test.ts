@@ -13,7 +13,7 @@ const defaults = {
 function renderQuickBlock(props: Partial<React.ComponentProps<typeof TodayQuickBlock>> = {}) {
   return renderToStaticMarkup(
     createElement(TodayQuickBlock, {
-      actionPath: '/app/today',
+      actionPath: '/today',
       todayDate: defaults.date,
       quickBlockDefaults: defaults,
       recentNames: ['Deep Work', 'Admin'],

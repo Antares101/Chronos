@@ -14,7 +14,7 @@ describe('TodayBlockActions', () => {
     ] satisfies readonly TodayBlockAction[];
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions,
       }),
@@ -30,7 +30,7 @@ describe('TodayBlockActions', () => {
   it('submits the allowlisted Day Sheet feedback origin only for block task creation', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [{ kind: 'event' }, { kind: 'task' }],
       }),
@@ -45,7 +45,7 @@ describe('TodayBlockActions', () => {
   it('keeps the exact reviewed fields inline while offering an independent direct conclusion', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [
           { kind: 'conclusion', tasks: [{ id: 'task-1', title: 'Finish report', status: 'done' }] },
@@ -70,7 +70,7 @@ describe('TodayBlockActions', () => {
   it('keeps direct conclusion available when reviewed feedback reports a failure', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [{ kind: 'conclusion', tasks: [] }],
         conclusionFeedback: {
@@ -88,7 +88,7 @@ describe('TodayBlockActions', () => {
   it('does not render either conclusion choice when conclusion is ineligible', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [{ kind: 'pause' }],
       }),

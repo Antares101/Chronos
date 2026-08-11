@@ -5,7 +5,7 @@ import TodayCloseout, { type TodayCloseoutProps } from './TodayCloseout';
 
 const defaults: TodayCloseoutProps = {
   closeout: { outcome: '', tomorrowAdjustment: '', state: 'empty' },
-  actionPath: '/app/today',
+  actionPath: '/today',
 };
 const render = (props: Partial<TodayCloseoutProps> = {}) =>
   renderToStaticMarkup(createElement(TodayCloseout, { ...defaults, ...props }));

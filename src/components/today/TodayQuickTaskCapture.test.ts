@@ -14,7 +14,7 @@ const destinations: TodayQuickTaskCaptureProps['capture']['destinations'] = [
 ];
 const base = {
   capture: { defaultDestination: destinations[0], destinations },
-  actionPath: '/app/today',
+  actionPath: '/today',
 } satisfies TodayQuickTaskCaptureProps;
 const render = (props: Partial<TodayQuickTaskCaptureProps> = {}) =>
   renderToStaticMarkup(createElement(TodayQuickTaskCapture, { ...base, ...props }));

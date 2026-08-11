@@ -6,7 +6,7 @@ import { chronosAppRoutes, resolveChronosActionRouteContext } from './route-cont
 function createPostRequest(values: Record<string, string>): Request {
   const formData = new FormData();
   for (const [name, value] of Object.entries(values)) formData.set(name, value);
-  return new Request('https://chronos.test/app/today', { method: 'POST', body: formData });
+  return new Request('https://chronos.test/today', { method: 'POST', body: formData });
 }
 
 describe('Today quick-block route contract', () => {
@@ -22,7 +22,7 @@ describe('Today quick-block route contract', () => {
         endTime: '23:59',
         feedbackOrigin: 'today-quick-block',
       }),
-      currentUrl: new URL('https://chronos.test/app/today'),
+      currentUrl: new URL('https://chronos.test/today'),
       routePath: chronosAppRoutes.today,
       repositoryFactory: () => ({}) as ChronosAppRepositories,
       actionHandler: async () => {

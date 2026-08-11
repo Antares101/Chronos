@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 function readTodaySource() {
-  return readFileSync(new URL('./today.astro', import.meta.url), 'utf8');
+  return readFileSync(new URL('../../pages/today.astro', import.meta.url), 'utf8');
 }
 
 describe('Today daily workspace route composition', () => {
@@ -16,7 +16,9 @@ describe('Today daily workspace route composition', () => {
   it('delegates local feedback scoping while preserving unknown feedback for the shell', () => {
       const source = readTodaySource();
 
-      expect(source).toContain("import { resolveTodayLocalFeedback } from './today-feedback-scoping';");
+      expect(source).toContain(
+        "import { resolveTodayLocalFeedback } from '../features/today/today-feedback-scoping';",
+      );
       expect(source).toContain('const localFeedback = resolveTodayLocalFeedback(');
       for (const action of [
         'today-save-daily-header',
@@ -51,7 +53,7 @@ describe('Today daily workspace route composition', () => {
     const source = readTodaySource();
 
     expect(source).toContain(
-      "import { bindTodayAssignmentInteractions } from './today-assignment-interactions';",
+      "import { bindTodayAssignmentInteractions } from '../features/today/today-assignment-interactions';",
     );
     expect(source).toContain('bindTodayAssignmentInteractions(document)');
     expect(source).not.toContain('fetch(');
@@ -70,9 +72,7 @@ describe('Today daily workspace route composition', () => {
     expect(source).toContain("localFeedback.actionError?.action === 'assign-task'");
     expect(source).toContain("localFeedback.statusMessage?.action === 'assign-task'");
     expect(source).toContain('closeTodayDisclosure');
-    expect(source).toContain(
-      "import TodayQuickBlock from '../../components/today/TodayQuickBlock';",
-    );
+    expect(source).toContain("import TodayQuickBlock from '../components/today/TodayQuickBlock';");
     expect(source).toContain('<TodayQuickBlock {...quickBlockProps} />');
     expect(source).toContain('bindQuickScheduleSelectors(document)');
     expect(source).toContain('grid-template-columns: minmax(19rem, 23rem) minmax(0, 1fr);');

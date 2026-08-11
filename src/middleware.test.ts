@@ -23,7 +23,7 @@ describe('auth middleware', () => {
     const locals = {};
     const response = new Response('ok');
     const next = vi.fn(async () => response);
-    const url = new URL('http://localhost:4321/app');
+    const url = new URL('http://localhost:4321/today');
     const createMockLocalAuthLocals = vi.mocked(auth.createMockLocalAuthLocals);
 
     createMockLocalAuthLocals.mockClear();
@@ -32,7 +32,7 @@ describe('auth middleware', () => {
       onRequest(
         {
           url,
-          request: new Request('http://localhost:4321/app'),
+          request: new Request('http://localhost:4321/today'),
           locals,
           clientAddress: '127.0.0.1',
         } as unknown as Parameters<typeof onRequest>[0],

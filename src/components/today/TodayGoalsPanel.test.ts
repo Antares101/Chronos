@@ -12,7 +12,7 @@ const goalsProps = {
     { id: 'goal-2', title: 'Review the Today page', position: 1 },
   ],
   maxGoals: 3,
-  actionPath: '/app/today',
+  actionPath: '/today',
 } satisfies TodayGoalsPanelProps;
 
 function renderGoalsPanel(props: Partial<TodayGoalsPanelProps> = {}): string {
@@ -25,7 +25,7 @@ describe('TodayGoalsPanel', () => {
 
     expect(html).toContain('Goals for today');
     expect(html).toContain('Pick up to three outcomes for today.');
-    expect(html).toContain('action="/app/today"');
+    expect(html).toContain('action="/today"');
     expect(html).toContain('name="action" value="today-save-goals"');
     expect(html).toContain('name="goals"');
     expect(html).toContain('value="Finish the API seam"');

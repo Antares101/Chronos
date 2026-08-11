@@ -9,7 +9,7 @@ const taskPanelProps = {
   description: 'Place open work into the block you are running now.',
   currentBlockId: 'current-block',
   currentBlockTitle: 'Current focus',
-  actionPath: '/app/today',
+  actionPath: '/today',
   tasks: [
     {
       id: 'current-task',
@@ -76,7 +76,7 @@ describe('TodayTaskPanel', () => {
   it('renders accessible assign-task forms for unassigned todo tasks', () => {
     const html = renderTaskPanel();
 
-    expect(html).toContain('action="/app/today"');
+    expect(html).toContain('action="/today"');
     expect(html).toContain('name="action" value="assign-task"');
     expect(html).toContain('name="taskId" value="unassigned-task"');
     expect(html).toContain('name="blockId" value="current-block"');

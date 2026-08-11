@@ -1,12 +1,12 @@
 # Chronos Visual Design Direction
 
-Chronos should feel calm, bounded, and readable before it feels dense. The `/app` surface is a backend-backed planning shell, so the UI must protect the user from overflow, overlapping controls, and hidden action context at every viewport width.
+Chronos should feel calm, bounded, and readable before it feels dense. The authenticated planning surface is backend-backed, so the UI must protect the user from overflow, overlapping controls, and hidden action context at every viewport width.
 
 ## Quick path
 
 1. Start with the root layout contract: global `box-sizing: border-box`, bounded page width, and `min-width: 0` on grid/flex children.
 2. Build action areas as responsive card grids with `auto-fit` and safe `minmax()` values.
-3. Verify `/app/today`, `/app/planning`, `/app/review`, and `/app/insights` in light and dark themes at desktop, tablet, and mobile widths before changing behavior.
+3. Verify `/today`, `/planning`, `/review`, and `/insights` in light and dark themes at desktop, tablet, and mobile widths before changing behavior.
 
 ## Visual direction
 
@@ -21,7 +21,7 @@ Chronos should feel calm, bounded, and readable before it feels dense. The `/app
 
 ## Product and copy context
 
-Chronos is personal-use software, not a product being sold. User-facing copy should sound like a practical operating surface for the owner: direct, concise, and useful in the moment. The root `/` is a lightweight redirect to `/app/today`; do not reintroduce a public marketing or launchpad home.
+Chronos is personal-use software, not a product being sold. User-facing copy should sound like a practical operating surface for the owner: direct, concise, and useful in the moment. The root `/` is a lightweight redirect to `/today`; do not reintroduce a public marketing or launchpad home.
 
 Avoid marketing, persuasion, onboarding explanations, and backend terms in UI copy. Do not use phrases such as `stored`, `persisted`, `loaded`, `user scope`, `app shell`, or `route panels` for user-facing text. Keep domain terms that are part of the app model: `planning`, `execution`, `review`, `pause`, and `highlighted event`.
 
@@ -85,7 +85,7 @@ Theme selection is client-side and progressive:
 
 - Use `box-sizing: border-box` globally and repeat it page-locally when a page has dense forms.
 - Critical app pages must define page-local safe tokens with literal fallbacks, then use those local tokens for backgrounds, surfaces, borders, controls, and text so contrast survives missing or stale global CSS variables in both themes.
-- `/` and `/app` redirect lightly to `/app/today`; authenticated app sections live on separate routes: `/app/today`, `/app/planning`, `/app/review`, and `/app/insights`.
+- `/` redirects lightly to `/today`; authenticated app sections live on separate top-level routes: `/today`, `/planning`, `/review`, and `/insights`.
 - Route navigation should stay lightweight inside the shared shell. Do not turn the app into primary tabs or a sidebar-first dashboard.
 - Each route should render only the forms and React islands needed for that section; avoid rebuilding the old all-islands monolith.
 - Add `min-width: 0` to grid children, cards, form labels, and nested grid containers.
@@ -109,17 +109,17 @@ Theme selection is client-side and progressive:
 
 Use OpenPencil when exploring larger visual changes before implementation:
 
-1. Sketch the `/app` action zone as bounded cards at desktop, tablet, and mobile widths.
+1. Sketch the authenticated action zone as bounded cards at desktop, tablet, and mobile widths.
 2. Export or inspect spacing/color decisions before coding.
 3. Keep the source implementation aligned with this document, not with one-off screenshot fixes.
 
 ## Verification checklist
 
-- [ ] `/app` action cards do not overlap at desktop, tablet, or mobile widths.
+- [ ] Authenticated action cards do not overlap at desktop, tablet, or mobile widths.
 - [ ] Light and dark themes both use readable Slate/Zinc surfaces, Indigo primary, Sky support accents, and Plus Jakarta Sans.
 - [ ] Theme selection persists with `chronos-theme` and still falls back to `prefers-color-scheme` when no stored choice exists.
 - [ ] Optional sound feedback defaults muted, remains keyboard-operable, persists `chronos-sound-muted`, and fails silently when unsupported.
-- [ ] `/app/today`, `/app/planning`, `/app/review`, and `/app/insights` keep section-local forms and islands only.
+- [ ] `/today`, `/planning`, `/review`, and `/insights` keep section-local forms and islands only.
 - [ ] Inputs, selects, textareas, and buttons fit inside their cards.
 - [ ] Date/time rows wrap before becoming too narrow.
 - [ ] Disabled controls are visually distinct and readable.
@@ -130,5 +130,5 @@ Use OpenPencil when exploring larger visual changes before implementation:
 ## Known follow-ups
 
 - Consider extracting shared app card/header/control styles once more pages exist.
-- Add a visual regression screenshot check for authenticated `/app` after test auth fixtures are available.
+- Add a visual regression screenshot check for authenticated routes after test auth fixtures are available.
 - Continue aligning React island cards with the same token and responsive contract.

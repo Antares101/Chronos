@@ -2,8 +2,10 @@ import { createServerClient, type CookieOptionsWithName } from '@supabase/ssr';
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import type { AstroCookies } from 'astro';
 
+import { chronosAppRoutes, chronosAppSectionPaths } from './app/routes';
+
 const AUTH_CALLBACK_PATH = '/auth/callback';
-const DEFAULT_APP_PATH = '/app';
+const DEFAULT_APP_PATH = chronosAppRoutes.today;
 const SIGN_IN_PATH = '/sign-in';
 const REDIRECT_TO_PARAM = 'redirectTo';
 const MOCK_LOCAL_USER_ID = '00000000-0000-4000-8000-000000000001';
@@ -213,7 +215,9 @@ function createMockLocalSupabaseClient(): SupabaseClient {
 }
 
 export function isProtectedAppPath(pathname: string): boolean {
-  return pathname === DEFAULT_APP_PATH || pathname.startsWith(`${DEFAULT_APP_PATH}/`);
+  return chronosAppSectionPaths.some(
+    (routePath) => pathname === routePath || pathname.startsWith(`${routePath}/`),
+  );
 }
 
 export function getSafeReturnPath(value: string | null, fallback = DEFAULT_APP_PATH): string {

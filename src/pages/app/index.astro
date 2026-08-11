@@ -1,7 +1,0 @@
----
-import { chronosHomeRedirect } from '../../server/app/route-contract';
-
-if (chronosHomeRedirect.kind === 'redirect') {
-  return Astro.redirect(chronosHomeRedirect.location, chronosHomeRedirect.status);
-}
----

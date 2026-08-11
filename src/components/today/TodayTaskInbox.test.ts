@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import TodayTaskInbox from './TodayTaskInbox';
 
 const baseProps = {
-  actionPath: '/app/today',
+  actionPath: '/today',
   tasks: [
     { id: 'open-1', title: 'Plan the next step', status: 'todo', blockId: null },
     { id: 'done-1', title: 'Already complete', status: 'done', blockId: null },

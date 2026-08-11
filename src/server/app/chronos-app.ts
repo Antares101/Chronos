@@ -1071,7 +1071,7 @@ function buildTodayTaskPanel(
     description: 'Place open work into the block you are running now.',
     currentBlockId: currentBlock?.id ?? null,
     currentBlockTitle: currentBlock?.title ?? null,
-    actionPath: '/app/today',
+    actionPath: '/today',
     tasks: todayTasks,
   };
 }

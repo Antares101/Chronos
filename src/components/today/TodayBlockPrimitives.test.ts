@@ -9,7 +9,7 @@ describe('Today block shared primitives', () => {
   it('retains the task-status form contract for todo and done tasks', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockTaskList, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         blockTitle: 'Focus block',
         tasks: [
           { id: 'todo-task', title: 'Draft handoff', status: 'todo' },
@@ -30,7 +30,7 @@ describe('Today block shared primitives', () => {
   it('retains the existing text-action feedback and field contracts for event and task primitives', () => {
     const eventMarkup = renderToStaticMarkup(
       createElement(TodayTextBlockActionForm, {
-        path: '/app/today',
+        path: '/today',
         action: 'create-highlighted-event',
         accessibleName: 'Record a highlighted event',
         block: { id: 'block-1', title: 'Focus block' },
@@ -40,7 +40,7 @@ describe('Today block shared primitives', () => {
     );
     const taskMarkup = renderToStaticMarkup(
       createElement(TodayTextBlockActionForm, {
-        path: '/app/today',
+        path: '/today',
         action: 'create-task',
         accessibleName: 'Add a task',
         block: { id: 'block-1', title: 'Focus block' },
@@ -64,7 +64,7 @@ describe('Today block shared primitives', () => {
   it('renders no fallback form when the permitted action list is empty', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [],
       }),
@@ -77,7 +77,7 @@ describe('Today block shared primitives', () => {
   it('keeps the day-sheet disclosure composed from the same permitted action primitive', () => {
     const markup = renderToStaticMarkup(
       createElement(TodayBlockActions, {
-        actionPath: '/app/today',
+        actionPath: '/today',
         block: { id: 'block-1', title: 'Focus block' },
         actions: [{ kind: 'task' }],
       }),

@@ -24,7 +24,7 @@ const ownedServerEnvironment = {
 
 const routeChecks = [
   {
-    path: '/app/today',
+    path: '/today',
     semanticChecks: [
       { name: 'app heading', text: 'Run the Day' },
       {
@@ -42,7 +42,7 @@ const routeChecks = [
     hydrationTargets: [{ name: 'today-quick-capture', selector: '.today-quick-capture' }],
   },
   {
-    path: '/app/planning',
+    path: '/planning',
     semanticChecks: [
       { name: 'app heading', selector: '#app-title', text: 'Planning' },
       {
@@ -77,7 +77,7 @@ const routeChecks = [
     ],
   },
   {
-    path: '/app/review',
+    path: '/review',
     semanticChecks: [
       { name: 'app heading', text: 'Close a block' },
       {
@@ -102,6 +102,23 @@ const routeChecks = [
       },
     ],
     hydrationTargets: [{ name: 'conclusion-panel', selector: '.conclusion-panel' }],
+  },
+  {
+    path: '/insights',
+    semanticChecks: [
+      { name: 'app heading', selector: '#app-title', text: 'Check the week' },
+      {
+        name: 'weekly insight heading',
+        selector: '#weekly-insight-title',
+        text: 'Week summary',
+      },
+      {
+        name: 'category metrics',
+        selector: '[aria-label="Planned vs actual by category"]',
+        text: 'Work',
+      },
+    ],
+    hydrationTargets: [{ name: 'weekly-insight', selector: '.weekly-insight' }],
   },
 ];
 
@@ -273,9 +290,9 @@ async function verifyRootRedirect(baseUrl) {
   const response = await fetch(`${baseUrl}/`, { redirect: 'manual' });
   const location = response.headers.get('location');
 
-  if (response.status !== 302 || location !== '/app/today') {
+  if (response.status !== 302 || location !== '/today') {
     throw new Error(
-      `Root redirect smoke failed: expected HTTP 302 with Location /app/today, received HTTP ${response.status} with Location ${location ?? '<missing>'}.`,
+      `Root redirect smoke failed: expected HTTP 302 with Location /today, received HTTP ${response.status} with Location ${location ?? '<missing>'}.`,
     );
   }
 
@@ -427,14 +444,14 @@ async function waitForOwnedDevServer(baseUrl, getServerFailure) {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/app/today`);
+      const response = await fetch(`${baseUrl}/today`);
       const html = await response.text();
 
       if (response.ok && html.includes('Run the Day')) {
         return;
       }
 
-      lastError = `HTTP ${response.status} while waiting for /app/today`;
+      lastError = `HTTP ${response.status} while waiting for /today`;
     } catch (error) {
       lastError = error.message;
     }

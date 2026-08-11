@@ -1,13 +1,10 @@
 ---
-import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
-import DailyReviewCards from '../../components/review/DailyReviewCards';
-import ConclusionPanel from '../../components/review/ConclusionPanel';
-import type { ChronosAuthLocals } from '../../server/auth';
-import { loadChronosReviewState } from '../../server/app/chronos-app';
-import {
-  chronosAppRoutes,
-  resolveChronosActionRouteContext,
-} from '../../server/app/route-contract';
+import ChronosAppShell from '../components/app/ChronosAppShell.astro';
+import DailyReviewCards from '../components/review/DailyReviewCards';
+import ConclusionPanel from '../components/review/ConclusionPanel';
+import type { ChronosAuthLocals } from '../server/auth';
+import { loadChronosReviewState } from '../server/app/chronos-app';
+import { chronosAppRoutes, resolveChronosActionRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.review;
 

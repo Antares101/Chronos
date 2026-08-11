@@ -26,23 +26,27 @@ import {
 } from './auth';
 
 describe('auth route helpers', () => {
-  it('classifies only the app shell as protected', () => {
-    expect(isProtectedAppPath('/app')).toBe(true);
-    expect(isProtectedAppPath('/app/blocks')).toBe(true);
+  it('classifies only app section routes as protected', () => {
+    expect(isProtectedAppPath('/today')).toBe(true);
+    expect(isProtectedAppPath('/today/blocks')).toBe(true);
+    expect(isProtectedAppPath('/planning')).toBe(true);
+    expect(isProtectedAppPath('/review')).toBe(true);
+    expect(isProtectedAppPath('/insights')).toBe(true);
     expect(isProtectedAppPath('/')).toBe(false);
     expect(isProtectedAppPath('/sign-in')).toBe(false);
+    expect(isProtectedAppPath('/app')).toBe(false);
     expect(isProtectedAppPath('/application')).toBe(false);
   });
 
   it('redirects unauthenticated app requests to sign-in with the app target preserved', () => {
     const decision = resolveAuthMiddlewareDecision(
-      new URL('https://chronos.test/app?day=today'),
+      new URL('https://chronos.test/today?day=today'),
       null,
     );
 
     expect(decision).toEqual({
       kind: 'redirect',
-      location: '/sign-in?redirectTo=%2Fapp%3Fday%3Dtoday',
+      location: '/sign-in?redirectTo=%2Ftoday%3Fday%3Dtoday',
       status: 303,
     });
   });
@@ -58,7 +62,7 @@ describe('auth route helpers', () => {
     ).toEqual({
       kind: 'continue',
     });
-    expect(resolveAuthMiddlewareDecision(new URL('https://chronos.test/app'), user)).toEqual({
+    expect(resolveAuthMiddlewareDecision(new URL('https://chronos.test/today'), user)).toEqual({
       kind: 'continue',
     });
   });
@@ -75,31 +79,31 @@ describe('auth route helpers', () => {
   });
 
   it('classifies localhost development requests only with dev, local hostname, and loopback client address', () => {
-    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true, '127.0.0.1')).toBe(
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/today'), true, '127.0.0.1')).toBe(
       true,
     );
-    expect(isLocalhostDevRequest(new URL('http://127.0.0.1:4321/app'), true, '127.0.0.1')).toBe(
+    expect(isLocalhostDevRequest(new URL('http://127.0.0.1:4321/today'), true, '127.0.0.1')).toBe(
       true,
     );
-    expect(isLocalhostDevRequest(new URL('http://[::1]:4321/app'), true, '::1')).toBe(true);
-    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true, '192.168.1.10')).toBe(
+    expect(isLocalhostDevRequest(new URL('http://[::1]:4321/today'), true, '::1')).toBe(true);
+    expect(
+      isLocalhostDevRequest(new URL('http://localhost:4321/today'), true, '192.168.1.10'),
+    ).toBe(false);
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/today'), true)).toBe(false);
+    expect(isLocalhostDevRequest(new URL('http://localhost:4321/today'), false, '127.0.0.1')).toBe(
       false,
     );
-    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), true)).toBe(false);
-    expect(isLocalhostDevRequest(new URL('http://localhost:4321/app'), false, '127.0.0.1')).toBe(
-      false,
-    );
-    expect(isLocalhostDevRequest(new URL('http://192.168.1.10:4321/app'), true, '127.0.0.1')).toBe(
-      false,
-    );
-    expect(isLocalhostDevRequest(new URL('https://chronos.test/app'), true, '127.0.0.1')).toBe(
+    expect(
+      isLocalhostDevRequest(new URL('http://192.168.1.10:4321/today'), true, '127.0.0.1'),
+    ).toBe(false);
+    expect(isLocalhostDevRequest(new URL('https://chronos.test/today'), true, '127.0.0.1')).toBe(
       false,
     );
   });
 
   it('creates deterministic mock auth locals only for protected localhost dev app routes', async () => {
     const locals = createMockLocalAuthLocals(
-      new URL('http://localhost:4321/app/today'),
+      new URL('http://localhost:4321/today'),
       true,
       '127.0.0.1',
     );
@@ -122,49 +126,51 @@ describe('auth route helpers', () => {
       createMockLocalAuthLocals(new URL('http://localhost:4321/sign-in'), true, '127.0.0.1'),
     ).toBeNull();
     expect(
-      createMockLocalAuthLocals(new URL('http://localhost:4321/app'), true, '192.168.1.10'),
+      createMockLocalAuthLocals(new URL('http://localhost:4321/today'), true, '192.168.1.10'),
     ).toBeNull();
-    expect(createMockLocalAuthLocals(new URL('http://localhost:4321/app'), true)).toBeNull();
+    expect(createMockLocalAuthLocals(new URL('http://localhost:4321/today'), true)).toBeNull();
     expect(
-      createMockLocalAuthLocals(new URL('http://localhost:4321/app'), false, '127.0.0.1'),
+      createMockLocalAuthLocals(new URL('http://localhost:4321/today'), false, '127.0.0.1'),
     ).toBeNull();
     expect(
-      createMockLocalAuthLocals(new URL('http://chronos.test/app'), true, '127.0.0.1'),
+      createMockLocalAuthLocals(new URL('http://chronos.test/today'), true, '127.0.0.1'),
     ).toBeNull();
   });
 
   it('allows only same-origin return paths', () => {
-    expect(getSafeReturnPath('/app?day=today')).toBe('/app?day=today');
-    expect(getSafeReturnPath('https://example.com/app')).toBe('/app');
-    expect(getSafeReturnPath('//example.com/app')).toBe('/app');
-    expect(getSafeReturnPath(null)).toBe('/app');
+    expect(getSafeReturnPath('/today?day=today')).toBe('/today?day=today');
+    expect(getSafeReturnPath('https://example.com/today')).toBe('/today');
+    expect(getSafeReturnPath('//example.com/today')).toBe('/today');
+    expect(getSafeReturnPath(null)).toBe('/today');
   });
 
   it('reads the redirect target from the redirectTo query parameter only after sanitizing it', () => {
-    expect(getRedirectTarget(new URL('https://chronos.test/sign-in?redirectTo=/app/blocks'))).toBe(
-      '/app/blocks',
+    expect(getRedirectTarget(new URL('https://chronos.test/sign-in?redirectTo=/planning'))).toBe(
+      '/planning',
     );
     expect(
-      getRedirectTarget(new URL('https://chronos.test/sign-in?redirectTo=https://evil.test/app')),
-    ).toBe('/app');
+      getRedirectTarget(
+        new URL('https://chronos.test/sign-in?redirectTo=https://evil.test/planning'),
+      ),
+    ).toBe('/today');
   });
 
   it('constructs safe sign-in and magic-link callback redirect URLs', () => {
-    const appUrl = new URL('https://chronos.test/app?day=today');
+    const appUrl = new URL('https://chronos.test/today?day=today');
     const signInUrl = createSignInUrl(appUrl);
 
     expect(signInUrl.pathname).toBe('/sign-in');
-    expect(signInUrl.searchParams.get('redirectTo')).toBe('/app?day=today');
+    expect(signInUrl.searchParams.get('redirectTo')).toBe('/today?day=today');
 
-    const unsafeSignInUrl = createSignInUrl(appUrl, 'https://evil.test/app');
-    expect(unsafeSignInUrl.searchParams.get('redirectTo')).toBe('/app');
+    const unsafeSignInUrl = createSignInUrl(appUrl, 'https://evil.test/today');
+    expect(unsafeSignInUrl.searchParams.get('redirectTo')).toBe('/today');
 
     const emailRedirectUrl = new URL(
-      getAuthEmailRedirectUrl(appUrl, '/app/blocks', 'https://chronos.test'),
+      getAuthEmailRedirectUrl(appUrl, '/planning', 'https://chronos.test'),
     );
     expect(emailRedirectUrl.origin).toBe('https://chronos.test');
     expect(emailRedirectUrl.pathname).toBe('/auth/callback');
-    expect(emailRedirectUrl.searchParams.get('redirectTo')).toBe('/app/blocks');
+    expect(emailRedirectUrl.searchParams.get('redirectTo')).toBe('/planning');
   });
 
   it('constructs callback URLs from injected origins so ambient env cannot change expectations', () => {
@@ -175,14 +181,14 @@ describe('auth route helpers', () => {
     const emailRedirectUrl = new URL(
       getAuthEmailRedirectUrl(
         new URL('https://chronos.test/sign-in'),
-        '/app',
+        '/today',
         'http://localhost:4321',
       ),
     );
 
     expect(emailRedirectUrl.origin).toBe('http://localhost:4321');
     expect(emailRedirectUrl.pathname).toBe('/auth/callback');
-    expect(emailRedirectUrl.searchParams.get('redirectTo')).toBe('/app');
+    expect(emailRedirectUrl.searchParams.get('redirectTo')).toBe('/today');
   });
 
   it('normalizes unknown auth errors', () => {
@@ -212,10 +218,10 @@ describe('auth route helpers', () => {
 
     await expect(
       resolveAuthCallbackDecision(
-        new URL('https://chronos.test/auth/callback?code=abc&redirectTo=/app/blocks'),
+        new URL('https://chronos.test/auth/callback?code=abc&redirectTo=/planning'),
         exchangeCodeForSession,
       ),
-    ).resolves.toEqual({ location: '/app/blocks', status: 303 });
+    ).resolves.toEqual({ location: '/planning', status: 303 });
     expect(exchangeCodeForSession).toHaveBeenCalledWith('abc');
   });
 
@@ -226,11 +232,11 @@ describe('auth route helpers', () => {
 
     await expect(
       resolveAuthCallbackDecision(
-        new URL('https://chronos.test/auth/callback?code=abc&redirectTo=https://evil.test/app'),
+        new URL('https://chronos.test/auth/callback?code=abc&redirectTo=https://evil.test/today'),
         exchangeCodeForSession,
       ),
     ).resolves.toEqual({
-      location: '/sign-in?redirectTo=%2Fapp&error=callback',
+      location: '/sign-in?redirectTo=%2Ftoday&error=callback',
       status: 303,
     });
   });
@@ -240,11 +246,11 @@ describe('auth route helpers', () => {
 
     await expect(
       resolveAuthCallbackDecision(
-        new URL('https://chronos.test/auth/callback?redirectTo=/app'),
+        new URL('https://chronos.test/auth/callback?redirectTo=/today'),
         exchangeCodeForSession,
       ),
     ).resolves.toEqual({
-      location: '/sign-in?redirectTo=%2Fapp&error=callback',
+      location: '/sign-in?redirectTo=%2Ftoday&error=callback',
       status: 303,
     });
     expect(exchangeCodeForSession).not.toHaveBeenCalled();
@@ -254,7 +260,7 @@ describe('auth route helpers', () => {
     const signInWithOtp = vi.fn(async () => ({ error: null }));
     const formData = new FormData();
     formData.set('email', '   ');
-    formData.set('redirectTo', '/app');
+    formData.set('redirectTo', '/today');
 
     await expect(
       resolveSignInPostDecision(
@@ -274,7 +280,7 @@ describe('auth route helpers', () => {
     const signInWithOtp = vi.fn(async () => ({ error: null }));
     const formData = new FormData();
     formData.set('email', '  user@example.com  ');
-    formData.set('redirectTo', 'https://evil.test/app');
+    formData.set('redirectTo', 'https://evil.test/today');
 
     await expect(
       resolveSignInPostDecision(
@@ -291,7 +297,7 @@ describe('auth route helpers', () => {
     expect(signInWithOtp).toHaveBeenCalledWith({
       email: 'user@example.com',
       options: {
-        emailRedirectTo: 'https://auth.chronos.test/auth/callback?redirectTo=%2Fapp',
+        emailRedirectTo: 'https://auth.chronos.test/auth/callback?redirectTo=%2Ftoday',
       },
     });
   });
@@ -300,7 +306,7 @@ describe('auth route helpers', () => {
     const signInWithOtp = vi.fn(async () => ({ error: new Error('Rate limited') }));
     const formData = new FormData();
     formData.set('email', 'user@example.com');
-    formData.set('redirectTo', '/app/blocks');
+    formData.set('redirectTo', '/planning');
 
     await expect(
       resolveSignInPostDecision(
@@ -327,11 +333,11 @@ describe('auth route helpers', () => {
         supabase: { auth: { exchangeCodeForSession } },
       } as unknown as ChronosAuthLocals,
       redirect,
-      url: new URL('https://chronos.test/auth/callback?code=abc&redirectTo=/app'),
+      url: new URL('https://chronos.test/auth/callback?code=abc&redirectTo=/today'),
     } as unknown as Parameters<typeof authCallbackGet>[0]);
 
     expect(exchangeCodeForSession).toHaveBeenCalledWith('abc');
-    expect(redirect).toHaveBeenCalledWith('/app', 303);
+    expect(redirect).toHaveBeenCalledWith('/today', 303);
   });
 
   it('signs out through Supabase and redirects safely to sign-in', async () => {

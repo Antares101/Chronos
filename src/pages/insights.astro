@@ -1,9 +1,9 @@
 ---
-import ChronosAppShell from '../../components/app/ChronosAppShell.astro';
-import WeeklyInsight from '../../components/metrics/WeeklyInsight';
-import type { ChronosAuthLocals } from '../../server/auth';
-import { loadChronosInsightsState } from '../../server/app/chronos-app';
-import { chronosAppRoutes, resolveChronosReadRouteContext } from '../../server/app/route-contract';
+import ChronosAppShell from '../components/app/ChronosAppShell.astro';
+import WeeklyInsight from '../components/metrics/WeeklyInsight';
+import type { ChronosAuthLocals } from '../server/auth';
+import { loadChronosInsightsState } from '../server/app/chronos-app';
+import { chronosAppRoutes, resolveChronosReadRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.insights;
 

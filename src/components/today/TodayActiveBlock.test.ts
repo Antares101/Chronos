@@ -26,7 +26,7 @@ const render = (props: Partial<React.ComponentProps<typeof TodayActiveBlock>> = 
     createElement(TodayActiveBlock, {
       row: row(),
       detail: detail(),
-      actionPath: '/app/today',
+      actionPath: '/today',
       quickBlockAnchor: '#today-capture',
       ...props,
     }),
@@ -107,7 +107,7 @@ describe('TodayActiveBlock', () => {
     expect(markup).toContain('href="#today-capture"');
     expect(markup).toContain('Capture a task');
     expect(markup).not.toContain('today-quick-block');
-    expect(markup).toContain('href="/app/planning"');
+    expect(markup).toContain('href="/planning"');
     expect(markup).not.toContain('value="start-block"');
     expect(markup).not.toContain('<form');
   });
