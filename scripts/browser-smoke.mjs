@@ -26,7 +26,7 @@ const routeChecks = [
   {
     path: '/today',
     semanticChecks: [
-      { name: 'app heading', text: 'Run the Day' },
+      { name: 'app heading', selector: '#app-title', text: 'Today' },
       {
         name: 'quick task capture heading',
         selector: '#today-quick-capture-title',
@@ -447,7 +447,7 @@ async function waitForOwnedDevServer(baseUrl, getServerFailure) {
       const response = await fetch(`${baseUrl}/today`);
       const html = await response.text();
 
-      if (response.ok && html.includes('Run the Day')) {
+      if (response.ok && /<h1\b[^>]*\bid="app-title"[^>]*>\s*Today\s*<\/h1>/.test(html)) {
         return;
       }
 

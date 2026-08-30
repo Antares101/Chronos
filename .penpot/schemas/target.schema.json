@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-target-v2.schema.json",
+  "title": "Chronos Penpot route target v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "route",
+    "revision",
+    "state",
+    "manifestRevision",
+    "penpotPage",
+    "frames",
+    "lifecycleHistory",
+    "requiredAxes",
+    "evidenceKeys",
+    "approvedAt"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/target.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "route": { "type": "string", "pattern": "^/[a-z][a-z0-9-]*$" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "state": { "enum": ["draft", "reviewed", "approved", "implemented", "verified", "archived"] },
+    "manifestRevision": { "type": "integer", "minimum": 0 },
+    "penpotPage": { "type": "string" },
+    "frames": { "type": "array", "items": { "type": "object" } },
+    "lifecycleHistory": {
+      "type": "array",
+      "items": { "enum": ["draft", "reviewed", "approved", "implemented", "verified"] }
+    },
+    "requiredAxes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["themes", "viewports"],
+      "properties": {
+        "themes": { "const": ["dark", "light"] },
+        "viewports": { "const": ["desktop", "mobile"] }
+      }
+    },
+    "evidenceKeys": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "approvedAt": { "type": ["string", "null"] }
+  }
+}

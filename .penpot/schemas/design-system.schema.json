@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-design-system-v2.schema.json",
+  "title": "Chronos Penpot token graph v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "revision", "status", "tiers", "tokenChains"],
+  "properties": {
+    "$schema": { "const": "./schemas/design-system.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "status": { "enum": ["planned", "verified", "drifted"] },
+    "tiers": { "const": ["global", "semantic", "component"] },
+    "tokenChains": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "array",
+            "prefixItems": [
+              { "type": "string" },
+              { "enum": ["dark", "light"] },
+              { "type": "string" },
+              { "type": "string" }
+            ],
+            "items": false
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["family", "theme", "type", "global", "semantic", "component"]
+          }
+        ]
+      }
+    }
+  }
+}

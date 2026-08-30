@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-manifest-v2.schema.json",
+  "title": "Chronos Penpot manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "provider",
+    "migrationState",
+    "revision",
+    "connection",
+    "authority",
+    "registries",
+    "pages",
+    "activeTarget"
+  ],
+  "properties": {
+    "$schema": { "const": "./schemas/manifest.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "provider": { "const": "penpot" },
+    "migrationState": {
+      "enum": ["contract-ready", "connected", "bootstrapped", "pilot-approved", "active"]
+    },
+    "revision": { "type": "integer", "minimum": 0 },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "status", "fileId"],
+      "properties": {
+        "mode": { "const": "remote" },
+        "status": { "enum": ["not-configured", "configured", "connected", "verified"] },
+        "fileId": { "type": ["string", "null"] }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["behavior", "visual", "policy", "verification"],
+      "properties": {
+        "behavior": { "const": "code" },
+        "visual": { "const": "penpot" },
+        "policy": { "const": "contracts" },
+        "verification": { "const": "rendered-application" }
+      }
+    },
+    "registries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grammarFamilies", "routes", "states", "themes", "tokenFamilies", "viewports"],
+      "properties": {
+        "grammarFamilies": { "$ref": "#/$defs/sortedStrings" },
+        "routes": { "$ref": "#/$defs/sortedStrings" },
+        "states": { "$ref": "#/$defs/sortedStrings" },
+        "themes": { "const": ["dark", "light"] },
+        "tokenFamilies": { "$ref": "#/$defs/sortedStrings" },
+        "viewports": { "const": ["desktop", "mobile"] }
+      }
+    },
+    "pages": { "type": "array", "items": { "type": "object" } },
+    "activeTarget": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "sortedStrings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

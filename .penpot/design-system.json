@@ -1,0 +1,27 @@
+{
+  "$schema": "./schemas/design-system.schema.json",
+  "schemaVersion": 2,
+  "revision": 3,
+  "status": "verified",
+  "tiers": ["global", "semantic", "component"],
+  "tokenChains": [
+    ["color", "dark", "color", "#818CF8"],
+    ["color", "light", "color", "#4F46E5"],
+    ["disabled", "dark", "opacity", "0.55"],
+    ["disabled", "light", "opacity", "0.55"],
+    ["focus-ring", "dark", "color", "#A5B4FC"],
+    ["focus-ring", "light", "color", "#4338CA"],
+    ["muted", "dark", "color", "#94A3B8"],
+    ["muted", "light", "color", "#64748B"],
+    ["radius", "dark", "borderRadius", "1rem"],
+    ["radius", "light", "borderRadius", "1rem"],
+    ["shell-ornament", "dark", "color", "#38BDF8"],
+    ["shell-ornament", "light", "color", "#0EA5E9"],
+    ["spacing", "dark", "spacing", "1rem"],
+    ["spacing", "light", "spacing", "1rem"],
+    ["status", "dark", "color", "#34D399"],
+    ["status", "light", "color", "#059669"],
+    ["typography", "dark", "fontFamilies", "Plus Jakarta Sans"],
+    ["typography", "light", "fontFamilies", "Plus Jakarta Sans"]
+  ]
+}

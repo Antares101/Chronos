@@ -1,0 +1,14 @@
+{
+  "$schema": "../schemas/target.schema.json",
+  "schemaVersion": 2,
+  "route": "/planning",
+  "revision": 1,
+  "state": "draft",
+  "manifestRevision": 3,
+  "penpotPage": "11 Planning",
+  "frames": [],
+  "lifecycleHistory": ["draft"],
+  "requiredAxes": { "themes": ["dark", "light"], "viewports": ["desktop", "mobile"] },
+  "evidenceKeys": [],
+  "approvedAt": null
+}

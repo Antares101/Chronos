@@ -1,0 +1,10 @@
+{
+  "$schema": "../schemas/change.schema.json",
+  "schemaVersion": 2,
+  "change": "complete-penpot-visual-authority",
+  "visualImpact": "penpot-first",
+  "rationale": "Complete the closed visual system and route authority before application acceptance.",
+  "approvalStatus": "pending",
+  "approvedRevisions": [],
+  "evidenceKeys": []
+}

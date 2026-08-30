@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-components-v2.schema.json",
+  "title": "Chronos Penpot shared grammar v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "revision", "status", "families", "components"],
+  "properties": {
+    "$schema": { "const": "./schemas/components.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "status": { "enum": ["planned", "verified", "drifted"] },
+    "families": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "semanticKey",
+          "penpotComponentId",
+          "penpotName",
+          "status",
+          "lastVerifiedRevision"
+        ],
+        "properties": {
+          "semanticKey": { "type": "string" },
+          "penpotComponentId": { "type": ["string", "null"] },
+          "penpotName": { "type": "string" },
+          "status": { "enum": ["planned", "verified", "drifted"] },
+          "lastVerifiedRevision": { "type": ["integer", "null"] }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-receipt-v2.schema.json",
+  "title": "Chronos Penpot transaction index v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "revision", "receipts"],
+  "properties": {
+    "$schema": { "const": "../schemas/receipt.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "digest",
+          "page",
+          "expectedRevision",
+          "resultingRevision",
+          "changedKeys",
+          "changedIds",
+          "postconditions",
+          "inverse"
+        ],
+        "properties": {
+          "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "page": { "type": "string" },
+          "expectedRevision": { "type": "integer" },
+          "resultingRevision": { "type": "integer" },
+          "changedKeys": { "type": "array", "items": { "type": "string" } },
+          "changedIds": { "type": "array", "items": { "type": "string" } },
+          "postconditions": { "type": "array", "items": { "type": "string" } },
+          "inverse": { "type": "object" }
+        }
+      }
+    }
+  }
+}

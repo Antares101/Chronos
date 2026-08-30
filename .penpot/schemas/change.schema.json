@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-change-v2.schema.json",
+  "title": "Chronos visual impact declaration v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "change",
+    "visualImpact",
+    "rationale",
+    "approvalStatus",
+    "approvedRevisions",
+    "evidenceKeys"
+  ],
+  "properties": {
+    "$schema": { "const": "../schemas/change.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "change": { "type": "string" },
+    "visualImpact": { "enum": ["none", "penpot-first"] },
+    "rationale": { "type": "string", "minLength": 1 },
+    "approvalStatus": { "enum": ["not-required", "pending", "approved", "blocked"] },
+    "approvedRevisions": { "type": "array", "items": { "type": "string" } },
+    "evidenceKeys": { "type": "array", "items": { "type": "string" } }
+  }
+}

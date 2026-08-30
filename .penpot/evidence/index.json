@@ -1,0 +1,184 @@
+{
+  "$schema": "../schemas/evidence.schema.json",
+  "schemaVersion": 2,
+  "revision": 1,
+  "appCommit": "d2cccc6db318af9a71e7d663821db811094c52ff",
+  "result": "blocked",
+  "deviation": "Visual comparison blocked: two focused Penpot preflights returned Cloudflare 504 origin_gateway_timeout.",
+  "baseline": {
+    "insights": {
+      "route": "/insights",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "590c6b6bb37fb8cb44a1962b4d1744c60e9315f02d29d8ec3939256a68fae606"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "777656277c2bde66d3d5f273c58aa4ee4a8fb6187605d9498f978ee8f3a04940"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "7183e4a67c421209bb8fd37cb3ce06556616dd0190a5ae3e49c5f1a996a4bd60"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "8157dba6ded1d648d690ad57ee4d231736a02e46e678ec3bf68302784f3dd1b2"
+          }
+        }
+      }
+    },
+    "planning": {
+      "route": "/planning",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "e1dc14b399bc63ebbba79f8ebd06e82c6d5dc63fc5854deb95fe2f7949bf18f3"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "c8773a748ba3164cc2d52acc088dd3299f64cf54be109ebd87ca3356a51c52f7"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "fefcfe310a12bdd20bc91d85927af95773609a4289963278bd1b2c40e8d5b0a0"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "f64fe3728a359763d96d90fbb71278ec697f4ef9f7b59120fa888852bc48d40e"
+          }
+        }
+      }
+    },
+    "review": {
+      "route": "/review",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "ba8fc01ba9a3e6c6ff0e12bf1f22ca32ceb1bdfb44a0a8eb6405befb825c7d91"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "c10212cb1770301db15021da87013230342da05b4adbbd614ec361c0a155b236"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "c36cef3ebc49ee43b516be5ced9925a427b5f7030e51b906a05e529354c15f66"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "ffc9c7e95a8e2fd84746d0fea5b4705bd58903accc8652577db50cf171cbee27"
+          }
+        }
+      }
+    },
+    "shared-shell": {
+      "route": "/today",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "6d0fd66bc0f0a6007d658021a6c44bda1a9cbc8c527f02bc5eb487878a4109f7"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "3190368c6d2607af00f2425f903188447ce4d81961b16144c3ba0558b2354c56"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "c1f575e4d702bd4728251a91b462bd7d372bc834529f4fc8f95ea56c4a27749f"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "8da9bd50297258b655373e474f558f1d464f7ac47c7e44758e2519d70327f615"
+          }
+        }
+      }
+    },
+    "sign-in": {
+      "route": "/sign-in",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "82e2f3e463e8892773b29f8f0f8a9dfcbe19cb2de390370ba8aec88868cd91f1"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "51917c9f2fef3843b0636b9a0429b67221a3d9824324a3ecce0e756b0399e709"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "f272fc84c5d6385b50bdeae8e892dac6a2e3a4d64b75c77562b23aa4708968d5"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "540d90cbf7e7092243dd119b23939eddde78414888fe8a4673f9088c9be139c5"
+          }
+        }
+      }
+    },
+    "today": {
+      "route": "/today",
+      "axes": {
+        "desktop": {
+          "dark": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "6d0fd66bc0f0a6007d658021a6c44bda1a9cbc8c527f02bc5eb487878a4109f7"
+          },
+          "light": {
+            "width": 1280,
+            "height": 1393,
+            "sha256": "3190368c6d2607af00f2425f903188447ce4d81961b16144c3ba0558b2354c56"
+          }
+        },
+        "mobile": {
+          "dark": {
+            "width": 390,
+            "height": 844,
+            "sha256": "c1f575e4d702bd4728251a91b462bd7d372bc834529f4fc8f95ea56c4a27749f"
+          },
+          "light": {
+            "width": 390,
+            "height": 844,
+            "sha256": "8da9bd50297258b655373e474f558f1d464f7ac47c7e44758e2519d70327f615"
+          }
+        }
+      }
+    }
+  }
+}

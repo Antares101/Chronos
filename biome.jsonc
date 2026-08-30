@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["**/*", "!**/*.astro", "!dist", "!node_modules", "!coverage"],
+    "includes": ["**/*", "!**/*.astro", "!dist", "!node_modules", "!coverage", "!.stitch"],
   },
   // Prettier retains formatter ownership, including Astro via prettier-plugin-astro.
   "formatter": {
@@ -33,8 +33,8 @@
   },
   "overrides": [
     {
-      // The smoke harness intentionally prints its structured report and cleanup warning.
-      "includes": ["scripts/browser-smoke.mjs"],
+      // Validation scripts intentionally print their structured reports and cleanup warnings.
+      "includes": ["scripts/browser-smoke.mjs", "scripts/validate-penpot-contract.mjs"],
       "linter": {
         "rules": {
           "suspicious": {

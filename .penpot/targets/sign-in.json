@@ -1,0 +1,14 @@
+{
+  "$schema": "../schemas/target.schema.json",
+  "schemaVersion": 2,
+  "route": "/sign-in",
+  "revision": 1,
+  "state": "draft",
+  "manifestRevision": 3,
+  "penpotPage": "14 Sign In",
+  "frames": [],
+  "lifecycleHistory": ["draft"],
+  "requiredAxes": { "themes": ["dark", "light"], "viewports": ["desktop", "mobile"] },
+  "evidenceKeys": [],
+  "approvedAt": null
+}

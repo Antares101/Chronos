@@ -1,0 +1,112 @@
+{
+  "$schema": "./schemas/manifest.schema.json",
+  "schemaVersion": 2,
+  "provider": "penpot",
+  "migrationState": "active",
+  "revision": 3,
+  "connection": {
+    "mode": "remote",
+    "status": "verified",
+    "fileId": "81f57451-85cc-819d-8008-7cba91fdaa6d"
+  },
+  "authority": {
+    "behavior": "code",
+    "visual": "penpot",
+    "policy": "contracts",
+    "verification": "rendered-application"
+  },
+  "registries": {
+    "grammarFamilies": [
+      "alerts-status",
+      "authentication",
+      "calendar-timeline",
+      "command-ribbons",
+      "context-bands",
+      "controls-forms",
+      "disclosures",
+      "insights-evidence",
+      "navigation",
+      "reviews-conclusions",
+      "shell",
+      "surfaces",
+      "tasks"
+    ],
+    "routes": ["/insights", "/planning", "/review", "/sign-in", "/today"],
+    "states": ["disabled", "empty", "error", "expanded", "ready", "status"],
+    "themes": ["dark", "light"],
+    "tokenFamilies": [
+      "color",
+      "disabled",
+      "focus-ring",
+      "muted",
+      "radius",
+      "shell-ornament",
+      "spacing",
+      "status",
+      "typography"
+    ],
+    "viewports": ["desktop", "mobile"]
+  },
+  "pages": [
+    {
+      "semanticKey": "foundations",
+      "name": "00 Foundations",
+      "status": "verified",
+      "pageId": "81f57451-85cc-819d-8008-7cba91fdaa6e"
+    },
+    {
+      "semanticKey": "components",
+      "name": "01 Components",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de030ee"
+    },
+    {
+      "semanticKey": "patterns",
+      "name": "02 Patterns",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de11149"
+    },
+    {
+      "semanticKey": "today",
+      "name": "10 Today",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de18a15"
+    },
+    {
+      "semanticKey": "planning",
+      "name": "11 Planning",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de2ad45"
+    },
+    {
+      "semanticKey": "review",
+      "name": "12 Review",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de31127"
+    },
+    {
+      "semanticKey": "insights",
+      "name": "13 Insights",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de38045"
+    },
+    {
+      "semanticKey": "sign-in",
+      "name": "14 Sign In",
+      "status": "planned"
+    },
+    {
+      "semanticKey": "sandbox",
+      "name": "90 Sandbox",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de479d0"
+    },
+    {
+      "semanticKey": "archive",
+      "name": "99 Archive",
+      "status": "verified",
+      "pageId": "d59d806e-6ccd-80fb-8008-7cbc8de55558"
+    }
+  ],
+  "activeTarget": "/today"
+}

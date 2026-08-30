@@ -1,0 +1,103 @@
+{
+  "$schema": "./schemas/coverage.schema.json",
+  "schemaVersion": 2,
+  "revision": 1,
+  "defaults": {
+    "objectId": null,
+    "objectRevision": null,
+    "mappingRevision": 0,
+    "lifecycle": "draft",
+    "applicability": { "status": "covered", "reason": null },
+    "consumedTokens": [],
+    "evidenceKeys": []
+  },
+  "entries": [
+    [
+      "grammar/alerts-status",
+      "grammar",
+      "alerts-status",
+      "01 Components",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/authentication",
+      "grammar",
+      "authentication",
+      "01 Components",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/calendar-timeline",
+      "grammar",
+      "calendar-timeline",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/command-ribbons",
+      "grammar",
+      "command-ribbons",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/context-bands",
+      "grammar",
+      "context-bands",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/controls-forms",
+      "grammar",
+      "controls-forms",
+      "01 Components",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/disclosures",
+      "grammar",
+      "disclosures",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/insights-evidence",
+      "grammar",
+      "insights-evidence",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/navigation",
+      "grammar",
+      "navigation",
+      "01 Components",
+      ["component.color.base.light"]
+    ],
+    [
+      "grammar/reviews-conclusions",
+      "grammar",
+      "reviews-conclusions",
+      "02 Patterns",
+      ["component.color.base.light"]
+    ],
+    ["grammar/shell", "grammar", "shell", "02 Patterns", ["component.color.base.light"]],
+    ["grammar/surfaces", "grammar", "surfaces", "01 Components", ["component.color.base.light"]],
+    ["grammar/tasks", "grammar", "tasks", "02 Patterns", ["component.color.base.light"]],
+    ["route/insights", "route", "/insights", "13 Insights", ["component.color.base.light"]],
+    ["route/planning", "route", "/planning", "11 Planning", ["component.color.base.light"]],
+    ["route/review", "route", "/review", "12 Review", ["component.color.base.light"]],
+    ["route/sign-in", "route", "/sign-in", "14 Sign In", ["component.color.base.light"]],
+    ["route/today", "route", "/today", "10 Today", ["component.color.base.light"]],
+    ["token/color", "token", "color", "00 Foundations"],
+    ["token/disabled", "token", "disabled", "00 Foundations"],
+    ["token/focus-ring", "token", "focus-ring", "00 Foundations"],
+    ["token/muted", "token", "muted", "00 Foundations"],
+    ["token/radius", "token", "radius", "00 Foundations"],
+    ["token/shell-ornament", "token", "shell-ornament", "00 Foundations"],
+    ["token/spacing", "token", "spacing", "00 Foundations"],
+    ["token/status", "token", "status", "00 Foundations"],
+    ["token/typography", "token", "typography", "00 Foundations"]
+  ]
+}

@@ -105,13 +105,57 @@ Theme selection is client-side and progressive:
 | Tablet  | Cards wrap with stable gaps; date/time rows collapse as needed.                |
 | Mobile  | Cards become single column; primary buttons span safely inside cards.          |
 
-## OpenPencil workflow
+## Command Ribbon system
 
-Use OpenPencil when exploring larger visual changes before implementation:
+Command Ribbon is the selected authenticated-app direction. It is a shared visual grammar, not a single page template:
 
-1. Sketch the authenticated action zone as bounded cards at desktop, tablet, and mobile widths.
-2. Export or inspect spacing/color decisions before coding.
-3. Keep the source implementation aligned with this document, not with one-off screenshot fixes.
+- Use a lightweight shared shell with consistent route links, theme/sound utilities, typography, semantic tokens, and active-route treatment.
+- Open each route with one dominant context band that states the work currently in focus.
+- Group the route's highest-frequency actions inside one connected command ribbon. Use internal dividers and spacing instead of a row or stack of unrelated cards.
+- Place the route's deeper working surface below the ribbon with quieter hierarchy and fewer borders.
+- Keep Plus Jakarta Sans, premium Slate/Zinc surfaces, restrained indigo primary, sky support accents, and emerald only for true success states.
+- Remove commercial footer chrome, generic metrics, neon/glass styling, excessive pills, tiny eyebrow text, and interchangeable SaaS card grids.
+- On mobile, collapse the command ribbon into one connected vertical surface. Keep route navigation visually lightweight and preserve 44px controls, persistent labels, readable timelines, and safe-area padding.
+
+Route identity comes from content and hierarchy while the shell and component grammar remain coherent:
+
+| Route       | Dominant context band                    | Connected command ribbon                                    | Deeper working surface                                 |
+| ----------- | ---------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ |
+| `/today`    | Current execution                        | Quick Add Task, Action Inbox, Schedule Block                | Day Sheet, Daily Intention, Close the Day              |
+| `/planning` | Planning horizon and selected date/range | Capture, schedule, prioritization, and planning actions     | Calendar/backlog planning workspace                    |
+| `/review`   | Review period and unresolved reflection  | Period selection, completion review, and reflection actions | Outcomes, adjustments, highlights, and review history  |
+| `/insights` | Active period/filter context             | Period, category, and comparison controls                   | Evidence-backed trends and charts without fake metrics |
+
+Do not duplicate `/today` section order on every route. Reuse the shell, ribbon anatomy, token hierarchy, control language, and responsive behavior while preserving each route's own job.
+
+## Design authority contract
+
+Chronos uses split authority so visual tooling cannot silently redefine product behavior:
+
+| Concern                                                  | Authority                                 |
+| -------------------------------------------------------- | ----------------------------------------- |
+| Behavior, accessibility, component API, and composition  | Application code                          |
+| Visual geometry, tokens, variants, and documented states | Penpot                                    |
+| Shared visual and responsive rules                       | `Design.md`                               |
+| Mapping and revision state                               | `.penpot/*.json`                          |
+| Final acceptance                                         | Rendered application and browser evidence |
+
+When Penpot and code disagree, report the conflict and stop before synchronization. Do not resolve the conflict implicitly. Follow `.penpot/WORKFLOW.md` for lifecycle states, deterministic operations, context limits, and migration gates.
+
+The Penpot contract is active. `.penpot/manifest.json` identifies the connected file, verified pages, component mappings, and current route target. Stitch artifacts under `.stitch/` are read-only historical evidence and must not drive new design work.
+
+## Penpot workflow
+
+Use Penpot when exploring larger visual changes before implementation:
+
+1. Confirm the focused file and page against `.penpot/manifest.json` before reading or writing.
+2. Build reusable tokens and components before route boards; resolve semantic keys before creating anything.
+3. Store approved route board IDs, viewports, themes, and lifecycle state under `.penpot/targets/` before changing product code.
+4. Apply bounded idempotent operations, then compare the rendered application at the recorded viewports and themes.
+
+The active v2 contract is fail-closed: `manifest.json` defines closed token, grammar, route, state, theme, and viewport registries; `coverage.json` maps every member by normalized semantic key. One focused page/revision batch produces one digest receipt and narrow changed-object readback before local IDs or revisions are recorded. Git rollback and remote Penpot inverse transactions are separate operations.
+
+Future work must declare `visualImpact` under `.penpot/changes/`. Behavior-only `none` changes carry no visual references. Visual work is `penpot-first` and cannot become approved or verified without provider-confirmed revisions and exact rendered-app evidence at `1280x1393` and `390x844` in light and dark. Automatic single-PR work predicted above 800 authored changed lines stops for maintainer review rather than silently changing delivery strategy.
 
 ## Verification checklist
 
@@ -125,7 +169,8 @@ Use OpenPencil when exploring larger visual changes before implementation:
 - [ ] Disabled controls are visually distinct and readable.
 - [ ] No server action names, field names, auth behavior, or data semantics changed for visual work.
 - [ ] Motion, transparency, and data-saving preferences reduce animation, glow, and decorative effects.
-- [ ] `npm run format:check`, `npm run check`, and `npm run build` pass.
+- [ ] Penpot component and route target IDs match the current `.penpot` contracts without semantic-key duplicates.
+- [ ] `npm run penpot:check`, `npm run format:check`, `npm run check`, and `npm run build` pass.
 
 ## Known follow-ups
 

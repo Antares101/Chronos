@@ -1,0 +1,51 @@
+{
+  "$schema": "../schemas/target.schema.json",
+  "schemaVersion": 2,
+  "route": "/today",
+  "revision": 1,
+  "state": "implemented",
+  "manifestRevision": 3,
+  "penpotPage": "10 Today",
+  "frames": [
+    {
+      "semanticKey": "desktop-dark",
+      "boardId": "d59d806e-6ccd-80fb-8008-7cc2e46f0d61",
+      "viewport": {
+        "width": 1280,
+        "height": 1393
+      },
+      "theme": "dark"
+    },
+    {
+      "semanticKey": "desktop-light",
+      "boardId": "d59d806e-6ccd-80fb-8008-7cc24fc0a2b5",
+      "viewport": {
+        "width": 1280,
+        "height": 1393
+      },
+      "theme": "light"
+    },
+    {
+      "semanticKey": "mobile-dark",
+      "boardId": "d59d806e-6ccd-80fb-8008-7cc2e535ccdd",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "dark"
+    },
+    {
+      "semanticKey": "mobile-light",
+      "boardId": "d59d806e-6ccd-80fb-8008-7cc2e4d34fc1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "theme": "light"
+    }
+  ],
+  "lifecycleHistory": ["draft", "reviewed", "approved", "implemented"],
+  "requiredAxes": { "themes": ["dark", "light"], "viewports": ["desktop", "mobile"] },
+  "evidenceKeys": [],
+  "approvedAt": "2026-08-15T15:14:08Z"
+}

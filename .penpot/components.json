@@ -1,0 +1,58 @@
+{
+  "$schema": "./schemas/components.schema.json",
+  "schemaVersion": 2,
+  "revision": 2,
+  "status": "planned",
+  "families": [
+    "alerts-status",
+    "authentication",
+    "calendar-timeline",
+    "command-ribbons",
+    "context-bands",
+    "controls-forms",
+    "disclosures",
+    "insights-evidence",
+    "navigation",
+    "reviews-conclusions",
+    "shell",
+    "surfaces",
+    "tasks"
+  ],
+  "components": [
+    {
+      "semanticKey": "button/primary/default",
+      "penpotComponentId": "d59d806e-6ccd-80fb-8008-7cbe0544b439",
+      "penpotName": "button/primary/default",
+      "status": "verified",
+      "lastVerifiedRevision": 1
+    },
+    {
+      "semanticKey": "control/input/default",
+      "penpotComponentId": "d59d806e-6ccd-80fb-8008-7cbe0556de0c",
+      "penpotName": "control/input/default",
+      "status": "verified",
+      "lastVerifiedRevision": 1
+    },
+    {
+      "semanticKey": "navigation/route-link/default",
+      "penpotComponentId": "d59d806e-6ccd-80fb-8008-7cbe0567ab1a",
+      "penpotName": "navigation/route-link/default",
+      "status": "verified",
+      "lastVerifiedRevision": 1
+    },
+    {
+      "semanticKey": "ribbon/action/default",
+      "penpotComponentId": "d59d806e-6ccd-80fb-8008-7cbe057939c3",
+      "penpotName": "ribbon/action/default",
+      "status": "verified",
+      "lastVerifiedRevision": 1
+    },
+    {
+      "semanticKey": "surface/card/default",
+      "penpotComponentId": "d59d806e-6ccd-80fb-8008-7cbe058dc34e",
+      "penpotName": "surface/card/default",
+      "status": "verified",
+      "lastVerifiedRevision": 1
+    }
+  ]
+}

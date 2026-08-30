@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chronos.local/schemas/penpot-evidence-v2.schema.json",
+  "title": "Chronos rendered-app evidence index v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "revision"],
+  "properties": {
+    "$schema": { "const": "../schemas/evidence.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "appCommit": { "type": "string" },
+    "result": { "enum": ["match", "mismatch", "blocked"] },
+    "deviation": { "type": "string" },
+    "baseline": { "type": "object" },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "route",
+          "case",
+          "theme",
+          "viewport",
+          "width",
+          "height",
+          "sha256",
+          "appCommit",
+          "result",
+          "deviations"
+        ],
+        "properties": {
+          "key": { "type": "string" },
+          "route": { "type": "string" },
+          "case": { "type": "string" },
+          "theme": { "enum": ["dark", "light"] },
+          "viewport": { "enum": ["desktop", "mobile"] },
+          "width": { "type": "integer" },
+          "height": { "type": "integer" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "appCommit": { "type": "string" },
+          "result": { "enum": ["match", "mismatch", "blocked"] },
+          "deviations": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
