@@ -26,42 +26,43 @@ export default function TodayGoalsPanel({
 
   return (
     <section className="today-goals" aria-labelledby="today-goals-title">
-      <header className="today-goals__header">
-        <p className="today-goals__eyebrow">Today goals</p>
-        <h4 id="today-goals-title">{title}</h4>
-        <p>{description}</p>
-      </header>
-
-      <form
-        className="today-goals__form"
-        method="post"
-        action={actionPath}
-        aria-describedby={actionError ? 'today-goals-feedback' : undefined}
-      >
-        <input type="hidden" name="action" value="today-save-goals" />
-        {fields.map(({ key, value }, index) => (
-          <label key={key}>
-            Goal {index + 1}
-            <input
-              name="goals"
-              maxLength={120}
-              placeholder={index === 0 ? 'Pick up to three outcomes for today.' : 'Optional'}
-              defaultValue={value}
-            />
-          </label>
-        ))}
-        <button type="submit">Save goals</button>
-        {actionError ? (
-          <p id="today-goals-feedback" className="today-goals__feedback" role="alert">
-            {actionError}
-          </p>
-        ) : null}
-        {statusMessage ? (
-          <p className="today-goals__feedback today-goals__feedback--success" role="status">
-            {statusMessage}
-          </p>
-        ) : null}
-      </form>
+      <h4 id="today-goals-title" className="visually-hidden">
+        {title}
+      </h4>
+      <details open={Boolean(actionError || statusMessage)}>
+        <summary>{title}</summary>
+        <p className="today-goals__description">{description}</p>
+        <form
+          className="today-goals__form"
+          method="post"
+          action={actionPath}
+          aria-describedby={actionError ? 'today-goals-feedback' : undefined}
+        >
+          <input type="hidden" name="action" value="today-save-goals" />
+          {fields.map(({ key, value }, index) => (
+            <label key={key}>
+              Goal {index + 1}
+              <input
+                name="goals"
+                maxLength={120}
+                placeholder={index === 0 ? 'Pick up to three outcomes for today.' : 'Optional'}
+                defaultValue={value}
+              />
+            </label>
+          ))}
+          <button type="submit">Save goals</button>
+          {actionError ? (
+            <p id="today-goals-feedback" className="today-goals__feedback" role="alert">
+              {actionError}
+            </p>
+          ) : null}
+          {statusMessage ? (
+            <p className="today-goals__feedback today-goals__feedback--success" role="status">
+              {statusMessage}
+            </p>
+          ) : null}
+        </form>
+      </details>
 
       <style>{styles}</style>
     </section>
@@ -71,47 +72,49 @@ export default function TodayGoalsPanel({
 const styles = `
   .today-goals {
     min-width: 0;
-    border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
-    border-radius: 24px;
-    background: var(--chronos-surface, #ffffff);
     color: var(--chronos-text, #0f172a);
-    box-shadow: var(--chronos-shadow, 0 24px 70px rgba(15, 23, 42, 0.1));
-    padding: clamp(1rem, 2vw, 1.5rem);
   }
 
-  .today-goals__header {
-    min-width: 0;
-    overflow-wrap: anywhere;
+  .today-goals .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .today-goals details {
     border: 1px solid var(--chronos-border, rgba(148, 163, 184, 0.22));
-    border-radius: 18px;
-    padding: 1rem;
-    background: var(--chronos-header-surface, linear-gradient(135deg, var(--chronos-surface, #ffffff), var(--chronos-surface-tinted, #eef2ff)));
+    border-radius: 12px;
+    background: var(--chronos-surface-muted, #f1f5f9);
   }
 
-  .today-goals__eyebrow {
-    margin: 0 0 0.25rem;
+  .today-goals summary {
+    min-height: 44px;
+    padding: 0.65rem 0.8rem;
     color: var(--chronos-primary, #4f46e5);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 850;
   }
 
-  .today-goals h4,
-  .today-goals p {
+  .today-goals__description {
     margin: 0;
-  }
-
-  .today-goals__header p:last-child {
-    margin-top: 0.35rem;
+    padding: 0 0.8rem;
     color: var(--chronos-text-muted, #475569);
-    line-height: 1.5;
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 
   .today-goals__form {
     display: grid;
     gap: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 0.65rem;
+    padding: 0 0.8rem 0.8rem;
   }
 
   .today-goals label {

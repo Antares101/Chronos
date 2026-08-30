@@ -45,8 +45,7 @@ export default function TodayQuickBlock({
   return (
     <section className="today-quick-block" aria-labelledby="today-quick-block-heading">
       <header>
-        <p>Quick block</p>
-        <h2 id="today-quick-block-heading">Add a block</h2>
+        <h2 id="today-quick-block-heading">Schedule Block</h2>
       </header>
       <form
         method="post"
@@ -67,16 +66,6 @@ export default function TodayQuickBlock({
           aria-describedby={actionError ? 'today-quick-block-error' : undefined}
         />
         <div className="today-quick-block__presets">
-          {recentNames.length > 0 ? (
-            <fieldset className="today-quick-block__recent">
-              <legend>Recent names</legend>
-              {recentNames.map((name) => (
-                <button key={name} type="button" data-recent-block-name={name}>
-                  {name}
-                </button>
-              ))}
-            </fieldset>
-          ) : null}
           <fieldset className="today-quick-block__durations" aria-label="Duration shortcuts">
             {durations.map(({ minutes, label }) => (
               <button
@@ -90,59 +79,75 @@ export default function TodayQuickBlock({
             ))}
           </fieldset>
         </div>
-        <details open={Boolean(draft && actionError)}>
-          <summary>Schedule &amp; category</summary>
-          <fieldset>
-            <legend>Schedule</legend>
-            <label htmlFor="quick-block-category">Category</label>
-            <select
-              id="quick-block-category"
-              name="category"
-              defaultValue={schedule.category}
-              required
-            >
-              {categories.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="quick-block-date">Date</label>
-            <input
-              id="quick-block-date"
-              data-quick-schedule-date
-              name="date"
-              type="date"
-              required
-              defaultValue={schedule.date}
-            />
-            <label htmlFor="quick-block-start">Start</label>
-            <input
-              id="quick-block-start"
-              data-quick-schedule-start
-              name="startTime"
-              type="time"
-              required
-              defaultValue={schedule.startTime}
-            />
-            <label htmlFor="quick-block-end">End</label>
-            <input
-              id="quick-block-end"
-              data-quick-schedule-end
-              name="endTime"
-              type="time"
-              required
-              defaultValue={schedule.endTime}
-            />
-            <output aria-live="polite" htmlFor="quick-block-date quick-block-start quick-block-end">
-              <strong data-quick-schedule-window>{preview.windowLabel}</strong>
-              <span data-quick-schedule-duration>{preview.durationLabel}</span>
-            </output>
-            <p data-quick-schedule-status role="status" aria-live="polite">
-              {preview.statusLabel}
-            </p>
-          </fieldset>
-        </details>
+        <div className="today-quick-block__actions">
+          <details open={Boolean(draft && actionError)}>
+            <summary>Category &amp; details</summary>
+            <fieldset>
+              <legend>Schedule</legend>
+              <label htmlFor="quick-block-category">Category</label>
+              <select
+                id="quick-block-category"
+                name="category"
+                defaultValue={schedule.category}
+                required
+              >
+                {categories.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="quick-block-date">Date</label>
+              <input
+                id="quick-block-date"
+                data-quick-schedule-date
+                name="date"
+                type="date"
+                required
+                defaultValue={schedule.date}
+              />
+              <label htmlFor="quick-block-start">Start</label>
+              <input
+                id="quick-block-start"
+                data-quick-schedule-start
+                name="startTime"
+                type="time"
+                required
+                defaultValue={schedule.startTime}
+              />
+              <label htmlFor="quick-block-end">End</label>
+              <input
+                id="quick-block-end"
+                data-quick-schedule-end
+                name="endTime"
+                type="time"
+                required
+                defaultValue={schedule.endTime}
+              />
+              <output
+                aria-live="polite"
+                htmlFor="quick-block-date quick-block-start quick-block-end"
+              >
+                <strong data-quick-schedule-window>{preview.windowLabel}</strong>
+                <span data-quick-schedule-duration>{preview.durationLabel}</span>
+              </output>
+              <p data-quick-schedule-status role="status" aria-live="polite">
+                {preview.statusLabel}
+              </p>
+            </fieldset>
+            {recentNames.length > 0 ? (
+              <fieldset className="today-quick-block__recent">
+                <legend>Recent names</legend>
+                {recentNames.map((name) => (
+                  <button key={name} type="button" data-recent-block-name={name}>
+                    {name}
+                  </button>
+                ))}
+              </fieldset>
+            ) : null}
+          </details>
+          <button type="submit">Create block</button>
+        </div>
         {actionError ? (
           <p id="today-quick-block-error" role="alert">
             {actionError}
@@ -151,7 +156,6 @@ export default function TodayQuickBlock({
         <p className="today-quick-block__status" role="status">
           {statusMessage}
         </p>
-        <button type="submit">Create block</button>
       </form>
       <style>{styles}</style>
     </section>

@@ -28,6 +28,17 @@ describe('TodayCloseout', () => {
     expect(status).toContain('role="status"');
   });
 
+  it('consolidates empty-state guidance into the described help row', () => {
+    const html = render();
+
+    expect(html).not.toContain('<p>Record one outcome and one adjustment for tomorrow.</p>');
+    expect(html).toContain(
+      '<p id="closeout-help">Record one outcome and one adjustment for tomorrow. Surrounding spaces are removed when saved. Both fields are required.</p>',
+    );
+    expect(html.match(/id="closeout-help"/g)).toHaveLength(1);
+    expect(html.match(/aria-describedby="closeout-help"/g)).toHaveLength(2);
+  });
+
   it('retains partial and blank drafts with field-specific accessible errors', () => {
     const html = render({
       draft: draft('Shipped the header', '   '),

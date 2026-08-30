@@ -38,7 +38,10 @@ describe('TodayGoalsPanel', () => {
     const html = renderGoalsPanel({ title: 'Edit Objectives' });
 
     // Today page h2 → Objectives h3 → this nested editing panel h4.
-    expect(html).toContain('<h4 id="today-goals-title">Edit Objectives</h4>');
+    expect(html).toContain(
+      '<h4 id="today-goals-title" class="visually-hidden">Edit Objectives</h4>',
+    );
+    expect(html).toContain('<summary>Edit Objectives</summary>');
   });
 
   it('restores failed goal submissions with scoped accessible feedback', () => {

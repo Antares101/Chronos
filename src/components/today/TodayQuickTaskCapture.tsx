@@ -58,8 +58,7 @@ export default function TodayQuickTaskCapture({
   return (
     <section className="today-quick-capture" aria-labelledby="today-quick-capture-title">
       <header>
-        <p>Quick Capture</p>
-        <h2 id="today-quick-capture-title">Add a Task</h2>
+        <h2 id="today-quick-capture-title">Quick Add Task</h2>
       </header>
       {actionError ? (
         <p id="capture-error" role="alert">
@@ -84,43 +83,47 @@ export default function TodayQuickTaskCapture({
           aria-invalid={titleError || undefined}
           aria-describedby={titleError ? 'capture-error' : undefined}
         />
-        {defaultKey && !override ? (
-          <>
-            <input type="hidden" name="destination" value={defaultKey} />
-            <p>Target: {capture.defaultDestination?.label}</p>
-            <button
-              type="button"
-              className="ui-button ui-button--secondary today-quick-capture__change-destination"
-              onClick={() => setOverride(true)}
-            >
-              Change Destination
-            </button>
-          </>
-        ) : (
-          <>
-            <label htmlFor="today-task-destination">Destination</label>
-            {!defaultKey ? <p>No automatic target—choose where this task belongs.</p> : null}
-            <select
-              id="today-task-destination"
-              name="destination"
-              value={destination}
-              onChange={(event) => setDestination(event.currentTarget.value)}
-              required
-              aria-invalid={destinationError || undefined}
-              aria-describedby={destinationError ? 'capture-error' : undefined}
-            >
-              <option value="">Choose a destination</option>
-              {capture.destinations.map((item) => (
-                <option key={destinationKey(item)} value={destinationKey(item)}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        <button type="submit" disabled={pending}>
-          {pending ? 'Adding…' : 'Add Task'}
-        </button>
+        <div className="today-quick-capture__destination-row">
+          {defaultKey && !override ? (
+            <div className="today-quick-capture__destination">
+              <input type="hidden" name="destination" value={defaultKey} />
+              <p>Target: {capture.defaultDestination?.label}</p>
+              <button
+                type="button"
+                className="ui-button ui-button--secondary today-quick-capture__change-destination"
+                onClick={() => setOverride(true)}
+              >
+                Change<span className="visually-hidden"> Destination</span>
+              </button>
+            </div>
+          ) : (
+            <label htmlFor="today-task-destination">
+              Destination
+              {!defaultKey ? (
+                <span>No automatic target—choose where this task belongs.</span>
+              ) : null}
+              <select
+                id="today-task-destination"
+                name="destination"
+                value={destination}
+                onChange={(event) => setDestination(event.currentTarget.value)}
+                required
+                aria-invalid={destinationError || undefined}
+                aria-describedby={destinationError ? 'capture-error' : undefined}
+              >
+                <option value="">Choose a destination</option>
+                {capture.destinations.map((item) => (
+                  <option key={destinationKey(item)} value={destinationKey(item)}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button type="submit" disabled={pending}>
+            {pending ? 'Adding…' : 'Add Task'}
+          </button>
+        </div>
       </form>
     </section>
   );

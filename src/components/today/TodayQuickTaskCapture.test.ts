@@ -30,7 +30,7 @@ describe('TodayQuickTaskCapture', () => {
     expect(html).toContain(
       'class="ui-button ui-button--secondary today-quick-capture__change-destination"',
     );
-    expect(html).toContain('>Change Destination</button>');
+    expect(html).toContain('>Change<span class="visually-hidden"> Destination</span></button>');
     expect(html).toContain('type="submit"');
   });
 

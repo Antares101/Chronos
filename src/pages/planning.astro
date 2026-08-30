@@ -13,7 +13,6 @@ import {
 import { chronosAppRoutes, resolveChronosActionRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.planning;
-
 const routeContext = await resolveChronosActionRouteContext({
   user: (Astro.locals as ChronosAuthLocals).user,
   request: Astro.request,
@@ -50,24 +49,21 @@ const defaultEditEndTime = firstPlanningBlock
   actionError={actionError}
   statusMessage={statusMessage}
 >
-  <div class="app-route app-route--planning planning-workbench">
-    <div class="planning-workbench__main">
-      <section class="planning-workbench__calendar" aria-label="Weekly planning calendar">
-        <WeeklyCalendar {...appState.weeklyCalendar} client:load />
-      </section>
-      <section class="planning-workbench__tasks" aria-label="Unassigned planning tasks">
-        <TaskList {...appState.taskList} client:load />
-      </section>
-    </div>
+  <div class="app-route app-route--planning">
+    <section class="planning-context-band" aria-labelledby="planning-context-title">
+      <p class="eyebrow">Planning horizon</p>
+      <h2 id="planning-context-title">Shape the work ahead</h2>
+      <p>Start with {appState.todayDate}, then place blocks and open work where they fit.</p>
+    </section>
 
-    <aside class="planning-workbench__rail actions" aria-labelledby="planning-actions-title">
-      <div class="actions__header">
+    <section class="planning-command-ribbon" aria-labelledby="planning-actions-title">
+      <header class="planning-command-ribbon__header">
         <p class="eyebrow">Planning actions</p>
         <h2 id="planning-actions-title">Set up blocks and assign tasks</h2>
-      </div>
+      </header>
 
-      <div class="actions__grid">
-        <article class="action-card planning-workbench__create">
+      <div class="planning-command-ribbon__actions">
+        <article class="planning-command-ribbon__section planning-workbench__create">
           <h3>Create planned block</h3>
           <form method="post">
             <input type="hidden" name="action" value="create-planned-block" />
@@ -103,189 +99,267 @@ const defaultEditEndTime = firstPlanningBlock
           </form>
         </article>
 
-        <details class="planning-action">
+        <details class="planning-command-ribbon__section planning-action">
           <summary>Edit planned schedule</summary>
-          <article class="action-card">
-            <form method="post">
-              <input type="hidden" name="action" value="update-planned-schedule" />
+          <form method="post">
+            <input type="hidden" name="action" value="update-planned-schedule" />
+            <label>
+              Planning block
+              <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
+                {
+                  appState.planningBlocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {getDateInputValue(block.plannedStart)}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <div class="form-row">
               <label>
-                Planning block
-                <select name="blockId" required disabled={appState.planningBlocks.length === 0}>
-                  {
-                    appState.planningBlocks.map((block) => (
-                      <option value={block.id}>
-                        {block.title} · {getDateInputValue(block.plannedStart)}
-                      </option>
-                    ))
-                  }
-                </select>
+                New day
+                <input type="date" name="date" value={defaultEditDate} required />
               </label>
-              <div class="form-row">
-                <label>
-                  New day
-                  <input type="date" name="date" value={defaultEditDate} required />
-                </label>
-                <label>
-                  Start
-                  <input type="time" name="startTime" value={defaultEditStartTime} required />
-                </label>
-                <label>
-                  End
-                  <input type="time" name="endTime" value={defaultEditEndTime} required />
-                </label>
-              </div>
-              <button type="submit" disabled={appState.planningBlocks.length === 0}>
-                Update planned schedule
-              </button>
-            </form>
-          </article>
+              <label>
+                Start
+                <input type="time" name="startTime" value={defaultEditStartTime} required />
+              </label>
+              <label>
+                End
+                <input type="time" name="endTime" value={defaultEditEndTime} required />
+              </label>
+            </div>
+            <button type="submit" disabled={appState.planningBlocks.length === 0}>
+              Update planned schedule
+            </button>
+          </form>
         </details>
 
-        <details class="planning-action">
+        <details class="planning-command-ribbon__section planning-action">
           <summary>Move task into block</summary>
-          <article class="action-card">
-            <form method="post">
-              <input type="hidden" name="action" value="assign-task" />
-              <label>
-                Unassigned task
-                <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
-                  {
-                    appState.assignableTasks.map((task) => (
-                      <option value={task.id}>{task.title}</option>
-                    ))
-                  }
-                </select>
-              </label>
-              <label>
-                Target block
-                <select name="blockId" required disabled={appState.blocks.length === 0}>
-                  {
-                    appState.blocks.map((block) => (
-                      <option value={block.id}>
-                        {block.title} · {block.phase}
-                      </option>
-                    ))
-                  }
-                </select>
-              </label>
-              <button
-                type="submit"
-                disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
-              >
-                Move task
-              </button>
-            </form>
-          </article>
+          <form method="post">
+            <input type="hidden" name="action" value="assign-task" />
+            <label>
+              Unassigned task
+              <select name="taskId" required disabled={appState.assignableTasks.length === 0}>
+                {
+                  appState.assignableTasks.map((task) => (
+                    <option value={task.id}>{task.title}</option>
+                  ))
+                }
+              </select>
+            </label>
+            <label>
+              Target block
+              <select name="blockId" required disabled={appState.blocks.length === 0}>
+                {
+                  appState.blocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {block.phase}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={appState.assignableTasks.length === 0 || appState.blocks.length === 0}
+            >
+              Move task
+            </button>
+          </form>
         </details>
 
-        <details class="planning-action">
+        <details class="planning-command-ribbon__section planning-action">
           <summary>Create task inside block</summary>
-          <article class="action-card">
-            <form method="post">
-              <input type="hidden" name="action" value="create-task" />
-              <label>
-                Target block
-                <select name="blockId" required disabled={appState.blocks.length === 0}>
-                  {
-                    appState.blocks.map((block) => (
-                      <option value={block.id}>
-                        {block.title} · {block.phase}
-                      </option>
-                    ))
-                  }
-                </select>
-              </label>
-              <label>
-                Task title
-                <input name="title" required maxlength="120" placeholder="Prepare notes" />
-              </label>
-              <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
-            </form>
-          </article>
+          <form method="post">
+            <input type="hidden" name="action" value="create-task" />
+            <label>
+              Target block
+              <select name="blockId" required disabled={appState.blocks.length === 0}>
+                {
+                  appState.blocks.map((block) => (
+                    <option value={block.id}>
+                      {block.title} · {block.phase}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+            <label>
+              Task title
+              <input name="title" required maxlength="120" placeholder="Prepare notes" />
+            </label>
+            <button type="submit" disabled={appState.blocks.length === 0}>Create task</button>
+          </form>
         </details>
       </div>
-    </aside>
+    </section>
+
+    <div class="planning-workspace">
+      <section class="planning-workspace__calendar" aria-label="Weekly planning calendar">
+        <WeeklyCalendar {...appState.weeklyCalendar} client:load />
+      </section>
+      <section class="planning-workspace__tasks" aria-label="Unassigned planning tasks">
+        <TaskList {...appState.taskList} client:load />
+      </section>
+    </div>
   </div>
 </ChronosAppShell>
 
 <style>
   .app-route--planning {
     --app-route-max: 86rem;
-  }
-
-  .planning-workbench,
-  .planning-workbench__main,
-  .planning-workbench__rail {
-    min-width: 0;
-  }
-
-  .planning-workbench,
-  .planning-workbench__main,
-  .planning-workbench__rail,
-  .planning-workbench__rail .actions__grid {
+    --planning-surface: var(--chronos-surface, var(--card, #ffffff));
+    --planning-surface-muted: var(--chronos-surface-muted, var(--muted, #f1f5f9));
+    --planning-border: var(--chronos-border, var(--border, rgba(100, 116, 139, 0.34)));
+    --planning-text: var(--chronos-text, var(--foreground, #0f172a));
+    --planning-text-muted: var(--chronos-text-muted, var(--muted-foreground, #475569));
     display: grid;
-    gap: clamp(0.85rem, 1.4vw, 1.25rem);
+    gap: clamp(1rem, 1.7vw, 1.5rem);
+    width: min(100%, var(--app-route-max));
+    min-width: 0;
+    margin: clamp(0.75rem, 1.2vw, 1rem) auto 0;
   }
 
-  .planning-workbench__calendar,
-  .planning-workbench__tasks {
+  .app-route--planning,
+  .app-route--planning *,
+  .app-route--planning *::before,
+  .app-route--planning *::after {
+    box-sizing: border-box;
+  }
+
+  .planning-context-band,
+  .planning-command-ribbon,
+  .planning-command-ribbon__actions,
+  .planning-workspace,
+  .planning-workspace > * {
     min-width: 0;
   }
 
-  .planning-workbench__main {
-    grid-area: main;
+  .planning-context-band {
+    display: grid;
+    gap: 0.45rem;
+    border-inline-start: 0.3rem solid var(--chronos-primary, var(--primary, #4f46e5));
+    padding: clamp(0.85rem, 1.6vw, 1.1rem) clamp(1rem, 1.8vw, 1.35rem);
+    background: var(--planning-surface-muted);
+    color: var(--planning-text);
   }
 
-  .planning-workbench__rail {
-    grid-area: rail;
+  .planning-context-band .eyebrow,
+  .planning-command-ribbon__header .eyebrow {
+    margin: 0;
   }
 
-  .planning-workbench__rail .actions__grid {
-    grid-template-columns: minmax(0, 1fr);
+  .planning-context-band h2,
+  .planning-command-ribbon__header h2 {
+    margin: 0;
+    color: var(--planning-text);
+    letter-spacing: -0.04em;
   }
 
-  .planning-action {
-    min-width: 0;
+  .planning-context-band p:last-child {
+    margin: 0;
+    color: var(--planning-text-muted);
+    font-weight: 650;
+    line-height: 1.55;
+  }
+
+  .planning-command-ribbon {
     overflow: hidden;
-    border: 1px solid var(--chronos-border);
-    border-radius: var(--chronos-radius, 1rem);
-    background: var(--chronos-surface);
-    box-shadow: var(--chronos-shadow-card);
+    border: 1px solid var(--planning-border);
+    border-radius: calc(var(--radius, 1rem) + 0.25rem);
+    background: var(--planning-surface);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--planning-text) 6%, transparent);
   }
 
-  .planning-action summary {
-    padding: 1rem 1.1rem;
-    color: var(--chronos-text);
-    font-weight: 800;
-    cursor: pointer;
+  .planning-command-ribbon__header,
+  .planning-command-ribbon__section {
+    padding: clamp(1rem, 1.8vw, 1.35rem);
+  }
+
+  .planning-command-ribbon__header {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .planning-command-ribbon__actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .planning-command-ribbon__section {
+    min-width: 0;
     overflow-wrap: anywhere;
   }
 
-  .planning-action summary:hover {
-    background: var(--chronos-surface-muted);
+  .planning-command-ribbon__section + .planning-command-ribbon__section {
+    border-inline-start: 1px solid var(--planning-border);
   }
 
-  .planning-action summary:focus-visible {
-    outline: 3px solid var(--chronos-ring);
-    outline-offset: -3px;
+  .planning-command-ribbon__section h3 {
+    margin: 0;
+    color: var(--planning-text);
+    font-size: 1.02rem;
   }
 
-  .planning-action[open] summary {
-    border-bottom: 1px solid var(--chronos-border);
+  .planning-command-ribbon__section form,
+  .planning-command-ribbon__section label {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
   }
 
-  .planning-action .action-card {
+  .planning-command-ribbon__section form {
+    margin-top: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .planning-command-ribbon__section input,
+  .planning-command-ribbon__section select,
+  .planning-command-ribbon__section textarea,
+  .planning-command-ribbon__section button {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .planning-action {
     border: 0;
     border-radius: 0;
+    background: transparent;
     box-shadow: none;
   }
 
-  @media (max-width: 87.999rem) {
-    .planning-workbench {
-      grid-template-areas:
-        'rail'
-        'main';
-    }
+  .planning-action summary {
+    min-height: 2.75rem;
+    color: var(--planning-text);
+    font-weight: 800;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+    touch-action: manipulation;
+  }
+
+  .planning-action summary:hover {
+    color: var(--chronos-primary-strong, #4338ca);
+  }
+
+  .planning-action summary:focus-visible {
+    outline: 3px solid var(--chronos-ring, var(--ring, #818cf8));
+    outline-offset: 3px;
+  }
+
+  .planning-action[open] summary {
+    margin-bottom: 0.85rem;
+  }
+
+  .planning-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.8fr);
+    align-items: start;
+    gap: clamp(1rem, 1.7vw, 1.5rem);
   }
 
   @media (min-width: 88rem) {
@@ -293,16 +367,35 @@ const defaultEditEndTime = firstPlanningBlock
       --app-route-max: 110rem;
     }
 
-    .planning-workbench {
-      align-items: start;
-      grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
-      grid-template-areas: 'main rail';
+    .planning-command-ribbon__actions {
+      grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
     }
   }
 
-  @media (min-width: 120rem) {
+  @media (max-width: 64rem) {
+    .planning-command-ribbon__actions,
+    .planning-workspace {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .planning-command-ribbon__section + .planning-command-ribbon__section {
+      border-top: 1px solid var(--planning-border);
+      border-inline-start: 0;
+    }
+  }
+
+  @media (max-width: 48rem) {
     .app-route--planning {
-      --app-route-max: 116rem;
+      padding-inline: max(0.25rem, env(safe-area-inset-left));
+    }
+
+    .planning-command-ribbon {
+      border-radius: var(--radius, 1rem);
+    }
+
+    .planning-command-ribbon__section,
+    .planning-command-ribbon__header {
+      padding: 1rem;
     }
   }
 </style>

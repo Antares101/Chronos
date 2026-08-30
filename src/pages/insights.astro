@@ -6,7 +6,6 @@ import { loadChronosInsightsState } from '../server/app/chronos-app';
 import { chronosAppRoutes, resolveChronosReadRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.insights;
-
 const locals = Astro.locals as ChronosAuthLocals;
 const routeContext = resolveChronosReadRouteContext({
   user: locals.user,
@@ -31,6 +30,34 @@ const appState = await loadChronosInsightsState(repositories, userId);
   currentPath={routePath}
 >
   <div class="app-route app-route--insights">
+    <section class="insights-context-band" aria-labelledby="insights-context-title">
+      <p class="eyebrow">Weekly evidence</p>
+      <h2 id="insights-context-title">Planned time alongside actual time</h2>
+      <p>Read the available evidence before changing the next planning pass.</p>
+    </section>
+
+    <section class="insights-evidence-ribbon" aria-labelledby="insights-scope-title">
+      <header class="insights-evidence-ribbon__header">
+        <p class="eyebrow">Evidence scope</p>
+        <h2 id="insights-scope-title">Current view</h2>
+        <p>Read-only scope for the weekly evidence below.</p>
+      </header>
+      <dl class="insights-evidence-ribbon__scope">
+        <div>
+          <dt>Period</dt>
+          <dd>This week</dd>
+        </div>
+        <div>
+          <dt>Comparison</dt>
+          <dd>Planned vs actual</dd>
+        </div>
+        <div>
+          <dt>Categories</dt>
+          <dd>Work / Home / Training</dd>
+        </div>
+      </dl>
+    </section>
+
     <section class="islands insights-islands" aria-label="Chronos insight content">
       <WeeklyInsight {...appState.weeklyInsight} client:load />
     </section>
@@ -40,6 +67,107 @@ const appState = await loadChronosInsightsState(repositories, userId);
 <style>
   .app-route--insights {
     --app-route-max: 86rem;
+    --insights-surface: var(--chronos-surface, var(--card, #ffffff));
+    --insights-surface-muted: var(--chronos-surface-muted, var(--muted, #f1f5f9));
+    --insights-border: var(--chronos-border, var(--border, rgba(100, 116, 139, 0.34)));
+    --insights-text: var(--chronos-text, var(--foreground, #0f172a));
+    --insights-text-muted: var(--chronos-text-muted, var(--muted-foreground, #475569));
+    display: grid;
+    gap: clamp(1rem, 1.7vw, 1.5rem);
+    width: min(100%, var(--app-route-max));
+    min-width: 0;
+    margin: clamp(0.75rem, 1.2vw, 1rem) auto 0;
+  }
+
+  .app-route--insights,
+  .app-route--insights *,
+  .app-route--insights *::before,
+  .app-route--insights *::after {
+    box-sizing: border-box;
+  }
+
+  .insights-context-band,
+  .insights-evidence-ribbon,
+  .insights-evidence-ribbon__scope,
+  .insights-evidence-ribbon__scope > div {
+    min-width: 0;
+  }
+
+  .insights-context-band {
+    display: grid;
+    gap: 0.45rem;
+    border-inline-start: 0.3rem solid var(--chronos-sky, #0ea5e9);
+    padding: clamp(0.85rem, 1.6vw, 1.1rem) clamp(1rem, 1.8vw, 1.35rem);
+    background: var(--insights-surface-muted);
+    color: var(--insights-text);
+  }
+
+  .insights-context-band .eyebrow,
+  .insights-evidence-ribbon__header .eyebrow {
+    margin: 0;
+  }
+
+  .insights-context-band h2,
+  .insights-evidence-ribbon__header h2 {
+    margin: 0;
+    color: var(--insights-text);
+    letter-spacing: -0.04em;
+  }
+
+  .insights-context-band p:last-child,
+  .insights-evidence-ribbon__header p:last-child {
+    margin: 0;
+    color: var(--insights-text-muted);
+    font-weight: 650;
+    line-height: 1.55;
+  }
+
+  .insights-evidence-ribbon {
+    overflow: hidden;
+    border: 1px solid var(--insights-border);
+    border-radius: calc(var(--radius, 1rem) + 0.25rem);
+    background: var(--insights-surface);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--insights-text) 6%, transparent);
+  }
+
+  .insights-evidence-ribbon__header,
+  .insights-evidence-ribbon__scope > div {
+    padding: clamp(1rem, 1.8vw, 1.35rem);
+  }
+
+  .insights-evidence-ribbon__header {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .insights-evidence-ribbon__scope {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  .insights-evidence-ribbon__scope > div + div {
+    border-inline-start: 1px solid var(--insights-border);
+  }
+
+  .insights-evidence-ribbon__scope dt {
+    color: var(--insights-text-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .insights-evidence-ribbon__scope dd {
+    margin: 0.35rem 0 0;
+    color: var(--insights-text);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+
+  .insights-islands {
+    width: 100%;
+    margin: 0;
   }
 
   @media (min-width: 100rem) {
@@ -51,6 +179,32 @@ const appState = await loadChronosInsightsState(repositories, userId);
   @media (min-width: 120rem) {
     .app-route--insights {
       --app-route-max: 112rem;
+    }
+  }
+
+  @media (max-width: 64rem) {
+    .insights-evidence-ribbon__scope {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .insights-evidence-ribbon__scope > div + div {
+      border-top: 1px solid var(--insights-border);
+      border-inline-start: 0;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .app-route--insights {
+      padding-inline: max(0.25rem, env(safe-area-inset-left));
+    }
+
+    .insights-evidence-ribbon {
+      border-radius: var(--radius, 1rem);
+    }
+
+    .insights-evidence-ribbon__header,
+    .insights-evidence-ribbon__scope > div {
+      padding: 1rem;
     }
   }
 </style>

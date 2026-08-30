@@ -33,11 +33,13 @@ describe('ChronosAppShell command bar contract', () => {
     expect(shellSource).not.toContain('role="tab"');
   });
 
-  it('keeps Today semantics hidden while retaining identity on the other routes', () => {
-    expect(shellSource).toContain('const isTodayRoute = currentPath === chronosAppRoutes.today;');
-    expect(shellSource).toContain("class:list={{ 'visually-hidden': isTodayRoute }}");
-    expect(shellSource).toContain('!isTodayRoute && eyebrow');
-    expect(shellSource).toContain('!isTodayRoute && summary');
+  it('keeps each route heading available to assistive technology while compacting the shared shell', () => {
+    expect(shellSource).toContain(
+      'const isCompactShellRoute = routes.some((route) => route.href === currentPath);',
+    );
+    expect(shellSource).toContain("{ 'command-bar--compact': isCompactShellRoute }");
+    expect(shellSource).toContain('<h1 id="app-title" class="visually-hidden">{heading}</h1>');
+    expect(shellSource).not.toContain('isTodayRoute');
   });
 
   it('associates the fixed desktop utility cluster with the command bar and lets it scroll on mobile', () => {
@@ -76,14 +78,21 @@ describe('ChronosAppShell command bar contract', () => {
     expect(shellSource).not.toMatch(/\.sound-toggle\s*{[^}]*order:/);
   });
 
-  it('keeps two readable route columns and a compact account treatment on narrow screens', () => {
+  it('gives all idle utility controls equal transparent border weight', () => {
+    expect(shellSource).toMatch(
+      /\.command-bar__utilities\s+:is\(\.theme-toggle, \.sound-toggle, \.sign-out-button\)\s*{\s*border: 1px solid transparent;/,
+    );
+    expect(shellSource).toMatch(
+      /\.command-bar__utilities\s+:is\(\.theme-toggle, \.sound-toggle, \.sign-out-button\):hover:not\(:disabled\)\s*{\s*border-color: var\(--app-border-strong\);/,
+    );
+  });
+
+  it('keeps two readable route columns on narrow screens', () => {
     const mobileStyles = shellSource.slice(shellSource.indexOf('@media (max-width: 520px)'));
 
     expect(mobileStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
     expect(mobileStyles).toContain('min-height: 2.75rem;');
-    expect(shellSource).toContain(
-      'class="command-bar__account" aria-label={`Signed in as $' + '{email}`}',
-    );
-    expect(shellSource).not.toContain('{summary} Signed in as <strong>{email}</strong>');
+    expect(shellSource).toContain('.command-bar--compact {');
+    expect(shellSource).not.toContain('command-bar--today');
   });
 });

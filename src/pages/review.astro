@@ -7,7 +7,6 @@ import { loadChronosReviewState } from '../server/app/chronos-app';
 import { chronosAppRoutes, resolveChronosActionRouteContext } from '../server/app/route-contract';
 
 const routePath = chronosAppRoutes.review;
-
 const routeContext = await resolveChronosActionRouteContext({
   user: (Astro.locals as ChronosAuthLocals).user,
   request: Astro.request,
@@ -21,6 +20,7 @@ if (routeContext.kind === 'redirect') {
 
 const { actionError, email, repositories, statusMessage, userId } = routeContext;
 const appState = await loadChronosReviewState(repositories, userId);
+const executionBlockCount = appState.executionBlocks.length;
 ---
 
 <ChronosAppShell
@@ -34,29 +34,39 @@ const appState = await loadChronosReviewState(repositories, userId);
   statusMessage={statusMessage}
 >
   <div class="app-route app-route--review">
-    <div class="review-workbench">
-      <div class="review-workbench__main">
-        <section class="actions" aria-labelledby="review-actions-title">
-          <div class="actions__header">
-            <p class="eyebrow">Daily Review</p>
-            <h2 id="review-actions-title">Close one block at a time</h2>
-          </div>
+    <section class="review-context-band" aria-labelledby="review-context-title">
+      <p class="eyebrow">Current review workload</p>
+      <h2 id="review-context-title">
+        {
+          executionBlockCount === 1
+            ? '1 execution block ready for review'
+            : `${executionBlockCount} execution blocks ready for review`
+        }
+      </h2>
+      <p>Review completion first, then leave the next planning adjustment in the same pass.</p>
+    </section>
 
-          <DailyReviewCards
-            blocks={appState.executionBlocks.map((block) => ({
-              id: block.id,
-              title: block.title,
-              tasks: (appState.tasksByBlockId[block.id] ?? []).map((task) => ({
-                id: task.id,
-                title: task.title,
-                status: task.status,
-              })),
-            }))}
-          />
-        </section>
-      </div>
+    <div class="review-workspace">
+      <section class="review-command-ribbon" aria-labelledby="review-actions-title">
+        <header class="review-command-ribbon__header">
+          <p class="eyebrow">Block closeout</p>
+          <h2 id="review-actions-title">Complete the review while the work is current</h2>
+        </header>
 
-      <aside class="review-workbench__context" aria-label="Last conclusion context">
+        <DailyReviewCards
+          blocks={appState.executionBlocks.map((block) => ({
+            id: block.id,
+            title: block.title,
+            tasks: (appState.tasksByBlockId[block.id] ?? []).map((task) => ({
+              id: task.id,
+              title: task.title,
+              status: task.status,
+            })),
+          }))}
+        />
+      </section>
+
+      <aside class="review-history-panel" aria-label="Last conclusion context">
         {
           appState.conclusionPanel ? (
             <ConclusionPanel {...appState.conclusionPanel} client:load />
@@ -75,39 +85,161 @@ const appState = await loadChronosReviewState(repositories, userId);
 <style>
   .app-route--review {
     --app-route-max: 86rem;
+    --review-surface: var(--chronos-surface, var(--card, #ffffff));
+    --review-surface-muted: var(--chronos-surface-muted, var(--muted, #f1f5f9));
+    --review-border: var(--chronos-border, var(--border, rgba(100, 116, 139, 0.34)));
+    --review-text: var(--chronos-text, var(--foreground, #0f172a));
+    --review-text-muted: var(--chronos-text-muted, var(--muted-foreground, #475569));
+    display: grid;
+    gap: clamp(1rem, 1.7vw, 1.5rem);
+    width: min(100%, var(--app-route-max));
+    min-width: 0;
+    margin: clamp(0.75rem, 1.2vw, 1rem) auto 0;
   }
 
-  .review-workbench,
-  .review-workbench__main,
-  .review-workbench__context {
+  .app-route--review,
+  .app-route--review *,
+  .app-route--review *::before,
+  .app-route--review *::after {
+    box-sizing: border-box;
+  }
+
+  .review-context-band,
+  .review-workspace,
+  .review-command-ribbon,
+  .review-history-panel {
     min-width: 0;
   }
 
-  .review-workbench {
+  .review-context-band {
     display: grid;
-    gap: clamp(0.85rem, 1.5vw, 1.25rem);
+    gap: 0.45rem;
+    border-inline-start: 0.3rem solid var(--chronos-sky, #0ea5e9);
+    padding: clamp(0.85rem, 1.6vw, 1.1rem) clamp(1rem, 1.8vw, 1.35rem);
+    background: var(--review-surface-muted);
+    color: var(--review-text);
+  }
+
+  .review-context-band .eyebrow,
+  .review-command-ribbon__header .eyebrow {
+    margin: 0;
+  }
+
+  .review-context-band h2,
+  .review-command-ribbon__header h2 {
+    margin: 0;
+    color: var(--review-text);
+    letter-spacing: -0.04em;
+  }
+
+  .review-context-band p:last-child {
+    margin: 0;
+    color: var(--review-text-muted);
+    font-weight: 650;
+    line-height: 1.55;
+  }
+
+  .review-workspace {
+    display: grid;
+    gap: clamp(1rem, 1.7vw, 1.5rem);
+  }
+
+  .review-command-ribbon {
+    overflow: hidden;
+    border: 1px solid var(--review-border);
+    border-radius: calc(var(--radius, 1rem) + 0.25rem);
+    background: var(--review-surface);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--review-text) 6%, transparent);
+  }
+
+  .review-command-ribbon__header {
+    display: grid;
+    gap: 0.45rem;
+    padding: clamp(1rem, 1.8vw, 1.35rem);
+  }
+
+  .review-history-panel {
+    align-self: start;
+  }
+
+  .review-command-ribbon :global(.daily-review-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: 0;
+    margin: 0;
+  }
+
+  .review-command-ribbon :global(.daily-review-card),
+  .review-command-ribbon :global(.daily-review-empty) {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    padding: clamp(1rem, 1.8vw, 1.35rem);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .review-command-ribbon :global(.daily-review-card:hover),
+  .review-command-ribbon :global(.daily-review-empty:hover) {
+    border-color: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .review-command-ribbon :global(.daily-review-card::before),
+  .review-command-ribbon :global(.daily-review-card::after),
+  .review-command-ribbon :global(.daily-review-empty::before),
+  .review-command-ribbon :global(.daily-review-empty::after) {
+    display: none;
+  }
+
+  .review-command-ribbon :global(.daily-review-card input:not([type='checkbox'])),
+  .review-command-ribbon :global(.daily-review-card select),
+  .review-command-ribbon :global(.daily-review-card textarea),
+  .review-command-ribbon :global(.daily-review-card button) {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .review-command-ribbon :global(.daily-review-card + .daily-review-card) {
+    border-inline-start: 1px solid var(--review-border);
   }
 
   @media (min-width: 88rem) {
-    .review-workbench {
+    .app-route--review {
+      --app-route-max: 104rem;
+    }
+
+    .review-workspace {
       grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
       align-items: start;
     }
   }
 
-  @media (min-width: 100rem) {
-    .app-route--review {
-      --app-route-max: 100rem;
+  @media (max-width: 64rem) {
+    .review-command-ribbon :global(.daily-review-grid) {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .app-route--review .action-card--wide {
-      padding: clamp(1.15rem, 1.4vw, 1.45rem);
+    .review-command-ribbon :global(.daily-review-card + .daily-review-card) {
+      border-top: 1px solid var(--review-border);
+      border-inline-start: 0;
     }
   }
 
-  @media (min-width: 120rem) {
+  @media (max-width: 48rem) {
     .app-route--review {
-      --app-route-max: 104rem;
+      padding-inline: max(0.25rem, env(safe-area-inset-left));
+    }
+
+    .review-command-ribbon {
+      border-radius: var(--radius, 1rem);
+    }
+
+    .review-command-ribbon__header,
+    .review-command-ribbon :global(.daily-review-card),
+    .review-command-ribbon :global(.daily-review-empty) {
+      padding: 1rem;
     }
   }
 </style>

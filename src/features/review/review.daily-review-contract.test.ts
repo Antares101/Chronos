@@ -5,7 +5,7 @@ function readReviewSource() {
   return readFileSync(new URL('../../pages/review.astro', import.meta.url), 'utf8');
 }
 
-describe('Review daily review route contract', () => {
+describe('Review command ribbon contract', () => {
   it('renders DailyReviewCards from route state without hydrating the review card component', () => {
     const source = readReviewSource();
 
@@ -32,32 +32,31 @@ describe('Review daily review route contract', () => {
     expect(cardsSource).toContain('status: task.status');
   });
 
-  it('frames the page as a block closeout instead of a whole-day digest', () => {
+  it('uses truthful execution block workload as the visible review context', () => {
     const source = readReviewSource();
 
+    expect(source).toContain('const executionBlockCount = appState.executionBlocks.length;');
+    expect(source).toContain('<section class="review-context-band"');
+    expect(source).toContain('Current review workload');
+    expect(source).toContain('execution blocks ready for review');
     expect(source).toContain('heading="Close a block"');
-    expect(source).toContain(
-      'summary="Review one active block at a time, mark what finished, and note the adjustment for tomorrow."',
-    );
-    expect(source).toContain('<p class="eyebrow">Daily Review</p>');
     expect(source).not.toContain('heading="Close the day"');
   });
 
-  it('keeps completion first and adjacent to last-conclusion context in a responsive workbench', () => {
+  it('connects review cards in the command surface and leaves conclusion context alongside it on desktop', () => {
     const source = readReviewSource();
-    const workbenchIndex = source.indexOf('<div class="review-workbench">');
-    const mainIndex = source.indexOf('<div class="review-workbench__main">');
+    const ribbonIndex = source.indexOf('<section class="review-command-ribbon"');
     const cardsIndex = source.indexOf('<DailyReviewCards');
-    const asideIndex = source.indexOf('<aside class="review-workbench__context"');
+    const historyIndex = source.indexOf('<aside class="review-history-panel"');
     const conclusionIndex = source.indexOf('<ConclusionPanel');
 
-    expect(workbenchIndex).toBeGreaterThanOrEqual(0);
-    expect(mainIndex).toBeGreaterThan(workbenchIndex);
-    expect(cardsIndex).toBeGreaterThan(mainIndex);
-    expect(asideIndex).toBeGreaterThan(cardsIndex);
-    expect(conclusionIndex).toBeGreaterThan(asideIndex);
+    expect(ribbonIndex).toBeGreaterThanOrEqual(0);
+    expect(cardsIndex).toBeGreaterThan(ribbonIndex);
+    expect(historyIndex).toBeGreaterThan(cardsIndex);
+    expect(conclusionIndex).toBeGreaterThan(historyIndex);
+    expect(source).toContain('border-inline-start: 1px solid var(--review-border);');
     expect(source).toContain('@media (min-width: 88rem)');
-    expect(source).toContain('grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem)');
+    expect(source).toContain('grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);');
   });
 
   it('preserves the conclusion output path and removes the route-local conclude-block form', () => {

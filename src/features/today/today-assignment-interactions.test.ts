@@ -42,7 +42,7 @@ function createNode(dataset: Record<string, string> = {}) {
   };
 }
 
-function createFixture({ coarse = false, stale = false } = {}) {
+function createFixture({ fine = true, stale = false, targets = true } = {}) {
   const task = createNode({ assignmentTask: 'task-1' });
   const target = createNode({ assignmentTarget: 'block-1', assignmentTargetLabel: 'Focus block' });
   const select = createNode();
@@ -54,17 +54,17 @@ function createFixture({ coarse = false, stale = false } = {}) {
   option.value = stale ? 'other-block' : 'block-1';
   const root = createNode() as FakeNode & {
     documentElement: FakeNode;
-    defaultView: { matchMedia: () => { matches: boolean } };
+    defaultView: { matchMedia: (query: string) => { matches: boolean } };
     querySelector: (selector: string) => FakeNode | null;
     querySelectorAll: (selector: string) => FakeNode[];
   };
   root.documentElement = createNode();
-  root.defaultView = { matchMedia: () => ({ matches: coarse }) };
+  root.defaultView = { matchMedia: (query) => ({ matches: query === '(pointer: fine)' && fine }) };
   root.querySelector = (selector) =>
     selector === '[data-today-inbox-drag-feedback]' ? feedback : null;
   root.querySelectorAll = (selector) => {
     if (selector === '[data-assignment-task]') return [task];
-    if (selector === '[data-assignment-target]') return [target];
+    if (selector === '[data-assignment-target]') return targets ? [target] : [];
     if (selector === '[data-today-inbox-assignment]') return [form];
     if (selector === 'select[name="blockId"]') return [select];
     if (selector === 'option') return [option];
@@ -90,9 +90,23 @@ describe('today assignment interactions', () => {
     expect(select.value).toBe('block-1');
     expect(status.value).toBe('todo');
     expect(form.requestSubmit).toHaveBeenCalledTimes(1);
+    expect(task.draggable).toBe(true);
+    expect(task.getAttribute('data-assignment-draggable')).toBe('true');
     expect(form.getAttribute('data-assignment-state')).toBe('submitting');
     expect(form.getAttribute('aria-busy')).toBe('true');
     expect(feedback.textContent).toBe('Assigning to Focus block.');
+  });
+
+  it('does not bind pointer assignment when authoritative targets are missing', () => {
+    const fixture = createFixture({ targets: false });
+
+    expect(bindTodayAssignmentInteractions(fixture.root as never)).toBeNull();
+    expect(fixture.task.draggable).toBe(false);
+    expect(fixture.task.getAttribute('data-assignment-draggable')).toBeNull();
+
+    fixture.task.dispatch('dragstart');
+    fixture.target.dispatch('drop');
+    expect(fixture.form.requestSubmit).not.toHaveBeenCalled();
   });
 
   it('rejects stale targets and clears temporary drag state on drag end and Escape', () => {
@@ -166,7 +180,7 @@ describe('today assignment interactions', () => {
     fixture.target.dispatch('drop');
     expect(fixture.form.requestSubmit).toHaveBeenCalledTimes(1);
 
-    const touchFixture = createFixture({ coarse: true });
+    const touchFixture = createFixture({ fine: false });
     expect(bindTodayAssignmentInteractions(touchFixture.root as never)).toBeNull();
     expect(touchFixture.task.draggable).toBe(false);
   });

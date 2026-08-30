@@ -82,6 +82,37 @@ describe('BaseLayout focus ring tokens', () => {
   });
 });
 
+describe('BaseLayout form feedback tokens', () => {
+  it('keeps input boundaries and destructive text readable on route surfaces', () => {
+    const themes = [
+      { name: 'light', block: readThemeBlock(':root') },
+      { name: 'dark', block: readThemeBlock(":root\\[data-theme='dark'\\]") },
+    ];
+
+    expect(readToken(themes[0].block, '--chronos-destructive')).toBe('var(--chronos-danger-text)');
+
+    for (const { name, block } of themes) {
+      const input = readToken(block, '--chronos-input');
+      const destructiveText = readToken(block, '--chronos-danger-text');
+
+      expect(input, `${name} input border must be opaque`).toMatch(/^#[\da-f]{6}$/i);
+
+      for (const surfaceToken of ['--chronos-surface', '--chronos-surface-muted']) {
+        const surface = readToken(block, surfaceToken);
+
+        expect(
+          contrastRatio(input, surface),
+          `${name} input on ${surfaceToken}`,
+        ).toBeGreaterThanOrEqual(3);
+        expect(
+          contrastRatio(destructiveText, surface),
+          `${name} destructive text on ${surfaceToken}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
+
 describe('BaseLayout responsive shell', () => {
   it('permits reflow below 320 CSS px at browser zoom without a body min-width floor', () => {
     expect(layoutSource).not.toMatch(/body\s*\{[^}]*\bmin-width\s*:/s);

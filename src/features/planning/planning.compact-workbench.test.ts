@@ -5,26 +5,23 @@ function readPlanningSource() {
   return readFileSync(new URL('../../pages/planning.astro', import.meta.url), 'utf8');
 }
 
-describe('Planning compact workbench', () => {
-  it('keeps content first in source order while placing the action rail first in the mobile grid', () => {
+describe('Planning command ribbon', () => {
+  it('places the planning horizon and connected actions before the calendar and backlog workspace', () => {
     const source = readPlanningSource();
-
-    const mainIndex = source.indexOf('<div class="planning-workbench__main">');
+    const contextIndex = source.indexOf('<section class="planning-context-band"');
+    const ribbonIndex = source.indexOf('<section class="planning-command-ribbon"');
     const calendarIndex = source.indexOf('<WeeklyCalendar');
     const taskListIndex = source.indexOf('<TaskList');
-    const railIndex = source.indexOf('class="planning-workbench__rail actions"');
 
-    expect(mainIndex).toBeGreaterThanOrEqual(0);
-    expect(calendarIndex).toBeGreaterThan(mainIndex);
+    expect(contextIndex).toBeGreaterThanOrEqual(0);
+    expect(ribbonIndex).toBeGreaterThan(contextIndex);
+    expect(calendarIndex).toBeGreaterThan(ribbonIndex);
     expect(taskListIndex).toBeGreaterThan(calendarIndex);
-    expect(railIndex).toBeGreaterThan(taskListIndex);
-    expect(source).not.toContain('<main class="planning-workbench__main">');
-    expect(source).toContain('@media (max-width: 87.999rem)');
-    expect(source).toContain('.planning-workbench__main {\n    grid-area: main;\n  }');
-    expect(source).toContain('.planning-workbench__rail {\n    grid-area: rail;\n  }');
-    expect(source).toMatch(
-      /@media \(max-width: 87\.999rem\)\s*{\s*\.planning-workbench\s*{\s*grid-template-areas:\s*'rail'\s*'main';/,
-    );
+    expect(source).toContain('Planning horizon');
+    expect(source).toContain('class="planning-command-ribbon__actions"');
+    expect(source).toContain('border-inline-start: 1px solid var(--planning-border);');
+    expect(source).toContain('@media (max-width: 64rem)');
+    expect(source).toContain('border-top: 1px solid var(--planning-border);');
     expect(source.slice(calendarIndex, source.indexOf('/>', calendarIndex))).toContain(
       'client:load',
     );
@@ -36,9 +33,11 @@ describe('Planning compact workbench', () => {
   it('keeps create block expanded and places secondary actions in native details', () => {
     const source = readPlanningSource();
 
-    expect(source).toContain('<article class="action-card planning-workbench__create">');
+    expect(source).toContain(
+      '<article class="planning-command-ribbon__section planning-workbench__create">',
+    );
     expect(source).toContain('<h3>Create planned block</h3>');
-    expect(source).toContain('<details class="planning-action">');
+    expect(source).toContain('<details class="planning-command-ribbon__section planning-action">');
     expect(source).toContain('<summary>Edit planned schedule</summary>');
     expect(source).toContain('<summary>Move task into block</summary>');
     expect(source).toContain('<summary>Create task inside block</summary>');
@@ -70,15 +69,12 @@ describe('Planning compact workbench', () => {
     expect(source).toContain('categoryLabels[category]');
   });
 
-  it('uses a bounded desktop rail without a four-column action wall', () => {
+  it('keeps calendar dominant and stacks the ribbon and workspace safely on mobile', () => {
     const source = readPlanningSource();
 
-    expect(source).toContain('@media (min-width: 88rem)');
-    expect(source).toContain('grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);');
-    expect(source).toContain("grid-template-areas: 'main rail';");
-    expect(source).toContain('.planning-workbench__main,');
-    expect(source).toContain('.planning-workbench__rail {');
+    expect(source).toContain('grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.8fr);');
+    expect(source).toContain('.planning-command-ribbon__actions,\n    .planning-workspace {');
+    expect(source).toContain('grid-template-columns: minmax(0, 1fr);');
     expect(source).toContain('min-width: 0;');
-    expect(source).not.toContain('repeat(4, minmax(0, 1fr))');
   });
 });

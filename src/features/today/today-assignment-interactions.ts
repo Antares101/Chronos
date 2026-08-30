@@ -36,13 +36,14 @@ const bindings = new WeakMap<object, TodayAssignmentInteractionsBinding>();
 export function bindTodayAssignmentInteractions(
   root: TodayAssignmentInteractionsRoot,
 ): TodayAssignmentInteractionsBinding | null {
-  if (root.defaultView?.matchMedia?.('(pointer: coarse)').matches) return null;
+  if (!root.defaultView?.matchMedia?.('(pointer: fine)').matches) return null;
   const existing = bindings.get(root);
   if (existing) return existing;
 
   const tasks = nodes(root.querySelectorAll('[data-assignment-task]'));
   const targets = nodes(root.querySelectorAll('[data-assignment-target]'));
   const forms = nodes(root.querySelectorAll('[data-today-inbox-assignment]'));
+  if (tasks.length === 0 || targets.length === 0 || forms.length === 0) return null;
   const feedback = node(root.querySelector('[data-today-inbox-drag-feedback]'));
   const submittedTaskIds = new Set<string>();
   let activeTaskId: string | null = null;
@@ -83,6 +84,7 @@ export function bindTodayAssignmentInteractions(
 
   for (const task of tasks) {
     task.draggable = true;
+    task.setAttribute('data-assignment-draggable', 'true');
     listen(task, 'dragstart', () => {
       const taskId = task.dataset?.assignmentTask;
       if (
@@ -127,6 +129,10 @@ export function bindTodayAssignmentInteractions(
   const binding = {
     destroy() {
       for (const [target, type, listener] of listeners) target.removeEventListener(type, listener);
+      for (const task of tasks) {
+        task.draggable = false;
+        task.removeAttribute('data-assignment-draggable');
+      }
       clear(true);
       bindings.delete(root);
     },

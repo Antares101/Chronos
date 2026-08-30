@@ -124,7 +124,7 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
 <ChronosAppShell
   title="Chronos Today"
-  heading="Run the Day"
+  heading="Today"
   email={email}
   currentPath={routePath}
   actionError={shellActionError}
@@ -148,10 +148,10 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
       />
     </div>
 
-    <div class="today-workspace">
+    <section class="today-operations-ribbon" aria-label="Operations ribbon">
       <div
         id="today-capture"
-        class="today-workspace__capture today-focus-target"
+        class="today-operations-ribbon__capture today-focus-target"
         data-focus-target
         tabindex="-1"
       >
@@ -160,7 +160,7 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
       <aside
         id="today-open-tasks"
-        class="today-workspace__shelf today-focus-target"
+        class="today-operations-ribbon__shelf today-focus-target"
         data-focus-target
         tabindex="-1"
         aria-label="Task inbox"
@@ -170,13 +170,15 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
       <div
         id="today-quick-block"
-        class="today-workspace__quick-block today-focus-target"
+        class="today-operations-ribbon__quick-block today-focus-target"
         data-focus-target
         tabindex="-1"
       >
         <TodayQuickBlock {...quickBlockProps} />
       </div>
+    </section>
 
+    <div class="today-workspace">
       <div
         id="today-day-sheet"
         class="today-workspace__sheet today-focus-target"
@@ -194,16 +196,18 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
       >
         <TodayDailyHeader {...headerProps} />
       </div>
+    </div>
 
+    <section class="today-closeout-band" aria-label="Close the day">
       <div
         id="today-closeout"
-        class="today-workspace__closeout today-focus-target"
+        class="today-closeout-band__content today-focus-target"
         data-focus-target
         tabindex="-1"
       >
         <TodayCloseout {...closeoutProps} />
       </div>
-    </div>
+    </section>
   </div>
 </ChronosAppShell>
 
@@ -264,58 +268,206 @@ const quickBlockProps = { actionPath: routePath, todayDate: appState.todayDate, 
 
 <style>
   /* prettier-ignore */
-  .app-route--today { --app-route-max: 90rem; --today-surface: var(--chronos-surface, var(--card, #fff)); --today-border: var(--chronos-border, var(--border, rgba(99, 102, 241, 0.22))); display: grid; gap: clamp(0.85rem, 1.5vw, 1.25rem); width: min(100%, var(--app-route-max)); min-width: 0; margin-inline: auto; }
+  .app-route--today { --app-route-max: 90rem; --today-surface: var(--chronos-surface, var(--card, #fff)); --today-surface-muted: var(--chronos-surface-muted, var(--muted, #f1f5f9)); --today-border: var(--chronos-border, var(--border, rgba(100, 116, 139, 0.34))); --today-border-strong: var(--chronos-border-strong, rgba(79, 70, 229, 0.34)); --today-text: var(--chronos-text, var(--foreground, #0f172a)); --today-text-muted: var(--chronos-text-muted, var(--muted-foreground, #475569)); display: grid; gap: clamp(1rem, 1.7vw, 1.5rem); width: min(100%, var(--app-route-max)); min-width: 0; margin-block-start: clamp(.75rem, 1.2vw, 1rem); margin-inline: auto; }
   /* prettier-ignore */
   .app-route--today, .app-route--today *, .app-route--today *::before, .app-route--today *::after { box-sizing: border-box; }
   /* prettier-ignore */
-  .today-focus-target, .today-workspace, .today-workspace > * { min-width: 0; max-width: 100%; }
+  .today-focus-target, .today-operations-ribbon, .today-operations-ribbon > *, .today-workspace, .today-workspace > *, .today-closeout-band, .today-closeout-band > * { min-width: 0; max-width: 100%; }
   /* prettier-ignore */
   .today-focus-target:focus-visible, [data-focus-target]:focus { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 4px; }
   /* prettier-ignore */
-  .today-workspace { display: grid; grid-template-columns: minmax(19rem, 23rem) minmax(0, 1fr); grid-template-areas: 'capture shelf' 'quick-block sheet' 'intention sheet' 'closeout sheet'; align-items: start; gap: clamp(0.85rem, 1.5vw, 1.25rem); }
+  .today-operations-ribbon { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr); align-items: stretch; overflow: hidden; border: 1px solid var(--today-border); border-radius: var(--radius, 1rem); background: var(--today-surface); box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent); }
   /* prettier-ignore */
-  .today-workspace__capture { grid-area: capture; }
+  .today-operations-ribbon > * { padding: clamp(1rem, 1.6vw, 1.25rem); }
+  /* prettier-ignore */
+  .today-operations-ribbon > * + * { border-inline-start: 1px solid var(--today-border); }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture), .today-operations-ribbon :global(.today-task-inbox), .today-operations-ribbon :global(.today-quick-block) { height: 100%; border: 0; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
+  /* prettier-ignore */
+  .today-workspace { display: grid; grid-template-columns: minmax(0, 7fr) minmax(19rem, 5fr); grid-template-areas: 'sheet intention'; align-items: stretch; gap: clamp(1rem, 1.7vw, 1.5rem); }
   .today-workspace__sheet {
     grid-area: sheet;
-  }
-  .today-workspace__shelf {
-    grid-area: shelf;
-  }
-  .today-workspace__quick-block {
-    grid-area: quick-block;
   }
   .today-workspace__intention {
     grid-area: intention;
   }
-  .today-workspace__closeout {
-    grid-area: closeout;
+  /* prettier-ignore */
+  .today-workspace__sheet > :global(.today-sheet), .today-workspace__intention > :global(.daily-header) { height: 31.25rem; overflow: auto; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(section), .today-operations-ribbon :global(form), .today-operations-ribbon :global(label), .today-workspace :global(section), .today-workspace :global(form), .today-workspace :global(label), .today-closeout-band :global(section), .today-closeout-band :global(form), .today-closeout-band :global(label) { min-width: 0; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(form), .today-workspace :global(form), .today-closeout-band :global(form) { display: grid; gap: 0.65rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(input), .today-operations-ribbon :global(select), .today-operations-ribbon :global(textarea), .today-operations-ribbon :global(button), .today-workspace :global(input), .today-workspace :global(select), .today-workspace :global(textarea), .today-workspace :global(button), .today-closeout-band :global(input), .today-closeout-band :global(select), .today-closeout-band :global(textarea), .today-closeout-band :global(button) { width: 100%; max-width: 100%; min-height: 44px; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(button), .today-operations-ribbon :global(.today-task-inbox__actions), .today-workspace :global(button), .today-workspace :global(.today-tasks__actions), .today-closeout-band :global(button) { flex-wrap: wrap; touch-action: manipulation; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture) { min-width: 0; overflow-wrap: anywhere; color: var(--today-text); }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture header) { display: flex; align-items: baseline; gap: 0.65rem; flex-wrap: wrap; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture header p), .today-operations-ribbon :global(.today-quick-capture h2) { margin: 0; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture header p) { color: var(--chronos-primary, var(--primary, #4f46e5)); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__change-destination) { border: 1px solid var(--today-border-strong); background: transparent; color: var(--chronos-primary-strong, #4338ca); box-shadow: none; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__change-destination:hover:not(:disabled)) { background: var(--chronos-surface-tinted, #eef2ff); }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture input:focus-visible), .today-operations-ribbon :global(.today-quick-capture select:focus-visible), .today-operations-ribbon :global(.today-quick-capture button:focus-visible) { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 2px; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(h2) { margin: 0; font-size: 1rem; letter-spacing: -0.025em; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(form) { margin-top: .75rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__destination-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: .5rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__destination) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .4rem; min-width: 0; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__destination p) { margin: 0; color: var(--today-text-muted); font-size: .78rem; overflow-wrap: anywhere; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-capture__destination-row > button), .today-operations-ribbon :global(.today-quick-capture__change-destination) { width: auto; min-width: 4.25rem; border-radius: .55rem; padding-inline: .65rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-task-inbox ul) { max-height: 8.5rem; overflow: auto; margin-top: .75rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-task-inbox li) { padding: .6rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__presets) { padding: 0; border: 0; background: transparent; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__presets button), .today-operations-ribbon :global(.today-quick-block > form > button[type='submit']) { border-radius: .55rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__actions) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .5rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block details) { min-width: 0; margin-top: 0; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block details > summary) { min-height: 44px; padding-block: .65rem; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__actions > button[type='submit']) { width: auto; min-width: 6rem; min-height: 44px; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__actions > details[open]) { grid-column: 1 / -1; }
+  /* prettier-ignore */
+  .today-operations-ribbon :global(.today-quick-block__actions > details[open] + button[type='submit']) { grid-column: 1 / -1; width: 100%; }
+  /* prettier-ignore */
+  .today-workspace :global(.today-sheet), .today-workspace :global(.daily-header), .today-closeout-band :global(.today-closeout) { border-radius: var(--radius, 1rem); box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent); }
+  /* prettier-ignore */
+  .today-workspace :global(.today-sheet__header > p), .today-workspace :global(.daily-header > header > p), .today-closeout-band :global(.today-closeout > header > p) { display: none; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header > header) { align-items: center; border-bottom: 1px solid var(--today-border); padding-bottom: .85rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header > header time) { border: 1px solid var(--today-border); border-radius: .45rem; padding: .3rem .55rem; background: var(--today-surface-muted); font-size: .78rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header) { padding: 1.25rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header__form) { grid-template-columns: minmax(0, 1fr); margin-top: .75rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header__form textarea) { min-height: 44px; height: 44px; }
+  /* prettier-ignore */
+  .today-workspace :global(#daily-header-help) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header__form button) { width: auto; justify-self: end; border-radius: .55rem; padding-inline: 1rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header__objectives) { margin-top: .85rem; padding-top: .85rem; }
+  /* prettier-ignore */
+  .today-workspace :global(.daily-header__objectives ol) { margin-block: .6rem; padding-inline-start: 1.25rem; }
+  /* prettier-ignore */
+  .today-closeout-band { min-width: 0; }
+  /* prettier-ignore */
+  .today-closeout-band :global(.today-closeout) { border-color: var(--today-border); padding: clamp(1rem, 1.8vw, 1.35rem); }
+  /* prettier-ignore */
+  .today-closeout-band :global(.today-closeout__form) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; }
+  /* prettier-ignore */
+  .today-closeout-band :global(.today-closeout__form > #closeout-help) { grid-column: 1 / 3; margin: 0; color: var(--today-text-muted); font-size: .78rem; }
+  /* prettier-ignore */
+  .today-closeout-band :global(.today-closeout__form > button) { grid-column: 3; grid-row: 1 / 3; width: auto; min-width: 9rem; border-radius: .55rem; padding-inline: 1.25rem; }
+  /* prettier-ignore */
+  .today-closeout-band :global(textarea) { height: 44px; min-height: 44px; }
+  /* prettier-ignore */
+  .app-route--today :global(button) { border-radius: .55rem; }
+  /* prettier-ignore */
+  @media (max-width: 64rem) { .today-operations-ribbon { grid-template-columns: 1fr; } .today-operations-ribbon > * + * { border-inline-start: 0; border-top: 1px solid var(--today-border); } .today-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'sheet' 'intention'; } .today-workspace__sheet > :global(.today-sheet), .today-workspace__intention > :global(.daily-header) { height: auto; max-height: none; overflow: visible; } .today-closeout-band :global(.today-closeout__form) { grid-template-columns: minmax(0, 1fr); } .today-closeout-band :global(.today-closeout__form > #closeout-help), .today-closeout-band :global(.today-closeout__form > button) { grid-column: 1; grid-row: auto; width: 100%; } }
+  /* prettier-ignore */
+  @media (max-width: 48rem) { .app-route--today { padding-inline-start: max(0.25rem, env(safe-area-inset-left)); padding-inline-end: max(0.25rem, env(safe-area-inset-right)); } .today-operations-ribbon, .today-closeout-band { border-radius: var(--radius, 1rem); } .today-operations-ribbon > * { padding: 1rem; } .today-operations-ribbon :global(button[type='submit']), .today-workspace :global(button[type='submit']), .today-closeout-band :global(button[type='submit']) { width: 100%; } }
+  /* prettier-ignore */
+  /* Approved Command Ribbon desktop proportions: the contextual band leads, the ribbon stays one surface, and the quieter workspace follows. */
+  @media (min-width: 64rem) {
+    .app-route--today {
+      gap: 1rem;
+    }
+    :global(.today-active-block) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(8.75rem, 0.26fr);
+      column-gap: 1.5rem;
+      align-items: start;
+      padding: 1.25rem;
+    }
+    :global(.today-active-block > :not(.today-active-block__actions)) {
+      grid-column: 1;
+    }
+    :global(.today-active-block__actions) {
+      grid-column: 2;
+      grid-row: 1 / span 6;
+      align-self: stretch;
+      margin-top: 0;
+    }
+    :global(.today-active-block__actions > *) {
+      height: 100%;
+    }
+    .today-operations-ribbon {
+      min-height: 11.5rem;
+    }
+    .today-operations-ribbon > * {
+      padding: 1.25rem;
+    }
+    .today-operations-ribbon :global(.today-quick-capture form),
+    .today-operations-ribbon :global(.today-quick-block form) {
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .today-operations-ribbon :global(.today-quick-capture > form > label),
+    .today-operations-ribbon :global(.today-quick-block > form > label) {
+      gap: 0.25rem;
+      color: var(--today-text-muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .today-operations-ribbon :global(.today-quick-block__durations button) {
+      block-size: 44px;
+      min-block-size: 44px;
+      padding-block: 0;
+    }
+    .today-operations-ribbon :global(.today-task-inbox ul) {
+      gap: 0.4rem;
+      max-height: 6.25rem;
+    }
+    .today-operations-ribbon :global(.today-task-inbox li) {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.5rem;
+    }
+    .today-operations-ribbon :global(.today-task-inbox li:has(details[open])) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .today-operations-ribbon :global(.today-task-inbox li details[open]) {
+      grid-column: 1 / -1;
+    }
+    .today-operations-ribbon :global(.today-task-inbox li > div) {
+      gap: 0.1rem;
+    }
+    .today-workspace__sheet > :global(.today-sheet),
+    .today-workspace__intention > :global(.daily-header) {
+      height: 31.25rem;
+    }
+    .today-workspace :global(.today-sheet__header h2),
+    .today-workspace :global(.daily-header > header h2),
+    .today-closeout-band :global(.today-closeout > header h2) {
+      font-size: 1.125rem;
+      line-height: 1.2;
+    }
   }
-  /* prettier-ignore */
-  .today-workspace :global(section), .today-workspace :global(form), .today-workspace :global(label) { min-width: 0; }
-  /* prettier-ignore */
-  .today-workspace :global(form) { display: grid; gap: 0.65rem; }
-  /* prettier-ignore */
-  .today-workspace :global(input), .today-workspace :global(select), .today-workspace :global(textarea), .today-workspace :global(button) { width: 100%; max-width: 100%; min-height: 44px; }
-  /* prettier-ignore */
-  .today-workspace :global(button), .today-workspace :global(.today-tasks__actions) { flex-wrap: wrap; touch-action: manipulation; }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture) { min-width: 0; overflow-wrap: anywhere; color: var(--chronos-text, var(--foreground, #0f172a)); background: var(--today-surface); border: 1px solid var(--today-border); border-radius: var(--radius, 1rem); padding: clamp(1rem, 2vw, 1.5rem); }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture header) { display: flex; align-items: baseline; gap: 0.65rem; flex-wrap: wrap; }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture header p), .today-workspace :global(.today-quick-capture h2) { margin: 0; }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture header p) { color: var(--chronos-primary, var(--primary, #4f46e5)); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture__change-destination) { border: 1px solid var(--chronos-border-strong, rgba(99, 102, 241, 0.32)); background: transparent; color: var(--chronos-primary-strong, #4338ca); box-shadow: none; }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture__change-destination:hover:not(:disabled)) { background: var(--chronos-surface-tinted, #eef2ff); }
-  /* prettier-ignore */
-  .today-workspace :global(.today-quick-capture input:focus-visible), .today-workspace :global(.today-quick-capture select:focus-visible), .today-workspace :global(.today-quick-capture button:focus-visible) { outline: 3px solid var(--chronos-ring, var(--ring, #818cf8)); outline-offset: 2px; }
-  /* prettier-ignore */
-  @media (max-width: 72rem) { .today-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'capture' 'shelf' 'quick-block' 'sheet' 'intention' 'closeout'; } }
-  /* prettier-ignore */
-  @media (max-width: 48rem) { .app-route--today { padding-inline-start: max(0.25rem, env(safe-area-inset-left)); padding-inline-end: max(0.25rem, env(safe-area-inset-right)); } .today-workspace :global(button[type='submit']) { width: 100%; } }
   /* prettier-ignore */
   @media (prefers-reduced-motion: reduce) { .app-route--today *, .app-route--today *::before, .app-route--today *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 </style>

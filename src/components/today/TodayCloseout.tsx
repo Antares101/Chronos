@@ -23,11 +23,15 @@ export default function TodayCloseout({ closeout, actionPath, draft, actionError
     'Keep the adjustment to 280 characters or fewer.',
     280,
   );
+  const helpMessage = `${
+    closeout.state === 'empty' && !draft
+      ? 'Record one outcome and one adjustment for tomorrow. '
+      : ''
+  }Surrounding spaces are removed when saved. Both fields are required.`;
 
   return (
     <section className="today-closeout" aria-labelledby="today-closeout-title">
       <header>
-        <p>End of Day</p>
         <h2 id="today-closeout-title">Close the Day</h2>
       </header>
       {statusMessage ? (
@@ -44,9 +48,6 @@ export default function TodayCloseout({ closeout, actionPath, draft, actionError
         <div className="today-closeout__alert" role="alert">
           Daily closeout unavailable. <a href={actionPath}>Try loading it again.</a>
         </div>
-      ) : null}
-      {closeout.state === 'empty' && !draft ? (
-        <p>Record one outcome and one adjustment for tomorrow.</p>
       ) : null}
       {closeout.state !== 'error' || draft ? (
         <form method="post" action={actionPath} className="today-closeout__form">
@@ -69,9 +70,7 @@ export default function TodayCloseout({ closeout, actionPath, draft, actionError
             errorId="closeout-adjustment-error"
             autoFocus={!outcomeError && Boolean(adjustmentError)}
           />
-          <p id="closeout-help">
-            Surrounding spaces are removed when saved. Both fields are required.
-          </p>
+          <p id="closeout-help">{helpMessage}</p>
           <button type="submit">{buttonLabel}</button>
         </form>
       ) : null}

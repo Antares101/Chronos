@@ -18,16 +18,7 @@ interface Props {
   statusMessage?: string | null;
 }
 
-const {
-  title,
-  eyebrow,
-  heading,
-  summary,
-  email,
-  currentPath,
-  actionError = null,
-  statusMessage = null,
-} = Astro.props;
+const { title, heading, currentPath, actionError = null, statusMessage = null } = Astro.props;
 
 const routes: AppRoute[] = [
   { href: chronosAppRoutes.today, label: 'Today' },
@@ -35,7 +26,7 @@ const routes: AppRoute[] = [
   { href: chronosAppRoutes.review, label: 'Review' },
   { href: chronosAppRoutes.insights, label: 'Insights' },
 ];
-const isTodayRoute = currentPath === chronosAppRoutes.today;
+const isCompactShellRoute = routes.some((route) => route.href === currentPath);
 ---
 
 <BaseLayout title={title}>
@@ -43,7 +34,7 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
     <a class="skip-link" href="#app-content">Skip to content</a>
 
     <section
-      class:list={['command-bar', 'ui-card', { 'command-bar--today': isTodayRoute }]}
+      class:list={['command-bar', 'ui-card', { 'command-bar--compact': isCompactShellRoute }]}
       aria-labelledby="app-title"
     >
       <div class="command-bar__utilities" aria-label="Account and appearance actions">
@@ -87,20 +78,9 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
         </form>
       </div>
 
-      <div class="command-bar__identity">
-        {!isTodayRoute && eyebrow ? <p class="eyebrow">{eyebrow}</p> : null}
-        <h1 id="app-title" class:list={{ 'visually-hidden': isTodayRoute }}>{heading}</h1>
-        {
-          !isTodayRoute && summary ? (
-            <>
-              <p class="summary">{summary}</p>
-              <p class="command-bar__account" aria-label={`Signed in as ${email}`}>
-                <strong>{email}</strong>
-              </p>
-            </>
-          ) : null
-        }
-      </div>
+      <a class="command-bar__brand" href={chronosAppRoutes.today}>Chronos</a>
+
+      <h1 id="app-title" class="visually-hidden">{heading}</h1>
 
       <nav class="section-nav" aria-label="Chronos app sections">
         {
@@ -339,9 +319,7 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
 
   .command-bar {
     display: grid;
-    grid-template-areas:
-      'identity'
-      'nav';
+    grid-template-areas: 'nav';
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: clamp(0.75rem, 1.6vw, 1rem);
@@ -631,6 +609,14 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
     padding: 0;
   }
 
+  .command-bar__utilities :is(.theme-toggle, .sound-toggle, .sign-out-button) {
+    border: 1px solid transparent;
+  }
+
+  .command-bar__utilities :is(.theme-toggle, .sound-toggle, .sign-out-button):hover:not(:disabled) {
+    border-color: var(--app-border-strong);
+  }
+
   .command-bar__utilities svg {
     width: 1.2rem;
     height: 1.2rem;
@@ -886,7 +872,7 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
       padding-right: 10.5rem;
     }
 
-    .command-bar--today {
+    .command-bar--compact {
       grid-template-areas: 'nav';
       grid-template-columns: minmax(0, 1fr);
     }
@@ -970,7 +956,6 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
     .command-bar {
       grid-template-areas:
         'utilities'
-        'identity'
         'nav';
       grid-template-columns: minmax(0, 1fr);
       padding: 0.75rem;
@@ -1059,6 +1044,159 @@ const isTodayRoute = currentPath === chronosAppRoutes.today;
 
     .command-bar {
       backdrop-filter: none;
+    }
+  }
+
+  /* Command Ribbon shell: a quiet application rail rather than a dashboard card. */
+  .shell {
+    padding: 0 clamp(1rem, 2.5vw, 2rem) 2rem;
+    background: linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-soft) 100%);
+  }
+
+  .shell::before {
+    display: none;
+  }
+
+  .command-bar {
+    grid-template-areas: 'brand nav utilities';
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1.25rem, 2.5vw, 2.25rem);
+    width: min(100%, 90rem);
+    min-height: 4.5rem;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--app-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    animation: none;
+    overflow: visible;
+  }
+
+  .command-bar::before,
+  .command-bar::after {
+    display: none;
+  }
+
+  .command-bar__brand {
+    grid-area: brand;
+    color: var(--app-primary);
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    text-decoration: none;
+  }
+
+  .command-bar__brand:focus-visible {
+    border-radius: 0.35rem;
+    outline: 3px solid var(--app-ring);
+    outline-offset: 0.25rem;
+  }
+
+  .command-bar__utilities {
+    position: static;
+    grid-area: utilities;
+    gap: 0.15rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .section-nav {
+    display: flex;
+    justify-content: flex-start;
+    gap: clamp(0.8rem, 2vw, 1.5rem);
+  }
+
+  .section-nav__link {
+    min-height: 2.75rem;
+    border-color: transparent;
+    border-radius: 0;
+    padding: 0.8rem 0.1rem 0.65rem;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .section-nav__link::before {
+    display: none;
+  }
+
+  .section-nav__link:hover {
+    border-color: transparent;
+    color: var(--app-text);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .section-nav__link--active {
+    border-bottom-color: var(--app-primary);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .section-nav__link--active span {
+    color: var(--app-primary-strong);
+  }
+
+  .command-bar__utilities :is(.theme-toggle, .sound-toggle, .sign-out-button) {
+    border-radius: 0.55rem;
+    background: transparent;
+    color: var(--app-text-muted);
+    box-shadow: none;
+  }
+
+  .command-bar__utilities :is(.theme-toggle, .sound-toggle, .sign-out-button):hover:not(:disabled) {
+    background: var(--app-surface-muted);
+    color: var(--app-text);
+  }
+
+  @media (max-width: 760px) {
+    .command-bar {
+      grid-template-areas:
+        'brand utilities'
+        'nav nav';
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.25rem 1rem;
+      padding-block: 0.65rem;
+    }
+
+    .section-nav {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(5.5rem, 1fr));
+      gap: 0.25rem;
+      overflow-x: auto;
+    }
+
+    .section-nav__link {
+      justify-content: center;
+      padding-inline: 0.5rem;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .shell {
+      padding: 0 0.75rem 1.5rem;
+    }
+
+    .command-bar__utilities {
+      position: static;
+      justify-self: end;
+    }
+
+    .section-nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow-x: visible;
+    }
+
+    .section-nav__link {
+      border-radius: 0.45rem;
+      text-align: center;
     }
   }
 </style>
