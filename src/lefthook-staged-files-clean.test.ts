@@ -177,7 +177,7 @@ function fixture(layout: Layout) {
   const root = ownedRoot();
   const env = isolatedEnvironment(root);
   const transcript = join(root, 'commands.jsonl');
-  console.info(`Retained owned guard fixture and complete command output: ${root}`);
+  process.stdout.write(`Retained owned guard fixture and complete command output: ${root}\n`);
 
   function run(cwd: string, executable: string, args: string[]) {
     const result = spawnSync(executable, args, {
@@ -349,8 +349,8 @@ describe.each(layouts)('staged-files-clean [S2, S7]: %s', (layout) => {
       // Lefthook itself must discover and stash unstaged changes. Do not manufacture a patch.
       const result = owned.guard();
       const after = owned.snapshot();
-      console.info(
-        JSON.stringify({
+      process.stdout.write(
+        `${JSON.stringify({
           layout,
           scenario,
           stdout: result.stdout,
@@ -359,7 +359,7 @@ describe.each(layouts)('staged-files-clean [S2, S7]: %s', (layout) => {
           commandStdout: result.commandStdout,
           commandStderr: result.commandStderr,
           commandStatus: result.commandStatus,
-        }),
+        })}\n`,
       );
       // Soft assertions retain evidence for every effect even on the expected false-success RED.
       expect.soft(after, `state preservation; see ${owned.transcript}`).toEqual(before);
