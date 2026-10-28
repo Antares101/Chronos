@@ -235,6 +235,10 @@ function fixture(layout: Layout) {
     // Only query the public Git interface; never open or construct Git storage files.
   }
 
+  // Match Git's real pre-commit hook context using this worktree's actual index.
+  // Query its path publicly; never manufacture or open Git storage files.
+  env.GIT_INDEX_FILE = resolve(cwd, git(cwd, 'rev-parse', '--git-path', 'index').trim());
+
   const configuration = readFileSync(resolve(projectRoot, 'lefthook.yml'), 'utf8');
   writeFileSync(join(cwd, 'lefthook.yml'), configuration);
   const guardScript = join(projectRoot, 'scripts', 'staged-files-clean.sh');
