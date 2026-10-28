@@ -5,7 +5,7 @@ pre-commit:
     staged-files-clean:
       priority: 1
       run: >-
-        git diff --cached --quiet --diff-filter=ACMR || ( test ! -s $(git rev-parse --git-path info/lefthook-unstaged.patch) || ! git apply --numstat -- $(git rev-parse --git-path info/lefthook-unstaged.patch) | cut -f3- | grep -F -x -f <(git diff --cached --name-only --diff-filter=ACMR) >/dev/null ) || ( printf '%s\n' 'ERROR: staged files have unstaged changes. Stage or revert those changes before committing.'; git apply --numstat -- $(git rev-parse --git-path info/lefthook-unstaged.patch) | cut -f3- | grep -F -x -f <(git diff --cached --name-only --diff-filter=ACMR); false ); status=$?; exit $status; :
+        bash scripts/staged-files-clean.sh
     biome:
       glob: '*.{js,mjs,cjs,jsx,ts,tsx,json,jsonc,css}'
       run: npm exec -- biome check --no-errors-on-unmatched {staged_files}
