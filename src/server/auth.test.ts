@@ -26,12 +26,13 @@ import {
 } from './auth';
 
 describe('auth route helpers', () => {
-  it('classifies only app section routes as protected', () => {
+  it('classifies app sections and block workspaces as protected', () => {
     expect(isProtectedAppPath('/today')).toBe(true);
     expect(isProtectedAppPath('/today/blocks')).toBe(true);
     expect(isProtectedAppPath('/planning')).toBe(true);
     expect(isProtectedAppPath('/review')).toBe(true);
     expect(isProtectedAppPath('/insights')).toBe(true);
+    expect.soft(isProtectedAppPath('/blocks/local-execution-block')).toBe(true);
     expect(isProtectedAppPath('/')).toBe(false);
     expect(isProtectedAppPath('/sign-in')).toBe(false);
     expect(isProtectedAppPath('/app')).toBe(false);
@@ -65,6 +66,12 @@ describe('auth route helpers', () => {
     expect(resolveAuthMiddlewareDecision(new URL('https://chronos.test/today'), user)).toEqual({
       kind: 'continue',
     });
+    expect(
+      resolveAuthMiddlewareDecision(
+        new URL('https://chronos.test/blocks/local-execution-block'),
+        user,
+      ),
+    ).toEqual({ kind: 'continue' });
   });
 
   it('classifies loopback client addresses only for trusted local clients', () => {
@@ -122,6 +129,15 @@ describe('auth route helpers', () => {
       error: null,
     });
 
+    expect
+      .soft(
+        createMockLocalAuthLocals(
+          new URL('http://localhost:4321/blocks/local-execution-block'),
+          true,
+          '127.0.0.1',
+        )?.user,
+      )
+      .toBe(mockLocalUser);
     expect(
       createMockLocalAuthLocals(new URL('http://localhost:4321/sign-in'), true, '127.0.0.1'),
     ).toBeNull();

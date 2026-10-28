@@ -215,8 +215,11 @@ function createMockLocalSupabaseClient(): SupabaseClient {
 }
 
 export function isProtectedAppPath(pathname: string): boolean {
-  return chronosAppSectionPaths.some(
-    (routePath) => pathname === routePath || pathname.startsWith(`${routePath}/`),
+  return (
+    pathname.startsWith('/blocks/') ||
+    chronosAppSectionPaths.some(
+      (routePath) => pathname === routePath || pathname.startsWith(`${routePath}/`),
+    )
   );
 }
 
