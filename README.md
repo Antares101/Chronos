@@ -8,7 +8,7 @@ This repository is public and the project documentation will be expanded as the 
 
 ## Getting Started
 
-More setup instructions will be added soon.
+Install dependencies with `npm ci`. This uses the committed lockfile and checks that its dependency graph matches `package.json`; update the lockfile alongside dependency changes.
 
 ## Git hooks
 
