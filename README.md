@@ -10,6 +10,12 @@ This repository is public and the project documentation will be expanded as the 
 
 Install dependencies with `npm ci`. This uses the committed lockfile and checks that its dependency graph matches `package.json`; update the lockfile alongside dependency changes.
 
+## Protected navigation
+
+Block-detail paths under `/blocks/` use the same authentication boundary as app sections. Unauthenticated navigation redirects to `/sign-in`, preserving the requested path and query in `redirectTo`.
+
+Local mock authentication remains limited to development requests with both a localhost URL and a loopback client address.
+
 ## Git hooks
 
 Bash is required for the staged-files guard. After installing dependencies, install and check the hooks, and run the tests with:
