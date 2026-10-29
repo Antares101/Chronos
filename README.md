@@ -10,6 +10,8 @@ This repository is public and the project documentation will be expanded as the 
 
 Install dependencies with `npm ci`. This uses the committed lockfile and checks that its dependency graph matches `package.json`; update the lockfile alongside dependency changes.
 
+The production security dependency unit raises the Astro floor to `^7.3.3` and `@astrojs/node` to `^11.1.3`, using the committed patched lockfile. Normal gates remain `npm ci`, `npm run audit:production` (high severity threshold), `npm run quality:ci`, and the separate `npm run smoke:browser` functional check. Applying this dependency pair does not establish that those gates have passed or that independent review, native review, CI, or delivery signoff is complete.
+
 ## Protected navigation
 
 Block-detail paths under `/blocks/` use the same authentication boundary as app sections. Unauthenticated navigation redirects to `/sign-in`, preserving the requested path and query in `redirectTo`.
