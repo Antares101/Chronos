@@ -30,7 +30,7 @@ const routeChecks = [
       {
         name: 'quick task capture heading',
         selector: '#today-quick-capture-title',
-        text: 'Add a Task',
+        text: 'Quick Add Task',
       },
       { name: 'day sheet heading', selector: '#today-sheet-title', text: 'Day Sheet' },
       {
@@ -83,7 +83,7 @@ const routeChecks = [
       {
         name: 'review actions heading',
         selector: '#review-actions-title',
-        text: 'Close one block at a time',
+        text: 'Complete the review while the work is current',
       },
       {
         name: 'conclusion panel heading',

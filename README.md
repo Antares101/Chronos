@@ -34,6 +34,12 @@ ERROR: staged files have unstaged changes. Stage or revert those changes before 
 
 Stage or revert those changes before committing. The existing lint and style checks still run at pre-commit, and the quality gate remains in place at pre-push.
 
+## Browser smoke
+
+Run `npm run smoke:browser` with Chrome available (or set `CHRONOS_BROWSER_BIN` to its executable). The fixture-backed smoke owns its local dev server and checks Today, Planning, Review, Insights, and mobile sign-in targets, including visible, nonempty component targets and browser runtime errors; it does not verify a live backend, form submissions, or interactive controls.
+
+When a UI unit changes copy consumed by the smoke, reconcile its expected text in the same unit and rerun the normal smoke and `npm run quality:ci`. Keep the selectors, visibility, hydration, mobile target sizes, and runtime-error checks intact; do not accept old and new copy to hide a mismatch.
+
 ## License
 
 License information will be added later.
