@@ -16,7 +16,16 @@ import { describe, expect, it } from 'vitest';
 
 // T8: S7/S11/S12 shared-guard regression; S2 normal gates, without force/skip/bypass.
 const projectRoot = fileURLToPath(new URL('../', import.meta.url));
-const lefthookLauncher = createRequire(import.meta.url).resolve('lefthook');
+// Match official get-exe resolution; the fixture owns the native process deadline.
+// This removes the Node proxy, not a proven timeout root cause.
+const lefthookRequire = createRequire(createRequire(import.meta.url).resolve('lefthook/get-exe'));
+const lefthookPlatform = ['win32', 'cygwin'].includes(process.platform)
+  ? 'windows'
+  : process.platform;
+const lefthookExtension = lefthookPlatform === 'windows' ? '.exe' : '';
+const lefthookExecutable = lefthookRequire.resolve(
+  `lefthook-${lefthookPlatform}-${process.arch}/bin/lefthook${lefthookExtension}`,
+);
 const guardError =
   'ERROR: staged files have unstaged changes. Stage or revert those changes before committing.';
 const baseStaged = '# Original staged document\n\nUnchanged tail.\n';
@@ -216,7 +225,7 @@ function fixture(layout: Layout) {
     return result.stdout;
   }
 
-  const repository = join(root, 'repository');
+  const repository = join(root, 'repository with spaces');
   mkdirSync(repository);
   git(repository, 'init', '--quiet', '--initial-branch=guard-fixture');
   writeFileSync(join(repository, 'staged.md'), baseStaged);
@@ -304,8 +313,7 @@ function fixture(layout: Layout) {
     guard: () => {
       // Run the full public hook: command selection and --no-stage-fixed must not
       // suppress the real stash lifecycle. Other jobs retain their original globs.
-      const framework = run(cwd, process.execPath, [
-        lefthookLauncher,
+      const framework = run(cwd, lefthookExecutable, [
         'run',
         'pre-commit',
         '--colors',
