@@ -12,6 +12,12 @@ Install dependencies with `npm ci`. This uses the committed lockfile and checks 
 
 The production security dependency unit raises the Astro floor to `^7.3.3` and `@astrojs/node` to `^11.1.3`, using the committed patched lockfile. Normal gates remain `npm ci`, `npm run audit:production` (high severity threshold), `npm run quality:ci`, and the separate `npm run smoke:browser` functional check. Applying this dependency pair does not establish that those gates have passed or that independent review, native review, CI, or delivery signoff is complete.
 
+## Continuous integration
+
+The required `Quality` workflow runs on Windows (`windows-latest`) with Node.js 24. It preserves the existing CI installation command, `npm ci --ignore-scripts`, followed by `npm run audit:production`, `npm run quality:ci`, and `npm run smoke:browser`.
+
+Changing the runner does not waive any gate or establish that CI has passed. The guard fixtures and browser smoke retain all existing assertions.
+
 ## Protected navigation
 
 Block-detail paths under `/blocks/` use the same authentication boundary as app sections. Unauthenticated navigation redirects to `/sign-in`, preserving the requested path and query in `redirectTo`.
